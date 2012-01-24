@@ -15,8 +15,9 @@ And to uninstall it:
 
 Press Alt-F4 at any time to quit.
 
-
 Neverhood is an open-source, SDL Perl remake of the 1996 "The Neverhood". It aims to make you feel like you're playing the original, but also to improve it in certain places. It should run on most modern systems, contact me if it doesn't work on yours.
+
+Work has ceased on this project for the time being. You can still try running it, but there's not much to see. You don't have to contact me if it doesn't work for you.
 
 Contact:
  blaizer@cpan.org
