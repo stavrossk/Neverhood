@@ -1,8 +1,7 @@
 # the game object -- contains the current scene and game globals and sets up the App
 use 5.01;
-use strict;
-use warnings;
 package Games::Neverhood;
+use Mouse;
 
 $Games::Neverhood::VERSION = 0.010;
 
@@ -14,6 +13,8 @@ use SDL::Color;
 use SDL::Events;
 
 use File::Spec;
+
+use Games::Neverhood::SmackerPlayer;
 
 # globals from bin/nhc
 our ($DataDir, $Debug, $FPSLimit, $Fullscreen, $NoFrame, $ShareDir, $StartingScene, $StartingPrevScene);
@@ -28,9 +29,10 @@ BEGIN {
 	$StartingPrevScene //= $Games::Neverhood::StartingScene;
 }
 
-sub new {
-	my $class = shift;
-	$; = bless {}, $class;
+my $player;
+
+sub BUILD {
+	$; = shift;
 	
 	printf <<GREETING, $DataDir, $ShareDir, '=' x 50;
 Games::Neverhood started
@@ -38,8 +40,8 @@ Games::Neverhood started
 Share dir:  %s
 %s
 GREETING
-	
-	$self;
+
+	$player = Games::Neverhood::SmackerPlayer->new(file => 'a', pos => [2, 20]);
 }
 
 # the SDLx::App
@@ -102,7 +104,7 @@ sub app {
 #			async_blit => 1,
 #			hw_palette => 1,
 
-			icon => share_file('icon.bmp'),
+			icon => $;->share_file('icon.bmp'),
 			icon_alpha_key => SDL::Color->new(255, 255, 255),
 
 			event_handlers => [
@@ -117,9 +119,9 @@ sub app {
 				sub{SDL::Video::fill_rect(
 					$_[1],
 					SDL::Rect->new(0, 0, 640, 480),
-					SDL::Video::map_RGBA($_[1]->format, 0, 0, 0, 255)
+					SDL::Video::map_RGBA($_[1]->format, 23, 156, 56, 255)
 				)},
-				sub{},
+				sub{$player->draw},
 				sub{$_[1]->flip},
 			],
 			stop_handler => sub {
@@ -137,14 +139,15 @@ sub app {
 }
 
 sub debug {
-		&_msg
-	if $Debug;
+	return $Debug if @_ <= 1;
+	&_msg if $Debug;
 }
 sub error {
 	&_msg;
 	exit 1;
 }
 sub _msg {
+	shift;
 	my @caller = caller 2;
 	$caller[3] =~ s/^$caller[0]:://;
 	$caller[1] =~ s/^$ShareDir/.../;
@@ -153,17 +156,20 @@ sub _msg {
 }
 
 sub data_file {
-	return File::Spec->catfile($DataDir, @_);
+	shift; return File::Spec->catfile($DataDir, @_);
 }
 sub data_dir {
-	return File::Spec->catdir($DataDir, @_);
+	shift; return File::Spec->catdir($DataDir, @_);
 }
 sub share_file {
-	return File::Spec->catfile($ShareDir, @_);
+	shift; return File::Spec->catfile($ShareDir, @_);
 }
 sub share_dir {
-	return File::Spec->catdir($ShareDir, @_);
+	shift; return File::Spec->catdir($ShareDir, @_);
 }
+
+no Mouse;
+__PACKAGE__->meta->make_immutable;
 
 package Games::Neverhood::App;
 
