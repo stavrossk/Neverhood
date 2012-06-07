@@ -12,6 +12,7 @@ use Getopt::Long ();
 
 BEGIN {
 	Getopt::Long::GetOptions(
+		'data-dir=s'    => \$Games::Neverhood::DataDir,
 		'debug'         => \$Games::Neverhood::Debug,
 		'fast-forward'  => \$Games::Neverhood::Scene::FastForward,
 		'fps-limit=i'   => \$Games::Neverhood::FPSLimit,
@@ -19,13 +20,13 @@ BEGIN {
 		'help|?'        => sub { require Pod::Usage; Pod::Usage::pod2usage(1) },
 		'normal-window' => sub { $Games::Neverhood::Fullscreen = 0; $Games::Neverhood::NoFrame = 0 },
 		'share-dir=s'   => \$Games::Neverhood::ShareDir,
-		'start-name=s'  => sub { ($Games::Neverhood::StartSetName, $Games::Neverhood::StartUnsetName) = split /,/, $_[1] },
+		'start-name=s'  => sub { ($Games::Neverhood::StartingScene, $Games::Neverhood::StartingPrevScene) = split /,/, $_[1] },
 		'window'        => sub { $Games::Neverhood::Fullscreen = 0; },
 	) or require Pod::Usage, Pod::Usage::pod2usage(2);
 }
 
 use Games::Neverhood;
-$;->app->run;
+Games::Neverhood->new()->app->run;
 
 1;
 
@@ -37,16 +38,17 @@ nhc [options]
 
 =head2 Options
 
+ --data-dir=DIR      Set the dir for the game's assets (default=./DATA)
  --debug             Enable all debugging features
  --fast-forward      Enable the FASTFORWARD cheat
- --fps-limit=FPS     Limit the framerate to FPS, 0 for no limit (default=60)
+ --fps-limit=FPS     Limit the fps to FPS, 0 for no limit (default=60)
  --fullscreen        Run the game fullscreen (default)
  --help              Show this help
  --normal-window     Run the game in a normal window
- --share-dir=DIR     Set the directory for all game assets to DIR
- --start-name=SET[,UNSET]
+ --share-dir=DIR     Set the dir for the game's config files
+ --starting-scene=SET[,UNSET]
                      Start the game in SET (default=Scene::Nursery::One)
-                     Optional UNSET of what the game was in before SET
+                     Optional UNSET of what the scene was before SET
  --window            Run the game in a frame-less window
 
 =head2 In-game keys

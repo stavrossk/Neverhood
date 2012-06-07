@@ -1,61 +1,46 @@
-# the game object -- subclass of SDLx::App with inside-out game class
+# the game object -- contains the current scene and game globals and sets up the App
 use 5.01;
 use strict;
 use warnings;
 package Games::Neverhood;
 
-our $VERSION;
-BEGIN { $VERSION = 0.004 }
+$Games::Neverhood::VERSION = 0.010;
 
 use SDL;
-use Games::Neverhood::App;
+use SDLx::App;
 use SDL::Video;
+use SDL::Rect;
 use SDL::Color;
 use SDL::Events;
-# use SDLx::Mixer;
+
 use File::Spec;
 
-use parent 'Exporter';
-our @EXPORT_OK;
-BEGIN { @EXPORT_OK = qw/$Remainder $Debug $FPSLimit $Fullscreen $NoFrame $ShareDir $StartUnset $StartSet/ }
-
-use overload
-	# string overload to return ref $self, but without Games::Neverhood:: prefix
-	'""'   => sub { ref($_[0]) =~ /^Games::Neverhood::(.*)/ and return $1; '' },
-	'0+'   => sub { no overloading; $_[0] },
-	'fallback' => 1,
-;
-
-# keeping track of the frame remainder of stepping
-# TODO: keep track of this in GG
-our $Remainder;
-
 # globals from bin/nhc
-our ($Debug, $FPSLimit, $Fullscreen, $NoFrame, $ShareDir, $StartSetName, $StartUnsetName);
+our ($DataDir, $Debug, $FPSLimit, $Fullscreen, $NoFrame, $ShareDir, $StartingScene, $StartingPrevScene);
 BEGIN {
-	$Remainder = 0;
 #	$Debug;
-	$FPSLimit       //= 60;
-	$Fullscreen     //= 1;
-	$NoFrame        //= 1;
-	$ShareDir       //= do { require File::ShareDir; File::ShareDir::dist_dir('Games-Neverhood') };
-	$StartSetName   //= 'Scene::Nursery::One';
-	$StartUnsetName //= $Games::Neverhood::StartSetName;
+	$DataDir           //= File::Spec->catdir('DATA');
+	$FPSLimit          //= 60;
+	$Fullscreen        //= 1;
+	$NoFrame           //= 1;
+	$ShareDir          //= do { require File::ShareDir; File::ShareDir::dist_dir('Games-Neverhood') };
+	$StartingScene     //= 'Scene::Nursery::One';
+	$StartingPrevScene //= $Games::Neverhood::StartingScene;
 }
 
-# game globals
-use Games::Neverhood::GG;
-sub GG { state $GG = Games::Neverhood::GG->new }
-
-# global sprites
-use Games::Neverhood::Sprite::Klaymen;
-use Games::Neverhood::Sprite::Cursor;
-sub klaymen { state $klaymen = Games::Neverhood::Sprite::Klaymen->new }
-sub cursor  { state $cursor  = Games::Neverhood::Sprite::Cursor ->new }
-
-# game objects
-use Games::Neverhood::Scene::Nursery::One;
-use Games::Neverhood::Scene::Test;
+sub new {
+	my $class = shift;
+	$; = bless {}, $class;
+	
+	printf <<GREETING, $DataDir, $ShareDir, '=' x 50;
+Games::Neverhood started
+ Data dir:  %s
+Share dir:  %s
+%s
+GREETING
+	
+	$self;
+}
 
 # the SDLx::App
 sub app {
@@ -104,6 +89,7 @@ sub app {
 			height     => 480,
 			depth      => 16,
 			min_t      => $FPSLimit && 1 / $FPSLimit,
+			delay      => $FPSLimit && (1 / $FPSLimit)/4,
 			eoq        => 1,
 			init       => ['video', 'audio'],
 			no_cursor  => 1,
@@ -116,81 +102,81 @@ sub app {
 #			async_blit => 1,
 #			hw_palette => 1,
 
-			icon => do {
-				my $icon;
-				if($icon = SDL::Video::load_BMP(File::Spec->catfile($ShareDir, 'icon.bmp'))) {
-					SDL::Video::set_color_key($icon, SDL_SRCCOLORKEY, SDL::Color->new(255, 255, 255));
-				}
-				$icon;
-			},
+			icon => share_file('icon.bmp'),
+			icon_alpha_key => SDL::Color->new(255, 255, 255),
 
 			event_handlers => [
-
 				$event_window_pause,
 				$event_pause,
-				sub{$;->event(@_)},
+				sub{},
 			],
 			move_handlers => [
-				sub{$;->move(@_)},
+				sub{},
 			],
 			show_handlers => [
-				sub{SDL::Video::fill_rect($_[1], SDL::Rect->new(0, 0, 640, 480), 0)},
-				sub{$;->show(@_)},
+				sub{SDL::Video::fill_rect(
+					$_[1],
+					SDL::Rect->new(0, 0, 640, 480),
+					SDL::Video::map_RGBA($_[1]->format, 0, 0, 0, 255)
+				)},
+				sub{},
 				sub{$_[1]->flip},
-				sub {
-					my (undef, $app) = @_;
-					return unless defined(my $set_name = $;->set);
-					$;->set(undef);
-					my $unset_name = "$;";
-
-					$;->on_destroy($set_name);
-					$;->cursor->clicked(undef);
-					undef $;;
-
-					# inside this, $; gets set to the new object
-					"Games::Neverhood::$set_name"->new($unset_name);
-
-					$app->dt(1 / $;->fps);
-				},
 			],
+			stop_handler => sub {
+				my ($e, $self) = @_;
+					$self->stop
+				if
+					$e->type == SDL_QUIT
+					or
+					$e->type == SDL_KEYDOWN and $e->key_sym == SDLK_F4
+					and $e->key_mod & KMOD_ALT and not $e->key_mod & (KMOD_CTRL | KMOD_SHIFT | KMOD_META)
+				;
+			}
 		);
 	};
 }
 
-# SDLx::Mixer::init(
-	# frequency => 22050,
-	# channels => 1,
-	# chunk_size => 1024,
-	# support => ['ogg'],
-	# streams => 8,
-# );
-
-sub new {
-	# TODO: what else should go here? Is this redundant?
-	my ($class) = @_;
-	$; = bless {}, ref $class || $class;
+sub debug {
+		&_msg
+	if $Debug;
+}
+sub error {
+	&_msg;
+	exit 1;
+}
+sub _msg {
+	my @caller = caller 2;
+	$caller[3] =~ s/^$caller[0]:://;
+	$caller[1] =~ s/^$ShareDir/.../;
+	say STDERR sprintf "%s::%s: %s at %s line %d", @caller[0, 3], sprintf(shift, @_), @caller[1, 2];
+	return;
 }
 
-sub set {
-	if(@_ > 1) { $_[0]->{set} = $_[1]; return $_[0]; }
-	$_[0]->{set};
+sub data_file {
+	return File::Spec->catfile($DataDir, @_);
+}
+sub data_dir {
+	return File::Spec->catdir($DataDir, @_);
+}
+sub share_file {
+	return File::Spec->catfile($ShareDir, @_);
+}
+sub share_dir {
+	return File::Spec->catdir($ShareDir, @_);
 }
 
-# inside this, $; gets set to the new object
-"Games::Neverhood::$StartSetName"->new($StartUnsetName);
-$;->app->dt(1 / $;->fps);
+package Games::Neverhood::App;
 
-# you're NOT allowed to use $; to refer to the current app if you're a game class, okay? PROMISE?
-# no seriously, I mean it...
-# we're going on the assumption that if you're a sprite or something, you're only being asked to do something because you're in the current app
-# no two apps should ever access one another
-# use the assumption, don't abuse the assumption
+our @ISA = qw/SDLx::App/;
 
-###############################################################################
-# methods to be overloaded by Games::Neverhood::Scene and such
-
-sub event {}
-sub move {}
-sub show {}
+sub pause {
+	my $self = shift;
+	
+	# stuff before pause
+	
+	$self->SUPER::pause(@_);
+	
+	# stuff after pause
+}
 
 1;
