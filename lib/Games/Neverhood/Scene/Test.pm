@@ -4,7 +4,7 @@ use warnings;
 package Games::Neverhood::Scene::Test;
 
 use parent qw/Games::Neverhood::Scene/;
-use Games::Neverhood::Video;
+# use Games::Neverhood::Video;
 use File::Spec;
 
 use constant {
@@ -13,7 +13,8 @@ use constant {
 };
 sub sprites_list {
 	[
-		Games::Neverhood::Video->new(file => 73, dir => 'hd'),
+		'test',
+		# Games::Neverhood::Video->new(file => 73, dir => 'hd'),
 	];
 }
 

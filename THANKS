@@ -1,31 +1,31 @@
-Thanks to:
+Things I shouldn't forget to thank:
 
 Contributors to SDL Perl, for making it what it is today
 As well as specifically FROGGS, kthakore and Alias for their help and/or praise
 
+The ScummVM Neverhood Engine (WIP), providing the basis of all my work
 Onkel Hotte for writing a Python script that extracted and decompressed all of The Neverhood's images with Blast.
 
 Programs/libraries:
 The Neverhood
 Perl
 SDL
-LibSDL
+libsdl
 Notepad++
-FRAPS                 losslessly capturing the video of the game, and being my fps indicator
-Sony Vegas            losslessly saving the video as separate images
-GIMP                  image editing and crunching with scripts
-pngout                reducing the size of every PNG by ~10%
+FRAPS                 being a good lossless capturer and FPS indicator
+GIMP                  being good for viewing images
 Game Audio Player     extracting all the files from the Neverhood BLBs
-oggenc                converting the uncompressed audio to OGG Vorbis format
 SMPlayer              playing the Smacker video
 FFmpeg                having the Smacker codec
 zlib/contrib/Blast    decompressing PKWARE-compressed files
 
 Websites:
+Github            being an amazing hub of the gits
 XeNTaX Forum      help with Game Audio Player
-MultimediaWiki    very helpful pages on the BLB and Smacker formats
+MultimediaWiki    helpful pages on the BLB and Smacker formats
 
-Anyone else I can think of who provided support or even just interest:
+Anyone else who provided support or even just interest:
 Callum Gare                     being awesome, and having a Mac
+Gil Megidish
 Michael Snoswell
-Too many Russians to name...
+People who sent me emails or issues on Github
