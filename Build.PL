@@ -16,14 +16,15 @@ my $build = My::Builder->new(
 	share_dir     => 'share',
 	requires => {
 		'perl'           => 5.010,
-		'SDL'            => 2.534,
+		'SDL'            => 2.541,
+		'Mouse'          => 0.93,
 		'File::ShareDir' => 0,
 	},
-	configure_requires   => { 'Module::Build' => 0.38 },
+	configure_requires   => { 'Module::Build' => 0.34 },
 	dynamic_config       => 1,
 	extra_compiler_flags => \@cflags,
 	extra_linker_flags   => \@lflags,
-	include_dirs         => [ '.' ],
+	include_dirs         => [ 'src' ],
 	typemap_files        => { 'typemap' => 'lib/Games/Neverhood/typemap' },
 	add_to_cleanup => [
 		'MANIFEST',

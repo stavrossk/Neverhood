@@ -10,23 +10,25 @@ use warnings;
 
 use Getopt::Long ();
 
+my ($starting_scene, $starting_prev_scene);
+
 BEGIN {
 	Getopt::Long::GetOptions(
-		'data-dir=s'    => \$Games::Neverhood::DataDir,
+		'data-dir=s'    => \$Games::Neverhood::Data_Dir,
 		'debug'         => \$Games::Neverhood::Debug,
-		'fast-forward'  => \$Games::Neverhood::Scene::FastForward,
-		'fps-limit=i'   => \$Games::Neverhood::FPSLimit,
+		'fps-limit=i'   => \$Games::Neverhood::FPS_Limit,
 		'fullscreen'    => \$Games::Neverhood::Fullscreen,
+		'grab-input'    => \$Games::Neverhood::Grab_Input,
 		'help|?'        => sub { require Pod::Usage; Pod::Usage::pod2usage(1) },
-		'normal-window' => sub { $Games::Neverhood::Fullscreen = 0; $Games::Neverhood::NoFrame = 0 },
-		'share-dir=s'   => \$Games::Neverhood::ShareDir,
-		'start-name=s'  => sub { ($Games::Neverhood::StartingScene, $Games::Neverhood::StartingPrevScene) = split /,/, $_[1] },
+		'normal-window' => sub { $Games::Neverhood::Fullscreen = 0; $Games::Neverhood::No_Frame = 0 },
+		'share-dir=s'   => \$Games::Neverhood::Share_Dir,
+		'starting-scene=s'  => sub { ($starting_scene, $starting_prev_scene) = split /,/, $_[1] },
 		'window'        => sub { $Games::Neverhood::Fullscreen = 0; },
 	) or require Pod::Usage, Pod::Usage::pod2usage(2);
 }
 
 use Games::Neverhood;
-Games::Neverhood->new()->app->run;
+Games::Neverhood->new()->run($starting_scene, $starting_prev_scene);
 
 1;
 
@@ -38,18 +40,18 @@ nhc [options]
 
 =head2 Options
 
- --data-dir=DIR      Set the dir for the game's assets (default=./DATA)
- --debug             Enable all debugging features
- --fast-forward      Enable the FASTFORWARD cheat
- --fps-limit=FPS     Limit the fps to FPS, 0 for no limit (default=60)
- --fullscreen        Run the game fullscreen (default)
- --help              Show this help
- --normal-window     Run the game in a normal window
- --share-dir=DIR     Set the dir for the game's config files
+ --data-dir=DIR     Set the dir for the game's assets (default=./DATA)
+ --debug            Enable all debugging features
+ --fps-limit=FPS    Limit the fps to FPS, 0 for no limit (default=60)
+ --fullscreen       Run the game fullscreen
+ --grab-input       Confine the mouse to the window (default)
+ --help             Show this help
+ --normal-window    Run the game in a normal window
+ --share-dir=DIR    Set the dir for the game's config files
  --starting-scene=SET[,UNSET]
-                     Start the game in SET (default=Scene::Nursery::One)
-                     Optional UNSET of what the scene was before SET
- --window            Run the game in a frame-less window
+                    Start the game in SET (default=Scene::Nursery::One)
+                    Optional UNSET of what the scene was before SET
+ --window           Run the game in a frame-less window (default)
 
 =head2 In-game keys
 
