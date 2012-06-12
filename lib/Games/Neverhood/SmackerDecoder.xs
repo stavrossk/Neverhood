@@ -1,5 +1,11 @@
+/*
+// Smacker decoder
 // Based heavily on the ScummVM v1.3.1 Smacker decoder (video/smkdecoder.h)
 // https://github.com/scummvm/scummvm/tree/42ab839dd6c8a1570b232101eb97f4e54de57935/video
+*/
+
+#ifndef __SMACKER_DECODER_XS__
+#define __SMACKER_DECODER_XS__
 
 #undef NDEBUG
 #include <assert.h>
@@ -314,18 +320,6 @@ static Uint32 BigTree_getCode(BigTree* this, BitStream* bs) {
 // The main class.
 */
 
-/* convenience functions for returning numbers read from the stream */
-static Uint32 NHC_RWreadUint32(SDL_RWops* stream) {
-	Uint32 num;
-	SDL_RWread(stream, &num, 4, 1);
-	return num;
-}
-static Uint8 NHC_RWreadUint8(SDL_RWops* stream) {
-	Uint8 num;
-	SDL_RWread(stream, &num, 1, 1);
-	return num;
-}
-
 /* possible runs of blocks */
 static const int block_runs[64] = {
 	 1,    2,    3,    4,    5,    6,    7,    8,
@@ -403,15 +397,15 @@ SmackerDecoder* SmackerDecoder_new(SDL_RWops* stream) {
 	this->_fileStream = stream;
 
 	/* Read in the Smacker header */
-	this->_header.signature = NHC_RWreadUint32(stream);
+	this->_header.signature = SDL_RWreadUint32(stream);
 
 	if(this->_header.signature != ('S')+('M'<<8)+('K'<<16)+('2'<<24))
 		error("Invalid Smacker file");
 
-	Uint32 width      = NHC_RWreadUint32(stream);
-	Uint32 height     = NHC_RWreadUint32(stream);
+	Uint32 width      = SDL_RWreadUint32(stream);
+	Uint32 height     = SDL_RWreadUint32(stream);
 
-	this->_frameCount = NHC_RWreadUint32(stream);
+	this->_frameCount = SDL_RWreadUint32(stream);
 	Sint32 frameRate;
 	SDL_RWread(stream, &frameRate, 4, 1);
 
@@ -429,17 +423,17 @@ SmackerDecoder* SmackerDecoder_new(SDL_RWops* stream) {
 	// 2 - set to 1 if file is Y-doubled
 	// If bits 1 or 2 are set, the frame should be scaled to twice its height
 	// before it is displayed. */
-	this->_header.flags = NHC_RWreadUint32(stream);
+	this->_header.flags = SDL_RWreadUint32(stream);
 
 	int i;
 	for (i = 0; i < 7; i++)
-		this->_header.audioSize[i] = NHC_RWreadUint32(stream);
+		this->_header.audioSize[i] = SDL_RWreadUint32(stream);
 
-	this->_header.treesSize = NHC_RWreadUint32(stream);
-	this->_header.mMapSize  = NHC_RWreadUint32(stream);
-	this->_header.mClrSize  = NHC_RWreadUint32(stream);
-	this->_header.fullSize  = NHC_RWreadUint32(stream);
-	this->_header.typeSize  = NHC_RWreadUint32(stream);
+	this->_header.treesSize = SDL_RWreadUint32(stream);
+	this->_header.mMapSize  = SDL_RWreadUint32(stream);
+	this->_header.mClrSize  = SDL_RWreadUint32(stream);
+	this->_header.fullSize  = SDL_RWreadUint32(stream);
+	this->_header.typeSize  = SDL_RWreadUint32(stream);
 
 	for (i = 0; i < 7; i++) {
 		/* AudioRate - Frequency and format information for each sound track, up to 7 audio tracks.
@@ -452,7 +446,7 @@ SmackerDecoder* SmackerDecoder_new(SDL_RWops* stream) {
 		// * bit 26 - indicates Bink DCT compression
 		// * bits 25-24 - unused
 		// * bits 23-0 - audio sample rate */
-		Uint32 audioInfo = NHC_RWreadUint32(stream);
+		Uint32 audioInfo = SDL_RWreadUint32(stream);
 		this->_header.audioInfo[i].hasAudio   = audioInfo & 0x40000000;
 		this->_header.audioInfo[i].is16Bits   = audioInfo & 0x20000000;
 		this->_header.audioInfo[i].isStereo   = audioInfo & 0x10000000;
@@ -475,15 +469,15 @@ SmackerDecoder* SmackerDecoder_new(SDL_RWops* stream) {
 		}
 	}
 
-	this->_header.dummy = NHC_RWreadUint32(stream);
+	this->_header.dummy = SDL_RWreadUint32(stream);
 
 	this->_frameSizes = safemalloc(sizeof(Uint32) * this->_frameCount);
 	for (i = 0; i < this->_frameCount; i++)
-		this->_frameSizes[i] = NHC_RWreadUint32(stream);
+		this->_frameSizes[i] = SDL_RWreadUint32(stream);
 
 	this->_frameTypes = safemalloc(this->_frameCount);
 	for (i = 0; i < this->_frameCount; i++)
-		this->_frameTypes[i] = NHC_RWreadUint8(stream);
+		this->_frameTypes[i] = SDL_RWreadUint8(stream);
 
 	Uint8* huffmanTrees = safemalloc(this->_header.treesSize);
 	SDL_RWread(stream, huffmanTrees, this->_header.treesSize, 1);
@@ -534,13 +528,13 @@ int SmackerDecoder_nextFrame(SmackerDecoder* this) {
 		if (!(this->_frameTypes[this->_curFrame] & (2 << i)))
 			continue;
 
-		chunkSize = NHC_RWreadUint32(this->_fileStream);
+		chunkSize = SDL_RWreadUint32(this->_fileStream);
 		chunkSize -= 4;    /* subtract the first 4 bytes (chunk size) */
 
 		if (this->_header.audioInfo[i].compression == kCompressionNone) {
 			dataSizeUnpacked = chunkSize;
 		} else {
-			dataSizeUnpacked = NHC_RWreadUint32(this->_fileStream);
+			dataSizeUnpacked = SDL_RWreadUint32(this->_fileStream);
 			chunkSize -= 4;    /* subtract the next 4 bytes (unpacked data size) */
 		}
 
@@ -569,23 +563,19 @@ int SmackerDecoder_nextFrame(SmackerDecoder* this) {
 	int stride = this->_surface->pitch;
 	int block = 0, blocks = bw * bh;
 
-	Uint8* out;
-	int type, run, j, mode;
-	Uint32 p1, p2, clr, map;
-	Uint8 hi, lo;
-
 	while (block < blocks) {
-		type = BigTree_getCode(this->_TypeTree, bs);
-		run = block_runs[(type >> 2) & 0x3F];
+		int type = BigTree_getCode(this->_TypeTree, bs);
+		int run = block_runs[(type >> 2) & 0x3F];
+		Uint8* out;
 
 		switch (type & 3) {
 		case SMK_BLOCK_MONO:
 			while (run-- && block < blocks) {
-				clr = BigTree_getCode(this->_MClrTree, bs);
-				map = BigTree_getCode(this->_MMapTree, bs);
-				out = (Uint8*)this->_surface->pixels + (block / bw) * (stride * 4) + (block % bw) * 4;
-				hi = clr >> 8;
-				lo = clr & 0xff;
+				Uint32 clr = BigTree_getCode(this->_MClrTree, bs);
+				Uint32 map = BigTree_getCode(this->_MMapTree, bs);
+				out = (Uint8*)this->_surface->pixels + ((block / bw) * stride + (block % bw)) * 4;
+				Uint8 hi = clr >> 8;
+				Uint8 lo = clr & 0xff;
 				for (i = 0; i < 4; i++) {
 					out[0] = (map & 1) ? hi : lo;
 					out[1] = (map & 2) ? hi : lo;
@@ -599,10 +589,10 @@ int SmackerDecoder_nextFrame(SmackerDecoder* this) {
 			break;
 		case SMK_BLOCK_FULL:
 			while (run-- && block < blocks) {
-				out = (Uint8*)this->_surface->pixels + (block / bw) * (stride * 4) + (block % bw) * 4;
+				out = (Uint8*)this->_surface->pixels + ((block / bw) * stride + (block % bw)) * 4;
 				for (i = 0; i < 4; i++) {
-					p1 = BigTree_getCode(this->_FullTree, bs);
-					p2 = BigTree_getCode(this->_FullTree, bs);
+					Uint32 p1 = BigTree_getCode(this->_FullTree, bs);
+					Uint32 p2 = BigTree_getCode(this->_FullTree, bs);
 					out[2] = p1 & 0xff;
 					out[3] = p1 >> 8;
 					out[0] = p2 & 0xff;
@@ -617,10 +607,9 @@ int SmackerDecoder_nextFrame(SmackerDecoder* this) {
 				block++;
 			break;
 		case SMK_BLOCK_FILL:
-			mode = type >> 8;
 			while (run-- && block < blocks) {
-				out = (Uint8*)this->_surface->pixels + (block / bw) * (stride * 4) + (block % bw) * 4;
-				Uint32 col = mode * 0x01010101;
+				out = (Uint8*)this->_surface->pixels + ((block / bw) * stride + (block % bw)) * 4;
+				Uint32 col = (type >> 8) * 0x01010101;
 				for (i = 0; i < 4; i++) {
 					out[0] = out[1] = out[2] = out[3] = col;
 					out += stride;
@@ -787,7 +776,7 @@ static void SmackerDecoder_handleAudioTrack(SmackerDecoder* this, Uint8 track, U
 
 static void SmackerDecoder_unpackPalette(SmackerDecoder* this) {
 	int startPos = SDL_RWtell(this->_fileStream);
-	Uint32 len = 4 * NHC_RWreadUint8(this->_fileStream);
+	Uint32 len = 4 * SDL_RWreadUint8(this->_fileStream);
 
 	Uint8* chunk = safemalloc(len);
 	SDL_RWread(this->_fileStream, chunk, len, 1);
@@ -841,6 +830,8 @@ static void SmackerDecoder_unpackPalette(SmackerDecoder* this) {
 	SDL_RWseek(this->_fileStream, startPos + len, SEEK_SET);
 	safefree(chunk);
 }
+
+#endif
 
 MODULE = Games::Neverhood::SmackerDecoder		PACKAGE = Games::Neverhood::SmackerDecoder		PREFIX = Neverhood_SmackerDecoder_
 

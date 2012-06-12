@@ -10,10 +10,10 @@ my @cflags = ExtUtils::CBuilder->new->split_like_shell( File::Spec->catfile('-I'
 my @lflags = ExtUtils::CBuilder->new->split_like_shell( Alien::SDL->config('libs', '-lSDL_mixer') );
 
 my $build = My::Builder->new(
-	module_name   => 'Games::Neverhood',
-	dist_abstract => 'The Neverhood remade in SDL Perl',
-	license       => 'perl',
-	share_dir     => 'share',
+	module_name    => 'Games::Neverhood',
+	dist_abstract  => 'The Neverhood remade in SDL Perl',
+	license        => 'GPL_2',
+	share_dir      => 'share',
 	requires => {
 		'perl'           => 5.010,
 		'SDL'            => 2.541,

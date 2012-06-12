@@ -75,7 +75,7 @@ HELLO
 
 	printf <<GOODBYE, '=' x 69
 %s
-Games::Neverhood stopped normally
+Games::Neverhood ended normally
 
 GOODBYE
 }
@@ -135,7 +135,7 @@ sub app {
 			dt         => 0.1,
 			max_t      => 0.1,
 			min_t      => $FPS_Limit &&  1 / $FPS_Limit,
-			delay      => $FPS_Limit && (1 / $FPS_Limit) / 4,
+			delay      => $FPS_Limit ? (1 / $FPS_Limit) / 4 : 0.001,
 			eoq        => 1,
 			init       => ['video', 'audio'],
 			no_cursor  => 1,
