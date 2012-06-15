@@ -1,8 +1,10 @@
 #!/usr/bin/perl
-# bin/nhc
-# Script that should be run to play Neverhood. Starts it up with all the
+
+# bin/nhc - script that should be run to play Neverhood. Starts it up with all the
 # necessary command-line options, The respective module handles the default
 # values for these options.
+# Copyright (C) 2012  Blaise Roth
+# See the LICENSE file for the full terms of the license.
 
 use 5.01;
 use strict;

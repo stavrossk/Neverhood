@@ -104,6 +104,7 @@ SDL_svg_context*	T_PTR
 int			T_IV
 intArray		T_ARRAY
 SmackerDecoder*	O_OBJECT_NPGC
+SpriteResource* O_OBJECT_NPGC
 
 OUTPUT
 

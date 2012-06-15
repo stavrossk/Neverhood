@@ -20,6 +20,14 @@ Games::Neverhood::OrderedHash - Pure Perl dual tied interface to ordered hashes
 
 Blaise Roth <blaizer@cpan.org>
 
+=head1 COPYRIGHT & LICENSE
+
+Copyright (C) 2012  Blaise Roth
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License.
+See the LICENSE file for the full terms of the license.
+
 =head1 SEE ALSO
 
 TODO

@@ -1,5 +1,6 @@
 Games::Neverhood
-Blaise Roth
+Copyright (C) 2012  Blaise Roth
+See the LICENSE file for the full terms of the license.
 
 To install the game:
  perl Build.PL

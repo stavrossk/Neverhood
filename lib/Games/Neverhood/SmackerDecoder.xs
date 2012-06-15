@@ -1,11 +1,10 @@
 /*
-// Smacker decoder
-// Based heavily on the ScummVM v1.3.1 Smacker decoder (video/smkdecoder.h)
+// Smacker decoder - decodes smacker files
+// Based heavily on the ScummVM v1.3.1 Smacker decoder (video/smkdecoder).
 // https://github.com/scummvm/scummvm/tree/42ab839dd6c8a1570b232101eb97f4e54de57935/video
+// Copyright (C) 2012  Blaise Roth
+// See the LICENSE file for the full terms of the license.
 */
-
-#ifndef __SMACKER_DECODER_XS__
-#define __SMACKER_DECODER_XS__
 
 #undef NDEBUG
 #include <assert.h>
@@ -831,8 +830,6 @@ static void SmackerDecoder_unpackPalette(SmackerDecoder* this) {
 	safefree(chunk);
 }
 
-#endif
-
 MODULE = Games::Neverhood::SmackerDecoder		PACKAGE = Games::Neverhood::SmackerDecoder		PREFIX = Neverhood_SmackerDecoder_
 
 SmackerDecoder*
@@ -896,8 +893,6 @@ void
 Neverhood_SmackerDecoder_DESTROY(THIS)
 		SmackerDecoder* THIS
 	CODE:
-		SDL_FreeSurface(THIS->_surface);
-		SDL_RWclose(THIS->_fileStream);
 		safefree(THIS->_frameSizes);
 		safefree(THIS->_frameTypes);
 		BigTree_destroy(THIS->_MMapTree);

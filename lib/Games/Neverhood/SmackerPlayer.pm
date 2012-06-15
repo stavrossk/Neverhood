@@ -1,11 +1,16 @@
+# SmackerPlayer - drawable object to play smacker files
+# Copyright (C) 2012  Blaise Roth
+# See the LICENSE file for the full terms of the license.
+
 use 5.01;
 package Games::Neverhood::SmackerPlayer;
 use Mouse;
 
-use Games::Neverhood::SmackerDecoder;
 use SDL::RWOps;
 use SDL::GFX::Rotozoom;
 use File::Spec;
+
+use constant invalidator_checks => ('x', 'y');
 
 # public attributes
 
@@ -14,8 +19,6 @@ has ['x', 'y'] =>
 	isa => 'Int',
 	default => 0,
 ;
-
-use constant invalidator_checks => ('x', 'y');
 
 with 'Games::Neverhood::Drawable';
 
@@ -45,6 +48,7 @@ has _time_remainder =>
 	is => 'rw',
 	isa => 'Num',
 	default => 0,
+	init_arg => undef,
 ;
 has _stream =>
 	is => 'rw',

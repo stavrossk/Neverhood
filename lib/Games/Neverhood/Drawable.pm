@@ -1,9 +1,12 @@
+# Drawable - role that standardises drawing
+# Also handles "invalidating" of rects on the screen to call $app->update() minimally.
+# Copyright (C) 2012  Blaise Roth
+# See the LICENSE file for the full terms of the license.
+
 use 5.01;
 package Games::Neverhood::Drawable;
 use Mouse::Role;
 
-# role that standardises drawing
-# also handles "invalidating" of rects on the screen to call $app->update() minimally
 
 use SDL::Rect;
 use SDL::Video;
@@ -14,6 +17,8 @@ our @Invalidated_Rects;
 # surface needs to return an SDL::Surface
 # invalidator_checks needs to return a list of method names to check for changes
 requires 'surface', 'invalidator_checks', 'x', 'y';
+
+use constant is_visible => 1;
 
 sub w { $_[0]->surface->w }
 sub h { $_[0]->surface->h }
@@ -119,11 +124,14 @@ sub update_screen {
 
 sub draw {
 	my $self = shift;
-	SDL::Video::blit_surface($self->surface, undef, $;->app, SDL::Rect->new($self->x, $self->y, 0, 0));
+	$self->on_draw() if $self->is_visible;
 	$self->_is_checked(0);
 	$self->_set_is_invalidated(0);
 }
-
+sub on_draw {
+	my $self = shift;
+	SDL::Video::blit_surface($self->surface, undef, $;->app, SDL::Rect->new($self->x, $self->y, 0, 0));
+}
 
 no Mouse::Role;
 1;

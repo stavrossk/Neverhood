@@ -1,3 +1,7 @@
+# OrderedHash - a hash with an order
+# Copyright (C) 2012  Blaise Roth
+# See the LICENSE file for the full terms of the license.
+
 use 5.01;
 use warnings;
 use strict;
@@ -12,10 +16,11 @@ use constant {
 	ORDER     => 0,
 	HASH      => 1,
 };
-use parent "Exporter";
+use parent 'Exporter';
 BEGIN {
 	our @EXPORT_OK = (qw/TIEDHASH TIEDARRAY ORDER HASH/);
 }
+
 use Games::Neverhood::OrderedHash::TiedHash;
 use Games::Neverhood::OrderedHash::TiedArray;
 
@@ -29,7 +34,7 @@ use overload
 sub new {
 	my ($class, $order) = (shift, shift);
 	if(ref $order eq 'ARRAY') {
-		Carp::confess("Order list musn't have dups")
+		Carp::confess("Order list must not have dups")
 			if keys %{{map {$_ => undef} @$order}} != @$order;
 	}
 	elsif(!defined $order) {
