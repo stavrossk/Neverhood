@@ -105,6 +105,7 @@ int			T_IV
 intArray		T_ARRAY
 SmackerDecoder*	O_OBJECT_NPGC
 SpriteResource* O_OBJECT_NPGC
+SoundResource* O_OBJECT_NPGC
 
 OUTPUT
 

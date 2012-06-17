@@ -28,6 +28,8 @@ use SDL::Rect;
 use SDL::Color;
 use SDL::Events;
 use SDL::Mixer;
+use SDL::Mixer::Channels;
+use SDL::RWOps;
 
 use File::Spec;
 use XSLoader;
@@ -39,6 +41,7 @@ BEGIN {
 	XSLoader::load('Games::Neverhood::SmackerDecoder');
 	XSLoader::load('Games::Neverhood::SpriteResource');
 	XSLoader::load('Games::Neverhood::Video');
+	XSLoader::load('Games::Neverhood::SoundResource');
 }
 
 # globals from bin/nhc
@@ -93,6 +96,12 @@ HELLO
 			$player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
 	
 	$sprite = Games::Neverhood::Sprite->new(file => $;->share_file('i', '496.02'));
+	
+	my $sound_stream = SDL::RWOps->new_file($;->share_file('a', '11.07'), 'r') // $;->error(SDL::get_error());
+	my $sound = Games::Neverhood::SoundResource->new($sound_stream);
+	$sound->inc_refcount();
+	$sound->inc_refcount();
+	$sound->play(0);
 
 	while($self->app->stopped ne 1) {
 		if($self->scene) {
@@ -211,7 +220,7 @@ sub init_app {
 			)},
 			sub {
 				$player->draw() if $player->is_invalidated;
-				$sprite->draw();
+				# $sprite->draw();
 			},
 			sub { Games::Neverhood::Drawable->update_screen() },
 		],
@@ -227,7 +236,8 @@ sub init_app {
 		}
 	);
 
-	SDL::Mixer::open_audio(22050, AUDIO_U16SYS, 1, 512);
+	SDL::Mixer::open_audio(22050, AUDIO_S16SYS, 1, 1024);
+	SDL::Mixer::Channels::allocate_channels(8);
 }
 
 sub pause {
@@ -286,4 +296,6 @@ sub share_dir {
 	shift; return File::Spec->catdir($Share_Dir, @_);
 }
 
+no Mouse;
+__PACKAGE__->meta->make_immutable;
 1;

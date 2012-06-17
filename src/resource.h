@@ -9,7 +9,7 @@
 #include <helper.h>
 #include <SDL/SDL.h>
 
-void Video_unpackSpriteRLE(SDL_RWops* stream, SDL_Surface* surface) {
+void Resource_unpackSpriteRLE(SDL_RWops* stream, SDL_Surface* surface) {
 	Uint16 rows   = SDL_RWreadUint16(stream);
 	Uint16 chunks = SDL_RWreadUint16(stream);
 

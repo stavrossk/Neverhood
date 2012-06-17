@@ -10,15 +10,15 @@
 #include <SDL/SDL.h>
 
 #define error(...) {\
-	fprintf(stderr, __VA_ARGS__);\
-	fprintf(stderr, " at %s line %d\n", __FILE__, __LINE__);\
+	printf(__VA_ARGS__);\
+	printf(" at %s line %d\n", __FILE__, __LINE__);\
 	exit(1);\
 }
 
 #define debug(...)\
 	if(SvTRUE(get_sv("Games::Neverhood::Debug", 0))) {\
 		fprintf(stderr, __VA_ARGS__);\
-		fprintf(stderr, "at %s line %d\n", __FILE__, __LINE__);\
+		fprintf(stderr, " at %s line %d\n", __FILE__, __LINE__);\
 	}\
 
 /* convenience functions for returning numbers read from RWops */

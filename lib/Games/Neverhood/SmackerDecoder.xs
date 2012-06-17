@@ -41,14 +41,14 @@ static BitStream* BitStream_new(Uint8* buf, Uint32 length) {
 	return this;
 }
 
-static bool BitStream_getBit(BitStream* this) {
+static Uint8 BitStream_getBit(BitStream* this) {
 	if (this->_bitCount == 0) {
 		assert(this->_buf < this->_end);
 		this->_curByte = *this->_buf++;
 		this->_bitCount = 8;
 	}
 
-	bool v = this->_curByte & 1;
+	Uint8 v = this->_curByte & 1;
 
 	this->_curByte >>= 1;
 	this->_bitCount--;
@@ -91,7 +91,7 @@ static void BitStream_skip(BitStream* this, int n) {
 // A Huffman-tree to hold 8-bit values.
 */
 
-static const Uint16 SMK_SMALL_NODE = 0x8000;
+#define SMK_SMALL_NODE 0x8000
 
 typedef struct {
 	Uint16 _treeSize;
@@ -110,7 +110,7 @@ static SmallTree* SmallTree_new(BitStream* bs) {
 	this->_treeSize = 0;
 	this->_bs = bs;
 
-	bool bit = BitStream_getBit(bs);
+	Uint8 bit = BitStream_getBit(bs);
 	assert(bit);
 
 	int i;
@@ -176,7 +176,7 @@ static Uint16 SmallTree_getCode(SmallTree* this, BitStream* bs) {
 // A Huffman-tree to hold 16-bit values.
 */
 
-static const Uint32 SMK_BIG_NODE = 0x80000000;
+#define SMK_BIG_NODE 0x80000000
 
 typedef struct {
 	Uint32  _treeSize;
@@ -224,7 +224,7 @@ static BigTree* BigTree_new(BitStream* bs, int allocSize) {
 
 	BigTree_decodeTree(this, 0, 0);
 
-	bool bit = BitStream_getBit(bs);
+	Uint8 bit = BitStream_getBit(bs);
 	assert(!bit);
 
 	for (i = 0; i < 3; i++) {
@@ -346,9 +346,9 @@ typedef enum {
 
 typedef struct {
 	AudioCompression compression;
-	bool hasAudio;
-	bool is16Bits;
-	bool isStereo;
+	Uint8 hasAudio;
+	Uint8 is16Bits;
+	Uint8 isStereo;
 	Uint32 sampleRate;
 } AudioInfo;
 
@@ -446,9 +446,9 @@ SmackerDecoder* SmackerDecoder_new(SDL_RWops* stream) {
 		// * bits 25-24 - unused
 		// * bits 23-0 - audio sample rate */
 		Uint32 audioInfo = SDL_RWreadUint32(stream);
-		this->_header.audioInfo[i].hasAudio   = audioInfo & 0x40000000;
-		this->_header.audioInfo[i].is16Bits   = audioInfo & 0x20000000;
-		this->_header.audioInfo[i].isStereo   = audioInfo & 0x10000000;
+		this->_header.audioInfo[i].hasAudio   = (audioInfo & 0x40000000) >> 30;
+		this->_header.audioInfo[i].is16Bits   = (audioInfo & 0x20000000) >> 29;
+		this->_header.audioInfo[i].isStereo   = (audioInfo & 0x10000000) >> 28;
 		this->_header.audioInfo[i].sampleRate = audioInfo & 0xFFFFFF;
 
 		if (audioInfo & 0x8000000)
@@ -460,12 +460,8 @@ SmackerDecoder* SmackerDecoder_new(SDL_RWops* stream) {
 		else
 			this->_header.audioInfo[i].compression = kCompressionNone;
 
-		if (this->_header.audioInfo[i].hasAudio) {
-			if (this->_header.audioInfo[i].compression == kCompressionRDFT || this->_header.audioInfo[i].compression == kCompressionDCT)
+		if (this->_header.audioInfo[i].hasAudio && this->_header.audioInfo[i].compression == kCompressionRDFT || this->_header.audioInfo[i].compression == kCompressionDCT)
 				error("Unhandled Smacker v2 audio compression");
-
-			printf("%08X", this->_header.audioInfo[i].compression);
-		}
 	}
 
 	this->_header.dummy = SDL_RWreadUint32(stream);
@@ -645,32 +641,27 @@ static void SmackerDecoder_handleAudioTrack(SmackerDecoder* this, Uint8 track, U
 
 		SDL_RWread(this->_fileStream, soundBuffer, chunkSize, 1);
 
-		safefree(soundBuffer);
-
-		/*if (_header.audioInfo[track].compression == kCompressionRDFT || _header.audioInfo[track].compression == kCompressionDCT) {
-			// TODO: Compressed audio (Bink RDFT/DCT encoded)
-			free(soundBuffer);
-			return;
-		} else if (_header.audioInfo[track].compression == kCompressionDPCM) {
-			// Compressed audio (Huffman DPCM encoded)
-			queueCompressedBuffer(soundBuffer, chunkSize, unpackedSize, track);
-			free(soundBuffer);
+		if (this->_header.audioInfo[track].compression == kCompressionDPCM) {
+			//debug("Compressed audio (Huffman DPCM encoded)");
+			/*SmackerDecoder_queueCompressedBuffer(this, soundBuffer, chunkSize, unpackedSize);*/
+			safefree(soundBuffer);
 		} else {
-			// Uncompressed audio (PCM)
-			byte flags = 0;
-			if (_header.audioInfo[track].is16Bits)
-				flags = flags | Audio::FLAG_16BITS;
-			if (_header.audioInfo[track].isStereo)
-				flags = flags | Audio::FLAG_STEREO;
+			//debug("Uncompressed audio (PCM)");
+			// byte flags = 0;
+			// if (_header.audioInfo[track].is16Bits)
+				// flags = flags | Audio::FLAG_16BITS;
+			// if (_header.audioInfo[track].isStereo)
+				// flags = flags | Audio::FLAG_STEREO;
 
-			_audioStream->queueBuffer(soundBuffer, chunkSize, DisposeAfterUse::YES, flags);
+			// _audioStream->queueBuffer(soundBuffer, chunkSize, DisposeAfterUse::YES, flags);
 			// The sound buffer will be deleted by QueuingAudioStream
+			safefree(soundBuffer);
 		}
 
-		if (!_audioStarted) {
-			_mixer->playStream(_soundType, &_audioHandle, _audioStream, -1, 255);
-			_audioStarted = true;
-		}*/
+		// if (!_audioStarted) {
+			// _mixer->playStream(_soundType, &_audioHandle, _audioStream, -1, 255);
+			// _audioStarted = true;
+		// }
 	} else {
 		/* Ignore the rest of the audio tracks, if they exist
 		// TODO: Are there any Smacker videos with more than one audio stream?
@@ -680,58 +671,60 @@ static void SmackerDecoder_handleAudioTrack(SmackerDecoder* this, Uint8 track, U
 	}
 }
 
-/*static void SmackerDecoder::queueCompressedBuffer(byte *buffer, uint32 bufferSize,
-		uint32 unpackedSize, int streamNum) {
+static void SmackerDecoder_queueCompressedBuffer(SmackerDecoder* this, Uint8* buffer, Uint32 bufferSize, Uint32 unpackedSize)
+{
+	BitStream* audioBS = BitStream_new(buffer, bufferSize);
 
-	BitStream audioBS(buffer, bufferSize);
-	bool dataPresent = audioBS.getBit();
-
-	if (!dataPresent)
+	if (!BitStream_getBit(audioBS)) {
+		safefree(audioBS);
 		return;
+	}
 
-	bool isStereo = audioBS.getBit();
-	assert(isStereo == _header.audioInfo[streamNum].isStereo);
-	bool is16Bits = audioBS.getBit();
-	assert(is16Bits == _header.audioInfo[streamNum].is16Bits);
+	Uint8 isStereo = BitStream_getBit(audioBS);
+	assert(isStereo == this->_header.audioInfo[0].isStereo);
+	Uint8 is16Bits = BitStream_getBit(audioBS);
+	assert(is16Bits == this->_header.audioInfo[0].is16Bits);
 
 	int numBytes = 1 * (isStereo ? 2 : 1) * (is16Bits ? 2 : 1);
 
-	byte *unpackedBuffer = (byte *)malloc(unpackedSize);
-	byte *curPointer = unpackedBuffer;
-	uint32 curPos = 0;
+	Uint8* unpackedBuffer = (Uint8*)safemalloc(unpackedSize);
+	Uint8* curPointer = unpackedBuffer;
+	Uint32 curPos = 0;
 
-	SmallTree *audioTrees[4];
-	for (int k = 0; k < numBytes; k++)
-		audioTrees[k] = new SmallTree(audioBS);
+	SmallTree* audioTrees[4];
+	int k;
+	for (k = 0; k < numBytes; k++)
+		audioTrees[k] = SmallTree_new(audioBS);
 
 	// Base values, stored as big endian
 
-	int32 bases[2];
+	Sint32 bases[2];
 
 	if (isStereo) {
 		if (is16Bits) {
-			byte hi = audioBS.getBits8();
-			byte lo = audioBS.getBits8();
-			bases[1] = (int16) ((hi << 8) | lo);
+			Uint8 hi = BitStream_getBits8(audioBS);
+			Uint8 lo = BitStream_getBits8(audioBS);
+			bases[1] = (Sint16) ((hi << 8) | lo);
 		} else {
-			bases[1] = audioBS.getBits8();
+			bases[1] = BitStream_getBits8(audioBS);
 		}
 	}
 
 	if (is16Bits) {
-		byte hi = audioBS.getBits8();
-		byte lo = audioBS.getBits8();
-		bases[0] = (int16) ((hi << 8) | lo);
+		Uint8 hi = BitStream_getBits8(audioBS);
+		Uint8 lo = BitStream_getBits8(audioBS);
+		bases[0] = (Sint16) ((hi << 8) | lo);
 	} else {
-		bases[0] = audioBS.getBits8();
+		bases[0] = BitStream_getBits8(audioBS);
 	}
 
 	// The bases are the first samples, too
-	for (int i = 0; i < (isStereo ? 2 : 1); i++, curPointer += (is16Bits ? 2 : 1), curPos += (is16Bits ? 2 : 1)) {
-		if (is16Bits)
+	int i;
+	for (i = 0; i < (isStereo ? 2 : 1); i++, curPointer += (is16Bits ? 2 : 1), curPos += (is16Bits ? 2 : 1)) {
+		/*if (is16Bits)
 			WRITE_BE_UINT16(curPointer, bases[i]);
 		else
-			*curPointer = (bases[i] & 0xFF) ^ 0x80;
+			*curPointer = (bases[i] & 0xFF) ^ 0x80;*/
 	}
 
 	// Next follow the deltas, which are added to the corresponding base values and
@@ -742,18 +735,18 @@ static void SmackerDecoder_handleAudioTrack(SmackerDecoder* this, Uint8 track, U
 		// If the sample is stereo, the data is stored for the left and right channel, respectively
 		// (the exact opposite to the base values)
 		if (!is16Bits) {
-			for (int k = 0; k < (isStereo ? 2 : 1); k++) {
-				bases[k] += (int8) ((int16) audioTrees[k]->getCode(audioBS));
-				*curPointer++ = CLIP<int>(bases[k], 0, 255) ^ 0x80;
+			for (k = 0; k < (isStereo ? 2 : 1); k++) {
+				bases[k] += (Sint8)((Sint16)SmallTree_getCode(audioTrees[k], audioBS));
+				/**curPointer++ = CLIP<int>(bases[k], 0, 255) ^ 0x80;*/
 				curPos++;
 			}
 		} else {
-			for (int k = 0; k < (isStereo ? 2 : 1); k++) {
-				byte lo = audioTrees[k * 2]->getCode(audioBS);
-				byte hi = audioTrees[k * 2 + 1]->getCode(audioBS);
-				bases[k] += (int16) (lo | (hi << 8));
+			for (k = 0; k < (isStereo ? 2 : 1); k++) {
+				Uint8 lo = SmallTree_getCode(audioTrees[k * 2], audioBS);
+				Uint8 hi = SmallTree_getCode(audioTrees[k * 2 + 1], audioBS);
+				bases[k] += (Sint16) (lo | (hi << 8));
 
-				WRITE_BE_UINT16(curPointer, bases[k]);
+				/*WRITE_BE_UINT16(curPointer, bases[k]);*/
 				curPointer += 2;
 				curPos += 2;
 			}
@@ -761,17 +754,18 @@ static void SmackerDecoder_handleAudioTrack(SmackerDecoder* this, Uint8 track, U
 
 	}
 
-	for (int k = 0; k < numBytes; k++)
-		delete audioTrees[k];
+	for (k = 0; k < numBytes; k++)
+		safefree(audioTrees[k]);
 
-	byte flags = 0;
-	if (_header.audioInfo[0].is16Bits)
+	Uint8 flags = 0;
+	/*if (_header.audioInfo[0].is16Bits)
 		flags = flags | Audio::FLAG_16BITS;
 	if (_header.audioInfo[0].isStereo)
-		flags = flags | Audio::FLAG_STEREO;
-	_audioStream->queueBuffer(unpackedBuffer, unpackedSize, DisposeAfterUse::YES, flags);
+		flags = flags | Audio::FLAG_STEREO;*/
+	/*_audioStream->queueBuffer(unpackedBuffer, unpackedSize, DisposeAfterUse::YES, flags);*/
 	// unpackedBuffer will be deleted by QueuingAudioStream
-}*/
+	safefree(unpackedBuffer);
+}
 
 static void SmackerDecoder_unpackPalette(SmackerDecoder* this) {
 	int startPos = SDL_RWtell(this->_fileStream);
