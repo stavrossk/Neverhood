@@ -22,20 +22,36 @@
 	}\
 
 /* convenience functions for returning numbers read from RWops */
-static Uint32 SDL_RWreadUint32(SDL_RWops* stream) {
+Uint32 SDL_RWreadUint32(SDL_RWops* stream) {
 	Uint32 num;
 	SDL_RWread(stream, &num, 4, 1);
 	return num;
 }
-static Uint16 SDL_RWreadUint16(SDL_RWops* stream) {
+Uint16 SDL_RWreadUint16(SDL_RWops* stream) {
 	Uint16 num;
 	SDL_RWread(stream, &num, 2, 1);
 	return num;
 }
-static Uint8 SDL_RWreadUint8(SDL_RWops* stream) {
+Uint8 SDL_RWreadUint8(SDL_RWops* stream) {
 	Uint8 num;
 	SDL_RWread(stream, &num, 1, 1);
 	return num;
 }
+
+int SDL_RWlen(SDL_RWops* stream) {
+	int cur = SDL_RWtell(stream);
+	int len = SDL_RWseek(stream, 0, SEEK_END);
+	SDL_RWseek(stream, cur, SEEK_SET);
+	return len;
+}
+
+void WRITE_BE_UINT16(void *ptr, Uint16 value) {
+	#if SDL_BYTEORDER == SDL_LIL_ENDIAN
+	*(Uint16*)ptr = value;
+	#else
+	*(Uint16*)ptr = (value >> 8) | (value << 8);
+	#endif
+}
+
 
 #endif

@@ -352,6 +352,20 @@ typedef struct {
 	Uint32 sampleRate;
 } AudioInfo;
 
+struct LinkedBuf;
+typedef struct {
+	Uint8* _buf;
+	struct LinkedBuf* _link;
+} LinkedBuf;
+
+typedef struct {
+	Uint8* _curPos;
+	int _remainingLen;
+	Uint8* _curBuf;
+	Uint8* _nextBuf;
+	int _nextLen;
+} SmackerAudio;
+
 typedef struct {
 	Sint32 _curFrame;
 
@@ -388,6 +402,8 @@ typedef struct {
 	BigTree* _MClrTree;
 	BigTree* _FullTree;
 	BigTree* _TypeTree;
+	
+	SmackerAudio* _audio;
 } SmackerDecoder;
 
 SmackerDecoder* SmackerDecoder_new(SDL_RWops* stream) {
@@ -497,6 +513,7 @@ SmackerDecoder* SmackerDecoder_new(SDL_RWops* stream) {
 
 static void SmackerDecoder_handleAudioTrack(SmackerDecoder* this, Uint8 track, Uint32 chunkSize, Uint32 unpackedSize);
 static void SmackerDecoder_unpackPalette(SmackerDecoder* this);
+static void SmackerDecoder_player(void* udata, Uint8* buf, int len);
 
 int SmackerDecoder_nextFrame(SmackerDecoder* this) {
 	int i;
@@ -620,6 +637,9 @@ int SmackerDecoder_nextFrame(SmackerDecoder* this) {
 	safefree(this->_frameData);
 	safefree(bs);
 
+	if(this->_curFrame == 0)
+		Mix_HookMusic(SmackerDecoder_player, (void*)this->_audio);
+
 	return 1;
 }
 
@@ -634,6 +654,8 @@ void SmackerDecoder_firstFrame(SmackerDecoder* this) {
 	SmackerDecoder_nextFrame(this);
 }
 
+static void SmackerDecoder_queueCompressedBuffer(SmackerDecoder* this, Uint8* buffer, Uint32 bufferSize, Uint32 unpackedSize);
+
 static void SmackerDecoder_handleAudioTrack(SmackerDecoder* this, Uint8 track, Uint32 chunkSize, Uint32 unpackedSize) {
 	if (this->_header.audioInfo[track].hasAudio && chunkSize > 0 && track == 0) {
 		/* If it's track 0, play the audio data */
@@ -643,7 +665,7 @@ static void SmackerDecoder_handleAudioTrack(SmackerDecoder* this, Uint8 track, U
 
 		if (this->_header.audioInfo[track].compression == kCompressionDPCM) {
 			//debug("Compressed audio (Huffman DPCM encoded)");
-			/*SmackerDecoder_queueCompressedBuffer(this, soundBuffer, chunkSize, unpackedSize);*/
+			SmackerDecoder_queueCompressedBuffer(this, soundBuffer, chunkSize, unpackedSize);
 			safefree(soundBuffer);
 		} else {
 			//debug("Uncompressed audio (PCM)");
@@ -702,29 +724,29 @@ static void SmackerDecoder_queueCompressedBuffer(SmackerDecoder* this, Uint8* bu
 
 	if (isStereo) {
 		if (is16Bits) {
-			Uint8 hi = BitStream_getBits8(audioBS);
-			Uint8 lo = BitStream_getBits8(audioBS);
+			Uint8 hi = BitStream_get8(audioBS);
+			Uint8 lo = BitStream_get8(audioBS);
 			bases[1] = (Sint16) ((hi << 8) | lo);
 		} else {
-			bases[1] = BitStream_getBits8(audioBS);
+			bases[1] = BitStream_get8(audioBS);
 		}
 	}
 
 	if (is16Bits) {
-		Uint8 hi = BitStream_getBits8(audioBS);
-		Uint8 lo = BitStream_getBits8(audioBS);
+		Uint8 hi = BitStream_get8(audioBS);
+		Uint8 lo = BitStream_get8(audioBS);
 		bases[0] = (Sint16) ((hi << 8) | lo);
 	} else {
-		bases[0] = BitStream_getBits8(audioBS);
+		bases[0] = BitStream_get8(audioBS);
 	}
 
 	// The bases are the first samples, too
 	int i;
 	for (i = 0; i < (isStereo ? 2 : 1); i++, curPointer += (is16Bits ? 2 : 1), curPos += (is16Bits ? 2 : 1)) {
-		/*if (is16Bits)
+		if (is16Bits)
 			WRITE_BE_UINT16(curPointer, bases[i]);
 		else
-			*curPointer = (bases[i] & 0xFF) ^ 0x80;*/
+			*curPointer = (bases[i] & 0xFF) ^ 0x80;
 	}
 
 	// Next follow the deltas, which are added to the corresponding base values and
@@ -737,7 +759,10 @@ static void SmackerDecoder_queueCompressedBuffer(SmackerDecoder* this, Uint8* bu
 		if (!is16Bits) {
 			for (k = 0; k < (isStereo ? 2 : 1); k++) {
 				bases[k] += (Sint8)((Sint16)SmallTree_getCode(audioTrees[k], audioBS));
-				/**curPointer++ = CLIP<int>(bases[k], 0, 255) ^ 0x80;*/
+				Sint32 base = bases[k];
+				if     (base < 0  ) base = 0;
+				else if(base > 255) base = 255;
+				*curPointer++ = base ^ 0x80;
 				curPos++;
 			}
 		} else {
@@ -746,7 +771,7 @@ static void SmackerDecoder_queueCompressedBuffer(SmackerDecoder* this, Uint8* bu
 				Uint8 hi = SmallTree_getCode(audioTrees[k * 2 + 1], audioBS);
 				bases[k] += (Sint16) (lo | (hi << 8));
 
-				/*WRITE_BE_UINT16(curPointer, bases[k]);*/
+				WRITE_BE_UINT16(curPointer, bases[k]);
 				curPointer += 2;
 				curPos += 2;
 			}
@@ -762,9 +787,47 @@ static void SmackerDecoder_queueCompressedBuffer(SmackerDecoder* this, Uint8* bu
 		flags = flags | Audio::FLAG_16BITS;
 	if (_header.audioInfo[0].isStereo)
 		flags = flags | Audio::FLAG_STEREO;*/
-	/*_audioStream->queueBuffer(unpackedBuffer, unpackedSize, DisposeAfterUse::YES, flags);*/
+	SDL_LockAudio();
+	if(!this->_audio) {
+		this->_audio = safemalloc(sizeof(SmackerAudio));
+		this->_audio->_curBuf  = unpackedBuffer;
+		this->_audio->_curPos  = unpackedBuffer;
+		this->_audio->_nextBuf = unpackedBuffer;
+		this->_audio->_remainingLen = unpackedSize;
+		this->_audio->_nextLen      = unpackedSize;
+	}
+	else {
+		this->_audio->_nextBuf = unpackedBuffer;
+		this->_audio->_nextLen = unpackedSize;
+	}
+	SDL_UnlockAudio();
 	// unpackedBuffer will be deleted by QueuingAudioStream
-	safefree(unpackedBuffer);
+	safefree(audioBS);
+}
+
+static void SmackerDecoder_player(void* udata, Uint8* buf, int len) {
+	if(Mix_PausedMusic()) return;
+	SmackerAudio* this = (SmackerAudio*)udata;
+
+	Uint8* outputBuf = buf;
+
+	if(this->_remainingLen <= len) {
+		memcpy(outputBuf, this->_curPos, this->_remainingLen);
+		outputBuf += this->_remainingLen;
+		this->_remainingLen -= len;
+	
+		this->_curBuf = this->_nextBuf;
+		this->_curPos = this->_nextBuf;
+		
+		memcpy(outputBuf, this->_curPos, -this->_remainingLen);
+		this->_curPos -= this->_remainingLen;
+		this->_remainingLen += this->_nextLen;
+	}
+	else {
+		memcpy(outputBuf, this->_curPos, len);
+		this->_curPos += len;
+		this->_remainingLen -= len;
+	}
 }
 
 static void SmackerDecoder_unpackPalette(SmackerDecoder* this) {

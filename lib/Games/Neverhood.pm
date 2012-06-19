@@ -29,6 +29,7 @@ use SDL::Color;
 use SDL::Events;
 use SDL::Mixer;
 use SDL::Mixer::Channels;
+use SDL::Mixer::Music;
 use SDL::RWOps;
 
 use File::Spec;
@@ -42,6 +43,7 @@ BEGIN {
 	XSLoader::load('Games::Neverhood::SpriteResource');
 	XSLoader::load('Games::Neverhood::Video');
 	XSLoader::load('Games::Neverhood::SoundResource');
+	XSLoader::load('Games::Neverhood::MusicResource');
 }
 
 # globals from bin/nhc
@@ -97,11 +99,16 @@ HELLO
 	
 	$sprite = Games::Neverhood::Sprite->new(file => $;->share_file('i', '496.02'));
 	
-	my $sound_stream = SDL::RWOps->new_file($;->share_file('a', '11.07'), 'r') // $;->error(SDL::get_error());
-	my $sound = Games::Neverhood::SoundResource->new($sound_stream);
-	$sound->inc_refcount();
-	$sound->inc_refcount();
-	$sound->play(0);
+	# my $sound_stream = SDL::RWOps->new_file($;->share_file('a', '11.07'), 'r') // $;->error(SDL::get_error());
+	# my $sound = Games::Neverhood::SoundResource->new($sound_stream);
+	# $sound->inc_refcount();
+	# $sound->inc_refcount();
+	# $sound->play(-1);
+	
+	# my $music_stream = SDL::RWOps->new_file($;->share_file('a', '132.08'), 'r') // $;->error(SDL::get_error());
+	# Games::Neverhood::MusicResource->new($music_stream);
+	# my $music = Games::Neverhood::SoundResource->new($music_stream);
+	# $music->play(-1);
 
 	while($self->app->stopped ne 1) {
 		if($self->scene) {
@@ -137,11 +144,11 @@ sub init_app {
 	my ($event_window_pause, $event_pause); # recursive subs
 	$event_window_pause = sub {
 		# pause when the app loses focus
-		my ($e) = @_;
+		my ($e, $app) = @_;
 		if($e->type == SDL_ACTIVEEVENT) {
 			if($e->active_state & SDL_APPINPUTFOCUS) {
 				return 1 if $e->active_gain;
-				$;->pause($event_window_pause);
+				$app->pause($event_window_pause);
 			}
 		}
 		# if we're fullscreen we should unpause no matter what event we get
@@ -167,7 +174,7 @@ sub init_app {
 		elsif($e->type == SDL_KEYUP and $e->key_sym == SDLK_LALT && $lalt || $e->key_sym == SDLK_RALT && $ralt) {
 			undef($e->key_sym == SDLK_LALT ? $lalt : $ralt);
 			return 1 if $app->paused;
-			$;->pause($event_pause);
+			$app->pause($event_pause);
 		}
 		return;
 	};
@@ -196,7 +203,7 @@ sub init_app {
 #		hw_palette => 1,
 
 		icon => $;->share_file('icon.bmp'),
-		icon_alpha_key => SDL::Color->new(255, 255, 255),
+		icon_alpha_key => SDL::Color->new(255, 0, 255),
 
 		event_handlers => [
 			$event_window_pause,
@@ -225,29 +232,42 @@ sub init_app {
 			sub { Games::Neverhood::Drawable->update_screen() },
 		],
 		stop_handler => sub {
-			my ($e, $self) = @_;
-				$self->stop
+			my ($e, $app) = @_;
+				$app->stop()
 			if
 				$e->type == SDL_QUIT
 				or
 				$e->type == SDL_KEYDOWN and $e->key_sym == SDLK_F4
 				and $e->key_mod & KMOD_ALT and not $e->key_mod & (KMOD_CTRL | KMOD_SHIFT | KMOD_META)
 			;
-		}
+		},
+		before_pause => sub {
+			my $app = shift;
+			SDL::Mixer::Channels::pause(-1);
+			SDL::Mixer::Music::pause_music();
+		},
+		after_pause => sub {
+			my $app = shift;
+			unless(defined $app->stopped and $app->stopped eq 1) {
+				SDL::Mixer::Channels::resume(-1);
+				SDL::Mixer::Music::resume_music();
+			}
+		},
 	);
 
-	SDL::Mixer::open_audio(22050, AUDIO_S16SYS, 1, 1024);
+	my ($want_frequency, $want_format, $want_channels) = (22050, AUDIO_S16SYS, 1);
+	SDL::Mixer::open_audio($want_frequency, $want_format, $want_channels, 256);
+
+	my ($status, $got_frequency, $got_format, $got_channels) = @{SDL::Mixer::query_spec()};
+	unless($status > 0 and $got_frequency == $want_frequency and $got_format !~~ [AUDIO_U8, AUDIO_S8] and $got_channels == $want_channels) {
+		$;->error("Could not get the desired audio:\n\t got: frequency=>%d, format=>0x%04X, channels=>%d\n\twant: frequency=>%d, format=>0x%04X, channels=>%d\n",
+				$got_frequency, $got_format, $got_channels, $want_frequency, $want_format, $want_channels);
+	}
+	
 	SDL::Mixer::Channels::allocate_channels(8);
-}
-
-sub pause {
-	my $self = shift;
-
-	# stuff before pause
-
-	$self->app->pause(@_);
-
-	# stuff after pause
+	if(SDL::Mixer::Channels::allocate_channels(-1) <= 0) {
+		$;->error("Mixer could not allocate any channels");		
+	}
 }
 
 sub debug {

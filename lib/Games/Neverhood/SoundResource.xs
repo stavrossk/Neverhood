@@ -19,36 +19,32 @@ SoundResource* SoundResource_new(SDL_RWops* stream) {
 	this->allocated = 0; /* commandeering this for use as a refcount */
 	this->volume = MIX_MAX_VOLUME;
 
-	Uint32 inputLen = SDL_RWseek(stream, 0, SEEK_END);
-	SDL_RWseek(stream, 0, SEEK_SET);
-
-	Sint8* inputBuf = safemalloc(inputLen);
-	SDL_RWread(stream, inputBuf, inputLen, 1);
-
+	Uint32 inputLen = SDL_RWlen(stream);
+	
 	Uint8 shift = 5;
 	if(shift == 0xFF) { /* uncompressed PCM */
 		this->alen = inputLen;
-		this->abuf = inputBuf;
+		this->abuf = safemalloc(this->alen);
+		SDL_RWread(stream, this->abuf, this->alen, 1);
 	}
 	else { /* DW ADPCM compressed */
 		this->alen = inputLen * 2;
 		this->abuf = safemalloc(this->alen);
+		
+		Sint8* inputBuf = this->abuf + inputLen;
+		Sint8* inputEnd = inputBuf + inputLen;
+		SDL_RWread(stream, inputBuf, inputLen, 1);	
 
-		Uint8* inputEnd = inputBuf + inputLen;
-		Uint16* outputBuf = (Uint16*)this->abuf;
-		Sint16 curValue = 0x0000;
-
+		Sint16 curValue = 0;
+		Sint16* outputBuf = (Sint16*)this->abuf;
 		while(inputBuf < inputEnd) {
 			curValue += *inputBuf++;
 			*outputBuf++ = curValue << shift;
 		}
 	}
 
-	int frequency;
-	Uint16 format;
-	int channels;
+	int frequency, channels; Uint16 format;
 	Mix_QuerySpec(&frequency, &format, &channels);
-	debug("obtained: freq=%d, format=0x%04X, channels=%d", frequency, format, channels);
 
 	SDL_AudioCVT wav_cvt;
 	SDL_BuildAudioCVT(&wav_cvt, AUDIO_S16SYS, 1, 22050, format, channels, frequency);
