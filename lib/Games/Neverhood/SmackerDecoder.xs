@@ -352,18 +352,17 @@ typedef struct {
 	Uint32 sampleRate;
 } AudioInfo;
 
-struct LinkedBuf;
-typedef struct {
+typedef struct BufferLink {
 	Uint8* _buf;
-	struct LinkedBuf* _link;
-} LinkedBuf;
+	int _len;
+	struct BufferLink* _nextLink;
+} BufferLink;
 
 typedef struct {
 	Uint8* _curPos;
 	int _remainingLen;
-	Uint8* _curBuf;
-	Uint8* _nextBuf;
-	int _nextLen;
+	BufferLink* _curLink;
+	BufferLink** _latestLink;
 } SmackerAudio;
 
 typedef struct {
@@ -402,7 +401,7 @@ typedef struct {
 	BigTree* _MClrTree;
 	BigTree* _FullTree;
 	BigTree* _TypeTree;
-	
+
 	SmackerAudio* _audio;
 } SmackerDecoder;
 
@@ -781,50 +780,62 @@ static void SmackerDecoder_queueCompressedBuffer(SmackerDecoder* this, Uint8* bu
 
 	for (k = 0; k < numBytes; k++)
 		safefree(audioTrees[k]);
+	safefree(audioBS);
 
-	Uint8 flags = 0;
-	/*if (_header.audioInfo[0].is16Bits)
+	/*Uint8 flags = 0;
+	if (_header.audioInfo[0].is16Bits)
 		flags = flags | Audio::FLAG_16BITS;
 	if (_header.audioInfo[0].isStereo)
 		flags = flags | Audio::FLAG_STEREO;*/
+
 	SDL_LockAudio();
+
+	BufferLink* link = safemalloc(sizeof(BufferLink));
 	if(!this->_audio) {
 		this->_audio = safemalloc(sizeof(SmackerAudio));
-		this->_audio->_curBuf  = unpackedBuffer;
-		this->_audio->_curPos  = unpackedBuffer;
-		this->_audio->_nextBuf = unpackedBuffer;
+		this->_audio->_curLink = NULL;
+	}
+	if(!this->_audio->_curLink) {
+		this->_audio->_curLink = link;
+		this->_audio->_curPos = unpackedBuffer;
 		this->_audio->_remainingLen = unpackedSize;
-		this->_audio->_nextLen      = unpackedSize;
 	}
 	else {
-		this->_audio->_nextBuf = unpackedBuffer;
-		this->_audio->_nextLen = unpackedSize;
+		*this->_audio->_latestLink = link;
 	}
+	this->_audio->_latestLink = &link->_nextLink;
+
+	link->_buf = unpackedBuffer;
+	link->_len = unpackedSize;
+
 	SDL_UnlockAudio();
-	// unpackedBuffer will be deleted by QueuingAudioStream
-	safefree(audioBS);
 }
 
 static void SmackerDecoder_player(void* udata, Uint8* buf, int len) {
-	if(Mix_PausedMusic()) return;
+	if(!udata || Mix_PausedMusic()) return;
 	SmackerAudio* this = (SmackerAudio*)udata;
-
-	Uint8* outputBuf = buf;
+	if(!this->_curLink) return;
 
 	if(this->_remainingLen <= len) {
-		memcpy(outputBuf, this->_curPos, this->_remainingLen);
-		outputBuf += this->_remainingLen;
-		this->_remainingLen -= len;
-	
-		this->_curBuf = this->_nextBuf;
-		this->_curPos = this->_nextBuf;
-		
-		memcpy(outputBuf, this->_curPos, -this->_remainingLen);
-		this->_curPos -= this->_remainingLen;
-		this->_remainingLen += this->_nextLen;
+		memcpy(buf, this->_curPos, this->_remainingLen);
+
+		BufferLink* oldLink = this->_curLink;
+		this->_curLink = oldLink->_nextLink;
+		// safefree(oldLink->_buf);
+		// safefree(oldLink);
+
+		if(this->_curLink) {
+			Uint8* outputBuf = buf + this->_remainingLen;
+			this->_curPos = this->_curLink->_buf;
+			this->_remainingLen -= len;
+
+			memcpy(outputBuf, this->_curPos, -this->_remainingLen);
+			this->_curPos -= this->_remainingLen;
+			this->_remainingLen += this->_curLink->_len;
+		}
 	}
 	else {
-		memcpy(outputBuf, this->_curPos, len);
+		memcpy(buf, this->_curPos, len);
 		this->_curPos += len;
 		this->_remainingLen -= len;
 	}

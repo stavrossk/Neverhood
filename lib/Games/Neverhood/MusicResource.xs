@@ -16,7 +16,7 @@ typedef struct {
 } MusicResource;
 
 void MusicResource_player(void* udata, Uint8* buf, int len) {
-	if(Mix_PausedMusic()) return;
+	if(!udata || Mix_PausedMusic()) return;
 	MusicResource* this = (MusicResource*)udata;
 
 	int inputLen;

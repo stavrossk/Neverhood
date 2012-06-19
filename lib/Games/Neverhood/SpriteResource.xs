@@ -43,7 +43,7 @@ SpriteResource* SpriteResource_new(SDL_RWops* stream) {
 
 	if (flags & 0x10) {
 		if(flags & 1)
-			Video_unpackSpriteRLE(stream, this->_surface);
+			Resource_unpackSpriteRLE(stream, this->_surface);
 		else {
 			Uint8* dest = this->_surface->pixels;
 			int sourcePitch = (width + 3) & 0xFFFC;
