@@ -507,6 +507,8 @@ SmackerDecoder* SmackerDecoder_new(SDL_RWops* stream) {
 	this->_curFrame = -1;
 
 	this->_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 8, 0, 0, 0, 0);
+	
+	this->_audio = NULL;
 
 	return this;
 }

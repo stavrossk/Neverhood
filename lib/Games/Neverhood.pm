@@ -105,10 +105,10 @@ HELLO
 	# $sound->inc_refcount();
 	# $sound->play(-1);
 	
-	# my $music_stream = SDL::RWOps->new_file($;->share_file('a', '132.08'), 'r') // $;->error(SDL::get_error());
-	# Games::Neverhood::MusicResource->new($music_stream);
-	# my $music = Games::Neverhood::SoundResource->new($music_stream);
-	# $music->play(-1);
+	my $music_stream = SDL::RWOps->new_file($;->share_file('a', '132.08'), 'r') // $;->error(SDL::get_error());
+	Games::Neverhood::MusicResource->new($music_stream);
+	my $music = Games::Neverhood::SoundResource->new($music_stream);
+	$music->play(-1);
 
 	while($self->app->stopped ne 1) {
 		if($self->scene) {
@@ -226,8 +226,8 @@ sub init_app {
 				SDL::Video::map_RGBA($_[1]->format, 255, 255, 255, 255)
 			)},
 			sub {
-				$player->draw() if $player->is_invalidated;
-				# $sprite->draw();
+				# $player->draw() if $player->is_invalidated;
+				$sprite->draw();
 			},
 			sub { Games::Neverhood::Drawable->update_screen() },
 		],
