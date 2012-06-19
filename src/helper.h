@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <SDL/SDL.h>
+#include <SDL/SDL_mixer.h>
 
 #define error(...) {\
 	printf(__VA_ARGS__);\
@@ -46,7 +47,7 @@ int SDL_RWlen(SDL_RWops* stream) {
 }
 
 void WRITE_BE_UINT16(void *ptr, Uint16 value) {
-	#if SDL_BYTEORDER == SDL_LIL_ENDIAN
+	#if AUDIO_S16SYS == AUDIO_S16MSB
 	*(Uint16*)ptr = value;
 	#else
 	*(Uint16*)ptr = (value >> 8) | (value << 8);

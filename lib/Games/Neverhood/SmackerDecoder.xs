@@ -362,6 +362,7 @@ typedef struct {
 	Uint8* _curPos;
 	int _remainingLen;
 	BufferLink* _curLink;
+	BufferLink* _earliestLink;
 	BufferLink** _latestLink;
 } SmackerAudio;
 
@@ -523,8 +524,10 @@ int SmackerDecoder_nextFrame(SmackerDecoder* this) {
 
 	/* curFrame starts at -1 so we can do this */
 	this->_curFrame++;
-	if(this->_curFrame >= this->_frameCount)
+	if(this->_curFrame >= this->_frameCount) {
+		Mix_HookMusic(NULL, NULL);
 		return 0;
+	}
 
 	/* Check if we got a frame with palette data, and
 	// call back the virtual setPalette function to set
@@ -721,16 +724,6 @@ static void SmackerDecoder_queueCompressedBuffer(SmackerDecoder* this, Uint8* bu
 
 	Sint32 bases[2];
 
-	if (isStereo) {
-		if (is16Bits) {
-			Uint8 hi = BitStream_get8(audioBS);
-			Uint8 lo = BitStream_get8(audioBS);
-			bases[1] = (Sint16) ((hi << 8) | lo);
-		} else {
-			bases[1] = BitStream_get8(audioBS);
-		}
-	}
-
 	if (is16Bits) {
 		Uint8 hi = BitStream_get8(audioBS);
 		Uint8 lo = BitStream_get8(audioBS);
@@ -775,8 +768,17 @@ static void SmackerDecoder_queueCompressedBuffer(SmackerDecoder* this, Uint8* bu
 				curPos += 2;
 			}
 		}
-
 	}
+	
+	int frequency, channels; Uint16 format;
+	Mix_QuerySpec(&frequency, &format, &channels);
+	
+	SDL_AudioCVT wav_cvt;
+	SDL_BuildAudioCVT(&wav_cvt, AUDIO_S16MSB, 1, 22050, format, channels, frequency);
+
+	wav_cvt.buf = unpackedBuffer;
+	wav_cvt.len = unpackedSize;
+	SDL_ConvertAudio(&wav_cvt);
 
 	for (k = 0; k < numBytes; k++)
 		safefree(audioTrees[k]);
@@ -794,6 +796,7 @@ static void SmackerDecoder_queueCompressedBuffer(SmackerDecoder* this, Uint8* bu
 	if(!this->_audio) {
 		this->_audio = safemalloc(sizeof(SmackerAudio));
 		this->_audio->_curLink = NULL;
+		this->_audio->_earliestLink = link;
 	}
 	if(!this->_audio->_curLink) {
 		this->_audio->_curLink = link;
@@ -807,22 +810,31 @@ static void SmackerDecoder_queueCompressedBuffer(SmackerDecoder* this, Uint8* bu
 
 	link->_buf = unpackedBuffer;
 	link->_len = unpackedSize;
-
+	link->_nextLink = NULL;
+	
 	SDL_UnlockAudio();
+	
+	/* cleanup consumed buffer links */
+	while(this->_audio->_earliestLink && this->_audio->_earliestLink != this->_audio->_curLink) {
+		BufferLink* oldLink = this->_audio->_earliestLink;
+		this->_audio->_earliestLink = oldLink->_nextLink;
+		safefree(oldLink->_buf);
+		safefree(oldLink);
+	}
+	this->_audio->_earliestLink = this->_audio->_curLink;
 }
 
 static void SmackerDecoder_player(void* udata, Uint8* buf, int len) {
 	if(!udata || Mix_PausedMusic()) return;
 	SmackerAudio* this = (SmackerAudio*)udata;
-	if(!this->_curLink) return;
+	if(!this->_curLink || !this->_curPos) return;
 
 	if(this->_remainingLen <= len) {
 		memcpy(buf, this->_curPos, this->_remainingLen);
 
-		BufferLink* oldLink = this->_curLink;
-		this->_curLink = oldLink->_nextLink;
-		// safefree(oldLink->_buf);
-		// safefree(oldLink);
+		BufferLink* nextLink = this->_curLink->_nextLink;
+		this->_curLink = nextLink;
+		this->_curPos = NULL;
 
 		if(this->_curLink) {
 			Uint8* outputBuf = buf + this->_remainingLen;
@@ -967,4 +979,13 @@ Neverhood_SmackerDecoder_DESTROY(THIS)
 		BigTree_destroy(THIS->_MClrTree);
 		BigTree_destroy(THIS->_FullTree);
 		BigTree_destroy(THIS->_TypeTree);
+
+		while(THIS->_audio->_earliestLink) {
+			BufferLink* oldLink = THIS->_audio->_earliestLink;
+			THIS->_audio->_earliestLink = oldLink->_nextLink;
+			// safefree(oldLink->_buf);
+			safefree(oldLink);
+		}
+		safefree(THIS->_audio);
+		
 		safefree(THIS);
