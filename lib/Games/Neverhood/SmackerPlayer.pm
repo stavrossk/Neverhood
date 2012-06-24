@@ -38,9 +38,9 @@ has is_loopy =>
 	default => 1,
 ;
 
-sub cur_frame   { $_[0]->_decoder->get_cur_frame   }
-sub frame_rate  { $_[0]->_decoder->get_frame_rate  }
-sub frame_count { $_[0]->_decoder->get_frame_count }
+sub cur_frame   { $_[0]->_resource->get_cur_frame   }
+sub frame_rate  { $_[0]->_resource->get_frame_rate  }
+sub frame_count { $_[0]->_resource->get_frame_count }
 
 # private attributes
 
@@ -55,7 +55,7 @@ has _stream =>
 	isa => 'SDL::RWOps',
 	init_arg => undef,
 ;
-has _decoder =>
+has _resource =>
 	is => 'rw',
 	isa => 'Games::Neverhood::SmackerResource',
 	init_arg => undef,
@@ -77,8 +77,8 @@ sub BUILD {
 	my $self = shift;
 
 	$self->_stream(SDL::RWOps->new_file($self->file, 'r')) // $;->error(SDL::get_error());
-	$self->_decoder(Games::Neverhood::SmackerResource->new($self->_stream));
-	$self->_surface($self->_decoder->get_surface);
+	$self->_resource(Games::Neverhood::SmackerResource->new($self->_stream));
+	$self->_surface($self->_resource->get_surface);
 	$self->_double_size_surface(SDL::GFX::Rotozoom::surface($self->_surface, 0, 2, SMOOTHING_OFF));
 
 	return $self;
@@ -87,7 +87,7 @@ sub BUILD {
 sub next_frame {
 	my $self = shift;
 
-	unless($self->_decoder->next_frame()) {
+	unless($self->_resource->next_frame()) {
 		if($self->is_loopy) {
 			$self->first_frame();
 			return -1; # looped
@@ -100,7 +100,7 @@ sub next_frame {
 
 sub first_frame {
 	my $self = shift;
-	$self->_decoder->first_frame();
+	$self->_resource->first_frame();
 	$self->_finish_changing_frame();
 }
 
