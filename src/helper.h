@@ -1,3 +1,8 @@
+/*
+// helper.h
+// general purpose functions
+*/
+
 #ifndef __HELPER_H__
 #define __HELPER_H__
 
@@ -11,20 +16,26 @@
 #include <SDL/SDL_mixer.h>
 
 #define error(...) {\
-	printf(__VA_ARGS__);\
-	printf(" at %s line %d\n", __FILE__, __LINE__);\
+	fprintf(stderr, __VA_ARGS__);\
+	fprintf(stderr, " at %s line %d\n", __FILE__, __LINE__);\
 	exit(1);\
 }
 
 #define debug(...)\
 	if(SvTRUE(get_sv("Games::Neverhood::Debug", 0))) {\
+		fprintf(stderr, "----- at %s line %d\n", __FILE__, __LINE__);\
 		fprintf(stderr, __VA_ARGS__);\
-		fprintf(stderr, " at %s line %d\n", __FILE__, __LINE__);\
+		fprintf(stderr, "\n");\
 	}\
 
 /* convenience functions for returning numbers read from RWops */
 Uint32 SDL_RWreadUint32(SDL_RWops* stream) {
 	Uint32 num;
+	SDL_RWread(stream, &num, 4, 1);
+	return num;
+}
+Sint32 SDL_RWreadSint32(SDL_RWops* stream) {
+	Sint32 num;
 	SDL_RWread(stream, &num, 4, 1);
 	return num;
 }
@@ -45,14 +56,5 @@ int SDL_RWlen(SDL_RWops* stream) {
 	SDL_RWseek(stream, cur, SEEK_SET);
 	return len;
 }
-
-void WRITE_BE_UINT16(void *ptr, Uint16 value) {
-	#if AUDIO_S16SYS == AUDIO_S16MSB
-	*(Uint16*)ptr = value;
-	#else
-	*(Uint16*)ptr = (value >> 8) | (value << 8);
-	#endif
-}
-
 
 #endif

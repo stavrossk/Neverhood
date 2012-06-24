@@ -39,7 +39,7 @@ use Games::Neverhood::SmackerPlayer;
 use Games::Neverhood::Sprite;
 
 BEGIN {
-	XSLoader::load('Games::Neverhood::SmackerDecoder');
+	XSLoader::load('Games::Neverhood::SmackerResource');
 	XSLoader::load('Games::Neverhood::SpriteResource');
 	XSLoader::load('Games::Neverhood::Video');
 	XSLoader::load('Games::Neverhood::SoundResource');
@@ -93,22 +93,24 @@ HELLO
 	$self->init_app();
 	$self->app->stop($scene);
 
-	$player = Games::Neverhood::SmackerPlayer->new(file => $;->share_file('c', '56.0A'));
+	$player = Games::Neverhood::SmackerPlayer->new(file => $;->share_file('m', '0.0A'));
 	$;->debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
 			$player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
-	
-	$sprite = Games::Neverhood::Sprite->new(file => $;->share_file('i', '496.02'));
-	
+
+	# $sprite = Games::Neverhood::Sprite->new(file => $;->share_file('i', '496.02'));
+	# $sprite->invalidate();
+
 	# my $sound_stream = SDL::RWOps->new_file($;->share_file('a', '11.07'), 'r') // $;->error(SDL::get_error());
 	# my $sound = Games::Neverhood::SoundResource->new($sound_stream);
-	# $sound->inc_refcount();
-	# $sound->inc_refcount();
 	# $sound->play(-1);
-	
-	my $music_stream = SDL::RWOps->new_file($;->share_file('a', '132.08'), 'r') // $;->error(SDL::get_error());
-	Games::Neverhood::MusicResource->new($music_stream);
-	my $music = Games::Neverhood::SoundResource->new($music_stream);
-	$music->play(-1);
+
+	# my $music_stream = SDL::RWOps->new_file($;->share_file('a', '132.08'), 'r') // $;->error(SDL::get_error());
+	# my $music = Games::Neverhood::MusicResource->new($music_stream);
+	# $music->play();
+
+	# my $music_stream = SDL::RWOps->new_file($;->share_file('a', '132.08'), 'r') // $;->error(SDL::get_error());
+	# my $music = Games::Neverhood::SoundResource->new($music_stream);
+	# $music->play(-1);
 
 	while($self->app->stopped ne 1) {
 		if($self->scene) {
@@ -118,7 +120,7 @@ HELLO
 		$self->load_new_scene($self->app->stopped, $prev_scene);
 		$self->app->run();
 	}
-	
+
 	undef $self;
 	undef $;;
 	undef $App;
@@ -140,7 +142,7 @@ sub load_new_scene {
 sub app { $App }
 sub init_app {
 	return if $App;
-	
+
 	my ($event_window_pause, $event_pause); # recursive subs
 	$event_window_pause = sub {
 		# pause when the app loses focus
@@ -210,27 +212,22 @@ sub init_app {
 			$event_pause,
 			sub{},
 		],
-		move_handlers => [
-			sub {
-				my ($time, $app) = @_;
-				$time *= $app->dt; # time = step * dt
-				$player->advance_in_time($time);
-				# $player->next_frame();
-				$player->invalidate_all() if $player->is_invalidated;
-			},
-		],
-		show_handlers => [
-			sub{SDL::Video::fill_rect(
+		show_handlers => [sub {
+			my ($time, $app) = @_;
+			$player->advance_in_time($time);
+			$player->invalidate_all() if $player->is_invalidated;
+			
+			SDL::Video::fill_rect(
 				$_[1],
 				SDL::Rect->new(0, 0, 640, 480),
 				SDL::Video::map_RGBA($_[1]->format, 255, 255, 255, 255)
-			)},
-			sub {
-				# $player->draw() if $player->is_invalidated;
-				$sprite->draw();
-			},
-			sub { Games::Neverhood::Drawable->update_screen() },
-		],
+			);
+
+			$player->draw() if $player->is_invalidated;
+			# $sprite->draw();
+
+			Games::Neverhood::Drawable->update_screen();
+		}],
 		stop_handler => sub {
 			my ($e, $app) = @_;
 				$app->stop()
@@ -263,10 +260,10 @@ sub init_app {
 		$;->error("Could not get the desired audio:\n\t got: frequency=>%d, format=>0x%04X, channels=>%d\n\twant: frequency=>%d, format=>0x%04X, channels=>%d\n",
 				$got_frequency, $got_format, $got_channels, $want_frequency, $want_format, $want_channels);
 	}
-	
+
 	SDL::Mixer::Channels::allocate_channels(8);
 	if(SDL::Mixer::Channels::allocate_channels(-1) <= 0) {
-		$;->error("Mixer could not allocate any channels");		
+		$;->error("Mixer could not allocate any channels");
 	}
 }
 

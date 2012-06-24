@@ -1,4 +1,9 @@
 TYPEMAP
+SmackerResource* O_OBJECT_NPGC
+SpriteResource*  O_OBJECT_NPGC
+SoundResource*   O_OBJECT_NPGC
+MusicResource*   O_OBJECT_NPGC
+
 const Uint16 *		T_PTR
 const Sint16 *		T_PTR
 Uint8			T_UV
@@ -103,9 +108,6 @@ SDL_RWops*		O_OBJECT
 SDL_svg_context*	T_PTR
 int			T_IV
 intArray		T_ARRAY
-SmackerDecoder*	O_OBJECT_NPGC
-SpriteResource* O_OBJECT_NPGC
-SoundResource* O_OBJECT_NPGC
 
 OUTPUT
 

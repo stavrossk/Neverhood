@@ -16,8 +16,8 @@ SDL_Surface* Video_mirrorSurface(SDL_Surface* surface)
 
 	Uint16 off = surface->w - 1;
 	Uint16 x;
-	while(pixels < pixels_end) {
-		for(x = 0; x < surface->w; x++)
+	while (pixels < pixels_end) {
+		for (x = 0; x < surface->w; x++)
 			mirrored_pixels[x] = pixels[off - x];
 
 		pixels += surface->pitch;

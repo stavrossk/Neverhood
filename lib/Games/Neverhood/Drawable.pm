@@ -45,7 +45,6 @@ has _is_checked =>
 after BUILD => sub {
 	my $self = shift;
 	$self->_checked({});
-	$self->_update_checking();
 	$self->invalidate();
 };
 
@@ -64,6 +63,7 @@ sub invalidate {
 
 	unless($Is_All_Invalidated) {
 		my $checked = $self->_checked;
+		# TODO: this doesn't work properly
 		my ($x, $y, $w, $h) = ($self->x, $self->y, $self->w, $self->h);
 		$x = $checked->{x} if exists $checked->{x} and $checked->{x} < $x;
 		$y = $checked->{y} if exists $checked->{y} and $checked->{y} < $y;
@@ -96,6 +96,7 @@ sub maybe_invalidate {
 	return $self->invalidate() if $invalidate;
 	$self->_update_checking();
 }
+
 
 sub _update_checking {
 	my $self = shift;

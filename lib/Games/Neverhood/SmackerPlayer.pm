@@ -57,7 +57,7 @@ has _stream =>
 ;
 has _decoder =>
 	is => 'rw',
-	isa => 'Games::Neverhood::SmackerDecoder',
+	isa => 'Games::Neverhood::SmackerResource',
 	init_arg => undef,
 ;
 has _surface =>
@@ -77,9 +77,9 @@ sub BUILD {
 	my $self = shift;
 
 	$self->_stream(SDL::RWOps->new_file($self->file, 'r')) // $;->error(SDL::get_error());
-	$self->_decoder(Games::Neverhood::SmackerDecoder->new($self->_stream));
+	$self->_decoder(Games::Neverhood::SmackerResource->new($self->_stream));
 	$self->_surface($self->_decoder->get_surface);
-	$self->first_frame();
+	$self->_double_size_surface(SDL::GFX::Rotozoom::surface($self->_surface, 0, 2, SMOOTHING_OFF));
 
 	return $self;
 }
@@ -118,15 +118,20 @@ sub _finish_changing_frame {
 sub advance_in_time {
 	my ($self, $time) = @_;
 
+	my $return = 1; # didn't invalidate
+	
+	# go to the first frame on the first advance_in_time
+	if($self->cur_frame == -1) {
+		$return = $self->next_frame();
+	}
+
 	$time += $self->_time_remainder;
 	my $frame_time = 1 / $self->frame_rate;
-	my $return = 1; # didn't invalidate
 	if($time >= $frame_time) {
 		$return = $self->next_frame();
 		$time -= $frame_time;
 	}
 	$self->_time_remainder($time);
-
 	return $return;
 }
 

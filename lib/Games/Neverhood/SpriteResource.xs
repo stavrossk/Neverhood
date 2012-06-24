@@ -42,7 +42,7 @@ SpriteResource* SpriteResource_new(SDL_RWops* stream) {
 	}
 
 	if (flags & 0x10) {
-		if(flags & 1)
+		if (flags & 1)
 			Resource_unpackSpriteRLE(stream, this->_surface);
 		else {
 			Uint8* dest = this->_surface->pixels;
