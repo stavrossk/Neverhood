@@ -4,7 +4,7 @@
 
 use 5.01;
 package Games::Neverhood::Sprite;
-use Mouse;
+use Games::Neverhood::Moose;
 
 use SDL::RWOps;
 
@@ -14,41 +14,31 @@ with 'Games::Neverhood::Drawable';
 
 # public attributes
 
-has file =>
-	is => 'ro',
-	isa => 'Str',
+has file => ro Str,
 	required => 1,
 ;
 
-has is_mirrored =>
-	is => 'rw',
-	isa => 'Bool',
-;
+has is_mirrored => rw Bool;
 
 # private attributes
 
-has _surface =>
-	is => 'rw',
+private _surface =>
 	isa => 'SDL::Surface',
-	init_arg => undef,
+;
+private _mirrored_surface =>
+	isa => 'SDL::Surface',
 ;
 
-has _mirrored_surface =>
-	is => 'rw',
-	isa => 'SDL::Surface',
-	init_arg => undef,
-;
-
-has _resource =>
-	is => 'rw',
+private _resource =>
 	isa => 'Games::Neverhood::SpriteResource',
-	init_arg => undef,
-;	
+;
+
+# methods
 
 sub BUILD {
 	my $self = shift;
 
-	my $stream = SDL::RWOps->new_file($self->file, 'r') // $;->error(SDL::get_error());
+	my $stream = SDL::RWOps->new_file($self->file, 'r') // error(SDL::get_error());
 	$self->_resource(Games::Neverhood::SpriteResource->new($stream));
 	$self->_surface($self->_resource->get_surface);
 
@@ -65,6 +55,6 @@ sub surface {
 	$self->_surface;
 }
 
-no Mouse;
+no Games::Neverhood::Moose;
 __PACKAGE__->meta->make_immutable;
 1;

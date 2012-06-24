@@ -5,42 +5,32 @@
 
 use 5.01;
 package Games::Neverhood::Drawable;
-use Mouse::Role;
-
+use Games::Neverhood::Moose::Role;
 
 use SDL::Rect;
+use SDLx::Rect;
 use SDL::Video;
+use SDLx::App;
 
 our $Is_All_Invalidated;
 our @Invalidated_Rects;
 
 # surface needs to return an SDL::Surface
 # invalidator_checks needs to return a list of method names to check for changes
-requires 'surface', 'invalidator_checks', 'x', 'y';
+# requires 'surface', 'invalidator_checks', 'x', 'y';
 
 use constant is_visible => 1;
 
 sub w { $_[0]->surface->w }
 sub h { $_[0]->surface->h }
 
-has is_invalidated =>
-	is => 'ro',
-	isa => 'Bool',
-	writer => '_set_is_invalidated',
-	init_arg => undef,
-;
+private_set is_invalidated => Bool;
 
-has _checked =>
-	is => 'rw',
-	isa => 'HashRef',
-	init_arg => undef,
-;
+private _checked => HashRef;
 
-has _is_checked =>
-	is => 'rw',
-	isa => 'Bool',
-	init_arg => undef,
-;
+private _is_checked => Bool;
+
+# methods
 
 after BUILD => sub {
 	my $self = shift;
@@ -62,15 +52,39 @@ sub invalidate {
 	return if $self->_is_checked;
 
 	unless($Is_All_Invalidated) {
-		my $checked = $self->_checked;
-		# TODO: this doesn't work properly
+		my $screen_rect = SDL::Rect->new(0, 0, $;->app->w, $;->app->h);
+	
 		my ($x, $y, $w, $h) = ($self->x, $self->y, $self->w, $self->h);
-		$x = $checked->{x} if exists $checked->{x} and $checked->{x} < $x;
-		$y = $checked->{y} if exists $checked->{y} and $checked->{y} < $y;
-		$w = $checked->{w} if exists $checked->{w} and $checked->{w} > $w;
-		$h = $checked->{h} if exists $checked->{h} and $checked->{h} > $h;
+		my $rect = SDLx::Rect->new($x, $y, $w, $h);
+		$rect->clip_ip($screen_rect);
 
-		push @Invalidated_Rects, SDL::Rect->new($x, $y, $w, $h);
+		my $checked = $self->_checked;
+		my $checked_rect = SDLx::Rect->new;
+
+		my $checked_w = exists $checked->{w} ? $checked->{w} : $w;
+		my $checked_h = exists $checked->{h} ? $checked->{h} : $h;
+		$checked_rect->size($checked_w, $checked_h);
+
+		if(exists $checked->{x} or exists $checked->{y}) {
+			my $checked_x = exists $checked->{x} ? $checked->{x} : $x;
+			my $checked_y = exists $checked->{y} ? $checked->{y} : $y;
+			$checked_rect->topleft($checked_y, $checked_x);
+			$checked_rect->clip_ip($screen_rect);
+
+			if($rect->colliderect($rect)) {
+				# if the rects collide, update the bigger rect that fits them both
+				push @Invalidated_Rects, $rect->union($checked_rect);
+			}
+			else {
+				# if the rects don't collide, update both separately
+				push @Invalidated_Rects, $rect, $checked_rect;
+			}
+		}
+		else {
+			$checked_rect->topleft($y, $x);
+			$checked_rect->clip_ip($screen_rect);
+			push @Invalidated_Rects, $rect->union($checked_rect);
+		}
 	}
 
 	$self->_update_checking();
@@ -84,23 +98,19 @@ sub maybe_invalidate {
 
 	return $self->invalidate() if $Is_All_Invalidated;
 
-	my $invalidate;
 	my $checked = $self->_checked;
 	while(my ($k, $v) = each %$checked) {
-		unless($v ~~ $self->$k) {
-			$invalidate = 1;
-			last;
+		if($v !~~ $self->$k) {
+			return $self->invalidate();
 		}
 	}
 
-	return $self->invalidate() if $invalidate;
 	$self->_update_checking();
 }
 
-
 sub _update_checking {
 	my $self = shift;
-	return if $self->_is_checked;
+	error("Wanted to update checking twice") if $self->_is_checked;
 
 	my $checked = $self->_checked;
 	for($self->invalidator_checks) {
@@ -125,14 +135,14 @@ sub update_screen {
 
 sub draw {
 	my $self = shift;
-	$self->on_draw() if $self->is_visible;
+	$self->draw_surface() if $self->is_visible;
 	$self->_is_checked(0);
 	$self->_set_is_invalidated(0);
 }
-sub on_draw {
+sub draw_surface {
 	my $self = shift;
 	SDL::Video::blit_surface($self->surface, undef, $;->app, SDL::Rect->new($self->x, $self->y, 0, 0));
 }
 
-no Mouse::Role;
+no Games::Neverhood::Moose::Role;
 1;

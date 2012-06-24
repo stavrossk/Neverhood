@@ -17,7 +17,7 @@
 
 use 5.01;
 package Games::Neverhood;
-use Mouse;
+use Games::Neverhood::Moose;
 
 $Games::Neverhood::VERSION = 0.10;
 
@@ -92,23 +92,24 @@ HELLO
 	# app stop is used to hold the scene name to be set
 	$self->init_app();
 	$self->app->stop($scene);
+	
+	Games::Neverhood::Drawable->invalidate_all();
 
-	$player = Games::Neverhood::SmackerPlayer->new(file => $;->share_file('m', '0.0A'));
-	$;->debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
+	$player = Games::Neverhood::SmackerPlayer->new(file => share_file('m', '0.0A'));
+	debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
 			$player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
 
-	# $sprite = Games::Neverhood::Sprite->new(file => $;->share_file('i', '496.02'));
-	# $sprite->invalidate();
+	# $sprite = Games::Neverhood::Sprite->new(file => share_file('i', '496.02'));
 
-	# my $sound_stream = SDL::RWOps->new_file($;->share_file('a', '11.07'), 'r') // $;->error(SDL::get_error());
+	# my $sound_stream = SDL::RWOps->new_file(share_file('a', '11.07'), 'r') // error(SDL::get_error());
 	# my $sound = Games::Neverhood::SoundResource->new($sound_stream);
 	# $sound->play(-1);
 
-	# my $music_stream = SDL::RWOps->new_file($;->share_file('a', '132.08'), 'r') // $;->error(SDL::get_error());
+	# my $music_stream = SDL::RWOps->new_file(share_file('a', '132.08'), 'r') // error(SDL::get_error());
 	# my $music = Games::Neverhood::MusicResource->new($music_stream);
 	# $music->play();
 
-	# my $music_stream = SDL::RWOps->new_file($;->share_file('a', '132.08'), 'r') // $;->error(SDL::get_error());
+	# my $music_stream = SDL::RWOps->new_file(share_file('a', '132.08'), 'r') // error(SDL::get_error());
 	# my $music = Games::Neverhood::SoundResource->new($music_stream);
 	# $music->play(-1);
 
@@ -135,7 +136,7 @@ GOODBYE
 # called outside of the run loop to load a new scene
 sub load_new_scene {
 	my ($self, $scene, $prev_scene) = @_;
-	$;->debug("Scene: %s; Previous scene: %s", $scene, $prev_scene);
+	debug("Scene: %s; Previous scene: %s", $scene, $prev_scene);
 }
 
 # the SDLx::App
@@ -204,7 +205,7 @@ sub init_app {
 #		async_blit => 1,
 #		hw_palette => 1,
 
-		icon => $;->share_file('icon.bmp'),
+		icon => share_file('icon.bmp'),
 		icon_alpha_key => SDL::Color->new(255, 0, 255),
 
 		event_handlers => [
@@ -221,7 +222,7 @@ sub init_app {
 				$_[1],
 				SDL::Rect->new(0, 0, 640, 480),
 				SDL::Video::map_RGBA($_[1]->format, 255, 255, 255, 255)
-			);
+			) if debug();
 
 			$player->draw() if $player->is_invalidated;
 			# $sprite->draw();
@@ -257,62 +258,16 @@ sub init_app {
 
 	my ($status, $got_frequency, $got_format, $got_channels) = @{SDL::Mixer::query_spec()};
 	unless($status > 0 and $got_frequency == $want_frequency and $got_format !~~ [AUDIO_U8, AUDIO_S8] and $got_channels == $want_channels) {
-		$;->error("Could not get the desired audio:\n\t got: frequency=>%d, format=>0x%04X, channels=>%d\n\twant: frequency=>%d, format=>0x%04X, channels=>%d\n",
+		error("Could not get the desired audio:\n\t got: frequency=>%d, format=>0x%04X, channels=>%d\n\twant: frequency=>%d, format=>0x%04X, channels=>%d\n",
 				$got_frequency, $got_format, $got_channels, $want_frequency, $want_format, $want_channels);
 	}
 
 	SDL::Mixer::Channels::allocate_channels(8);
 	if(SDL::Mixer::Channels::allocate_channels(-1) <= 0) {
-		$;->error("Mixer could not allocate any channels");
+		error("Mixer could not allocate any channels");
 	}
 }
 
-sub debug {
-	return $Debug if @_ <= 1;
-	return unless $Debug;
-	shift;
-
-	my ($sub, $filename, $line) = _get_sub_filename_line();
-
-	say STDERR sprintf "----- at %s(), %s line %d:", $sub, $filename, $line;
-	say STDERR sprintf(shift, @_);
-	return;
-}
-sub error {
-	shift;
-
-	my ($sub, $filename, $line) = _get_sub_filename_line();
-
-	say STDERR sprintf "%s at %s(), %s line %d", sprintf(shift, @_), $sub, $filename, $line;
-	exit 1;
-}
-sub _get_sub_filename_line {
-	my ($package, $filename, $line) = (caller 1);
-	my ($sub)                       = (caller 2)[3];
-
-	# removes the package name at the start of the sub name
-	$sub =~ s/^\Q${package}::\E//;
-
-	# might replace the full lib name from the filename with lib
-	my $i = -1;
-	1 until(++$i > $#INC or $filename =~ s/^\Q$INC[$i]\E/lib/);
-
-	return($sub, $filename, $line);
-}
-
-sub data_file {
-	shift; return File::Spec->catfile($Data_Dir, @_);
-}
-sub data_dir {
-	shift; return File::Spec->catdir($Data_Dir, @_);
-}
-sub share_file {
-	shift; return File::Spec->catfile($Share_Dir, @_);
-}
-sub share_dir {
-	shift; return File::Spec->catdir($Share_Dir, @_);
-}
-
-no Mouse;
+no Games::Neverhood::Moose;
 __PACKAGE__->meta->make_immutable;
 1;
