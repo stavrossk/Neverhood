@@ -7,11 +7,6 @@ use 5.01;
 package Games::Neverhood::Drawable;
 use Games::Neverhood::Moose::Role;
 
-use SDL::Rect;
-use SDLx::Rect;
-use SDL::Video;
-use SDLx::App;
-
 our $Is_All_Invalidated;
 our @Invalidated_Rects;
 
@@ -29,6 +24,19 @@ private_set is_invalidated => Bool;
 private _checked => HashRef;
 
 private _is_checked => Bool;
+
+sub rect {
+	my $self = shift;
+	if(@_) {
+		my $rect = shift;
+		$self->x($rect->x);
+		$self->y($rect->y);
+		$self->w($rect->w);
+		$self->h($rect->h);
+		return $self;
+	}
+	return SDLx::Rect->new($self->x, $self->y, $self->w, $self->h);
+}
 
 # methods
 

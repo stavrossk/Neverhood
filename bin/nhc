@@ -16,16 +16,16 @@ my ($starting_scene, $starting_prev_scene);
 
 BEGIN {
 	Getopt::Long::GetOptions(
-		'data-dir=s'    => \$Games::Neverhood::Data_Dir,
-		'debug'         => \$Games::Neverhood::Debug,
-		'fps-limit=i'   => \$Games::Neverhood::FPS_Limit,
-		'fullscreen'    => \$Games::Neverhood::Fullscreen,
-		'grab-input'    => \$Games::Neverhood::Grab_Input,
-		'help|?'        => sub { require Pod::Usage; Pod::Usage::pod2usage(1) },
-		'normal-window' => sub { $Games::Neverhood::Fullscreen = 0; $Games::Neverhood::No_Frame = 0 },
-		'share-dir=s'   => \$Games::Neverhood::Share_Dir,
-		'starting-scene=s'  => sub { ($starting_scene, $starting_prev_scene) = split /,/, $_[1] },
-		'window'        => sub { $Games::Neverhood::Fullscreen = 0; },
+		'data-dir=s'       => \$Games::Neverhood::Data_Dir,
+		'debug'            => \$Games::Neverhood::Debug,
+		'fps-limit=i'      => \$Games::Neverhood::FPS_Limit,
+		'fullscreen'       => \$Games::Neverhood::Fullscreen,
+		'grab-input'       => \$Games::Neverhood::Grab_Input,
+		'help|?'           => sub { require Pod::Usage; Pod::Usage::pod2usage(1) },
+		'normal-window'    => sub { $Games::Neverhood::Fullscreen = 0; $Games::Neverhood::No_Frame = 0 },
+		'share-dir=s'      => \$Games::Neverhood::Share_Dir,
+		'starting-scene=s' => sub { ($starting_scene, $starting_prev_scene) = split /,/, $_[1] },
+		'window'           => sub { $Games::Neverhood::Fullscreen = 0; },
 	) or require Pod::Usage, Pod::Usage::pod2usage(2);
 }
 

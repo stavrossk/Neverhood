@@ -1,3 +1,9 @@
+/*
+// AudioVideo - Miscellaneous audio/video things that are better written in C, but called from Perl
+// Copyright (C) 2012  Blaise Roth
+// See the LICENSE file for the full terms of the license.
+*/
+
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
@@ -6,7 +12,7 @@
 #include <helper.h>
 #include <SDL/SDL.h>
 
-SDL_Surface* Video_mirrorSurface(SDL_Surface* surface)
+SDL_Surface* AudioVideo_mirrorSurface(SDL_Surface* surface)
 {
 	SDL_Surface* mirrored_surface = SDL_ConvertSurface(surface, surface->format, surface->flags);
 
@@ -27,14 +33,14 @@ SDL_Surface* Video_mirrorSurface(SDL_Surface* surface)
 	return mirrored_surface;
 }
 
-MODULE = Games::Neverhood::Video		PACKAGE = Games::Neverhood::Video		PREFIX = Neverhood_Video_
+MODULE = Games::Neverhood::AudioVideo		PACKAGE = Games::Neverhood::AudioVideo		PREFIX = Neverhood_AudioVideo_
 
 SDL_Surface*
-Neverhood_Video_mirror_surface(surface)
+Neverhood_AudioVideo_mirror_surface(surface)
 		SDL_Surface* surface
 	INIT:
 		const char* CLASS = "SDL::Surface";
 	CODE:
-		RETVAL = Video_mirrorSurface(surface);
+		RETVAL = AudioVideo_mirrorSurface(surface);
 	OUTPUT:
 		RETVAL

@@ -1,15 +1,13 @@
-# SmackerPlayer - drawable object to play smacker files
+# MoviePlayer - drawable object to play movies (smacker resources)
 # Copyright (C) 2012  Blaise Roth
 # See the LICENSE file for the full terms of the license.
 
 use 5.01;
-package Games::Neverhood::SmackerPlayer;
+package Games::Neverhood::MoviePlayer;
 use Games::Neverhood::Moose;
 with 'Games::Neverhood::Drawable';
 
-use SDL::RWOps;
 use SDL::GFX::Rotozoom;
-use File::Spec;
 
 use constant invalidator_checks => ('x', 'y');
 

@@ -21,27 +21,18 @@ use Games::Neverhood::Moose;
 
 $Games::Neverhood::VERSION = 0.10;
 
-use SDL;
-use SDLx::App;
-use SDL::Video;
-use SDL::Rect;
-use SDL::Color;
 use SDL::Events;
 use SDL::Mixer;
-use SDL::Mixer::Channels;
-use SDL::Mixer::Music;
-use SDL::RWOps;
 
-use File::Spec;
 use XSLoader;
 
-use Games::Neverhood::SmackerPlayer;
+use Games::Neverhood::MoviePlayer;
 use Games::Neverhood::Sprite;
 
 BEGIN {
 	XSLoader::load('Games::Neverhood::SmackerResource');
 	XSLoader::load('Games::Neverhood::SpriteResource');
-	XSLoader::load('Games::Neverhood::Video');
+	XSLoader::load('Games::Neverhood::AudioVideo');
 	XSLoader::load('Games::Neverhood::SoundResource');
 	XSLoader::load('Games::Neverhood::MusicResource');
 }
@@ -63,11 +54,8 @@ BEGIN {
 
 our $App;
 
-has scene =>
-	is => 'ro',
+private_set scene =>
 	isa => 'Games::Neverhood::Scene',
-	writer => '_set_scene',
-	init_arg => undef,
 ;
 
 my $player;
@@ -95,7 +83,7 @@ HELLO
 	
 	Games::Neverhood::Drawable->invalidate_all();
 
-	$player = Games::Neverhood::SmackerPlayer->new(file => share_file('m', '0.0A'));
+	$player = Games::Neverhood::MoviePlayer->new(file => share_file('m', '0.0A'));
 	debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
 			$player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
 

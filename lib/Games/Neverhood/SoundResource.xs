@@ -1,3 +1,10 @@
+/*
+// SoundResource - decodes BLBSFX sounds and loads them as MixChunks
+// Based on http://wiki.multimedia.cx/index.php?title=BLB
+// Copyright (C) 2012  Blaise Roth
+// See the LICENSE file for the full terms of the license.
+*/
+
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
@@ -92,8 +99,10 @@ void SoundResource_playOrphan(SoundResource* this, int loops) {
 
 void SoundResource_finished(int channel) {
 	SoundResource* this = Mix_GetChunk(channel);
-	if (this && isOrphan[channel])
+	if (this && isOrphan[channel]) {
+		isOrphan[channel] = 0;
 		SoundResource_decRefcount(this);
+	}
 }
 
 int SoundResource_maybeDestroy(SoundResource* this) {

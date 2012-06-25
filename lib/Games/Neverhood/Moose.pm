@@ -8,14 +8,27 @@ use Mouse ();
 use Mouse::Exporter;
 use Carp ();
 use File::Spec ();
-use Games::Neverhood ();
+
+use SDL;
+use SDLx::App;
+use SDL::Video;
+use SDL::Rect;
+use SDLx::Rect;
+use SDL::Color;
+use SDL::Event;
+use SDL::Events;
+use SDL::Mixer;
+use SDL::Mixer::Channels;
+use SDL::Mixer::Music;
+use SDL::RWOps;
+use SDL::GFX::Rotozoom;
 
 our $Extra_Subs = [
 	\&private, \&private_set,
 	\&rw, \&ro,
 	\&Any, \&Item, \&Bool, \&Maybe, \&Undef, \&Defined, \&Value, \&Str, \&Num, \&Int, \&ClassName, \&RoleName, \&Ref, \&ScalarRef, \&ArrayRef, \&HashRef, \&CodeRef, \&RegexpRef, \&GlobRef, \&FileHandle, \&Object,
-	\&debug, \&error,
-	\&data_file, \&data_dir, \&share_file, \&share_dir,
+	\&debug, \&error, \&Carp::carp, \&Carp::croak, \&Carp::cluck, \&Carp::confess,
+	\&data_file, \&share_file, \&share_dir,
 ];
 
 Mouse::Exporter->setup_import_methods(
@@ -102,7 +115,6 @@ sub _get_sub_filename_line {
 }
 
 sub data_file  { File::Spec->catfile($Games::Neverhood::Data_Dir,  @_) }
-sub data_dir   { File::Spec->catdir ($Games::Neverhood::Data_Dir,  @_) }
 sub share_file { File::Spec->catfile($Games::Neverhood::Share_Dir, @_) }
 sub share_dir  { File::Spec->catdir ($Games::Neverhood::Share_Dir, @_) }
 

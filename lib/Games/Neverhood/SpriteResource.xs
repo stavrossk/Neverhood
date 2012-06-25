@@ -1,3 +1,10 @@
+/*
+// SpriteResource - decodes Neverhood image files and loads them as a surface
+// Based on the ScummVM Neverhood Engine's sprite resource code
+// Copyright (C) 2012  Blaise Roth
+// See the LICENSE file for the full terms of the license.
+*/
+
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"

@@ -1,3 +1,10 @@
+/*
+// MusicResource - decodes BLBSFX music and streams it as Mixer music
+// Based on http://wiki.multimedia.cx/index.php?title=BLB
+// Copyright (C) 2012  Blaise Roth
+// See the LICENSE file for the full terms of the license.
+*/
+
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
@@ -103,7 +110,8 @@ Neverhood_MusicResource_new(CLASS, stream)
 		RETVAL
 
 void
-Neverhood_MusicResource_destroy()
+Neverhood_MusicResource_destroy(CLASS)
+		const char* CLASS
 	CODE:
 		MusicResource_destroy();
 

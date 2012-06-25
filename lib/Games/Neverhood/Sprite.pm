@@ -6,8 +6,6 @@ use 5.01;
 package Games::Neverhood::Sprite;
 use Games::Neverhood::Moose;
 
-use SDL::RWOps;
-
 use constant invalidator_checks => ( 'is_mirrored', 'x', 'y' );
 
 with 'Games::Neverhood::Drawable';

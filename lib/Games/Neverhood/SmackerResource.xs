@@ -1,5 +1,5 @@
 /*
-// Smacker resource - decodes smacker files
+// Smacker resource - decodes smacker movie files and plays them
 // Based heavily on the ScummVM v1.3.1 Smacker decoder (video/smkdecoder).
 // https://github.com/scummvm/scummvm/tree/42ab839dd6c8a1570b232101eb97f4e54de57935/video
 // However it removes any code that the Neverhood smacker files don't need
