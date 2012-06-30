@@ -21,21 +21,16 @@ class Games::Neverhood::Sprite with Games::Neverhood::Drawable {
 
 	# methods
 
-	sub BUILD {
-		my $self = shift;
-
+	method BUILD {
 		my $stream = SDL::RWOps->new_file($self->file, 'r') // error(SDL::get_error());
 		$self->_resource(Games::Neverhood::SpriteResource->new($stream));
 		$self->_surface($self->_resource->get_surface);
-
-		return $self;
 	}
 
-	sub x { $_[0]->_resource->get_x }
-	sub y { $_[0]->_resource->get_y }
+	method x ($ ?) { $self->_resource->get_x };
+	method y ($ ?) { $self->_resource->get_y };
 
-	sub surface {
-		my $self = shift;
+	method surface ($ ?) {
 		# TODO: mirrored_surface
 
 		$self->_surface;

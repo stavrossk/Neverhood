@@ -43,8 +43,6 @@ class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable {
 		$self->_resource(Games::Neverhood::SmackerResource->new($self->_stream));
 		$self->_surface($self->_resource->get_surface);
 		$self->_double_size_surface(SDL::GFX::Rotozoom::surface($self->_surface, 0, 2, SMOOTHING_OFF));
-
-		return $self;
 	}
 
 	method next_frame () {
