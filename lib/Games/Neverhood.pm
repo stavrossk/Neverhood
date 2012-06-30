@@ -15,247 +15,209 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+$Games::Neverhood::VERSION = 0.12;
+
 use 5.01;
-package Games::Neverhood;
+use MooseX::Declare;
+
 use Games::Neverhood::Moose;
-
-$Games::Neverhood::VERSION = 0.10;
-
-use SDL::Events;
-use SDL::Mixer;
-
-use XSLoader;
-
+use Games::Neverhood::Options;
 use Games::Neverhood::MoviePlayer;
 use Games::Neverhood::Sprite;
 
-BEGIN {
-	XSLoader::load('Games::Neverhood::SmackerResource');
-	XSLoader::load('Games::Neverhood::SpriteResource');
-	XSLoader::load('Games::Neverhood::AudioVideo');
-	XSLoader::load('Games::Neverhood::SoundResource');
-	XSLoader::load('Games::Neverhood::MusicResource');
-}
+class Games::Neverhood {
+	use SDL::Constants ':SDL::Events', ':SDL::Audio';
 
-# globals from bin/nhc
-our ($Data_Dir, $Debug, $FPS_Limit, $Fullscreen, $Grab_Input, $No_Frame, $Share_Dir, $Starting_Scene, $Starting_Prev_Scene);
-BEGIN {
-	$Debug          //= 0;
-	$Data_Dir       //= File::Spec->catdir('DATA');
-	$FPS_Limit      //= 60;
-	$Fullscreen     //= 0;
-	$No_Frame       //= 0;
-	$Share_Dir      //= do { require File::ShareDir; File::ShareDir::dist_dir('Games-Neverhood') };
-	$Starting_Scene //= 'Scene::Nursery::One';
+	my ($player, $sprite);
 
-	$Grab_Input          //= $No_Frame || $Fullscreen;
-	$Starting_Prev_Scene //= $Games::Neverhood::StartingScene;
-}
+	has scene    => private_set 'Games::Neverhood::Scene';
+	has app      => private_set Maybe('SDL::Surface');
+	has _options => ro 'Games::Neverhood::Options', init_arg => 'options', required => 1;
 
-our $App;
+	method BUILD { $; = $self }
 
-private_set scene =>
-	isa => 'Games::Neverhood::Scene',
-;
+	method run (SceneName $scene, SceneName $prev_scene) {
+		printf unindent(<<'		HELLO'), data_dir(), share_dir(), '=' x 69;
 
-my $player;
-my $sprite;
+		Games::Neverhood started
+		 Data dir:  %s
+		Share dir:  %s
+		%s
+		HELLO
 
-sub BUILD { $; = shift }
+		# app stop is used to hold the scene name to be set
+		$self->init_app();
+		$self->app->stop($scene);
 
-sub run {
-	my ($self, $scene, $prev_scene) = @_;
+		$player = Games::Neverhood::MoviePlayer->new(file => share_file('c', '56.0A'));
+		debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
+				$player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
 
-	printf <<HELLO, $Data_Dir, $Share_Dir, '=' x 69;
+		# $sprite = Games::Neverhood::Sprite->new(file => share_file('i', '496.02'));
 
-Games::Neverhood started
- Data dir:  %s
-Share dir:  %s
-%s
-HELLO
+		# my $sound_stream = SDL::RWOps->new_file(share_file('a', '11.07'), 'r') // error(SDL::get_error());
+		# my $sound = Games::Neverhood::SoundResource->new($sound_stream);
+		# $sound->play(-1);
 
-	$scene //= 'Scene::Nursery::One';
-	$prev_scene //= $scene;
+		# Games::Neverhood::MusicResource->init();
+		# my $music_stream = SDL::RWOps->new_file(share_file('a', '132.08'), 'r') // error(SDL::get_error());
+		# my $music = Games::Neverhood::MusicResource->new($music_stream);
+		# $music->play(5_000);
 
-	# app stop is used to hold the scene name to be set
-	$self->init_app();
-	$self->app->stop($scene);
-	
-	Games::Neverhood::Drawable->invalidate_all();
+		# sleep(10);
 
-	$player = Games::Neverhood::MoviePlayer->new(file => share_file('m', '0.0A'));
-	debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
-			$player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
+		# Games::Neverhood::MusicResource->fade_out(5_000);
 
-	# $sprite = Games::Neverhood::Sprite->new(file => share_file('i', '496.02'));
+		# my $music_stream = SDL::RWOps->new_file(share_file('a', '132.08'), 'r') // error(SDL::get_error());
+		# my $music = Games::Neverhood::SoundResource->new($music_stream);
+		# $music->play(-1);
 
-	# my $sound_stream = SDL::RWOps->new_file(share_file('a', '11.07'), 'r') // error(SDL::get_error());
-	# my $sound = Games::Neverhood::SoundResource->new($sound_stream);
-	# $sound->play(-1);
-
-	# my $music_stream = SDL::RWOps->new_file(share_file('a', '132.08'), 'r') // error(SDL::get_error());
-	# my $music = Games::Neverhood::MusicResource->new($music_stream);
-	# $music->play();
-
-	# my $music_stream = SDL::RWOps->new_file(share_file('a', '132.08'), 'r') // error(SDL::get_error());
-	# my $music = Games::Neverhood::SoundResource->new($music_stream);
-	# $music->play(-1);
-
-	while($self->app->stopped ne 1) {
-		if($self->scene) {
-			$prev_scene = ref $self->scene;
-			$prev_scene =~ s/^Games::Neverhood:://;
+		while($self->app->stopped ne 1) {
+			Games::Neverhood::Drawable->invalidate_all();
+			if($self->scene) {
+				$prev_scene = ref $self->scene;
+				$prev_scene =~ s/^Games::Neverhood:://;
+			}
+			$self->load_new_scene($self->app->stopped, $prev_scene);
+			$self->app->run();
 		}
-		$self->load_new_scene($self->app->stopped, $prev_scene);
-		$self->app->run();
+
+		$self->app(undef);
+		undef $self;
+		undef $;;
+
+		printf unindent(<<'		GOODBYE'), '=' x 69
+		%s
+		Games::Neverhood ended normally
+
+		GOODBYE
 	}
 
-	undef $self;
-	undef $;;
-	undef $App;
+	# called outside of the run loop to load a new scene
+	method load_new_scene (SceneName $scene, SceneName $prev_scene) {
+		debug("Scene: %s; Previous scene: %s", $scene, $prev_scene);
+	}
 
-	printf <<GOODBYE, '=' x 69
-%s
-Games::Neverhood ended normally
+	method init_app () {
+		return if $self->app;
 
-GOODBYE
-}
-
-# called outside of the run loop to load a new scene
-sub load_new_scene {
-	my ($self, $scene, $prev_scene) = @_;
-	debug("Scene: %s; Previous scene: %s", $scene, $prev_scene);
-}
-
-# the SDLx::App
-sub app { $App }
-sub init_app {
-	return if $App;
-
-	my ($event_window_pause, $event_pause); # recursive subs
-	$event_window_pause = sub {
-		# pause when the app loses focus
-		my ($e, $app) = @_;
-		if($e->type == SDL_ACTIVEEVENT) {
-			if($e->active_state & SDL_APPINPUTFOCUS) {
-				return 1 if $e->active_gain;
-				$app->pause($event_window_pause);
-			}
-		}
-		# if we're fullscreen we should unpause no matter what event we get
-		$Fullscreen;
-	};
-	$event_pause = sub {
-		# toggle pause when either alt is pressed
-		my ($e, $app) = @_;
-		state $lalt;
-		state $ralt;
-		if($e->type == SDL_KEYDOWN) {
-			if($e->key_sym == SDLK_LALT) {
-				$lalt = 1;
-			}
-			elsif($e->key_sym == SDLK_RALT) {
-				$ralt = 1;
-			}
-			else {
-				undef $lalt;
-				undef $ralt;
-			}
-		}
-		elsif($e->type == SDL_KEYUP and $e->key_sym == SDLK_LALT && $lalt || $e->key_sym == SDLK_RALT && $ralt) {
-			undef($e->key_sym == SDLK_LALT ? $lalt : $ralt);
-			return 1 if $app->paused;
-			$app->pause($event_pause);
-		}
-		return;
-	};
-
-	$App = SDLx::App->new(
-		title      => 'The Neverhood',
-		width      => 640,
-		height     => 480,
-		depth      => 16,
-		dt         => 1 / 10,
-		max_t      => 1 / 10,
-		min_t      => $FPS_Limit &&  1 / $FPS_Limit,
-		delay      => 0,
-		eoq        => 1,
-		init       => ['video', 'audio'],
-		no_cursor  => 1,
-		centered   => 1,
-		fullscreen => $Fullscreen,
-		no_frame   => $No_Frame,
-		grab_input => $Grab_Input,
-		hw_surface => 1,
-#		double_buf => 1,
-#		sw_surface => 1,
-		any_format => 1,
-#		async_blit => 1,
-#		hw_palette => 1,
-
-		icon => share_file('icon.bmp'),
-		icon_alpha_key => SDL::Color->new(255, 0, 255),
-
-		event_handlers => [
-			$event_window_pause,
-			$event_pause,
-			sub{},
-		],
-		show_handlers => [sub {
-			my ($time, $app) = @_;
-			$player->advance_in_time($time);
-			$player->invalidate_all() if $player->is_invalidated;
-			
-			SDL::Video::fill_rect(
-				$_[1],
-				SDL::Rect->new(0, 0, 640, 480),
-				SDL::Video::map_RGBA($_[1]->format, 255, 255, 255, 255)
-			) if debug();
-
-			$player->draw() if $player->is_invalidated;
-			# $sprite->draw();
-
-			Games::Neverhood::Drawable->update_screen();
-		}],
-		stop_handler => sub {
+		my ($event_window_pause, $event_pause); # recursive subs
+		$event_window_pause = sub {
+			# pause when the app loses focus
 			my ($e, $app) = @_;
-				$app->stop()
-			if
-				$e->type == SDL_QUIT
-				or
-				$e->type == SDL_KEYDOWN and $e->key_sym == SDLK_F4
-				and $e->key_mod & KMOD_ALT and not $e->key_mod & (KMOD_CTRL | KMOD_SHIFT | KMOD_META)
-			;
-		},
-		before_pause => sub {
-			my $app = shift;
-			SDL::Mixer::Channels::pause(-1);
-			SDL::Mixer::Music::pause_music();
-		},
-		after_pause => sub {
-			my $app = shift;
-			unless(defined $app->stopped and $app->stopped eq 1) {
-				SDL::Mixer::Channels::resume(-1);
-				SDL::Mixer::Music::resume_music();
+			if($e->type == SDL_ACTIVEEVENT) {
+				if($e->active_state & SDL_APPINPUTFOCUS) {
+					return 1 if $e->active_gain;
+					$app->pause($event_window_pause);
+				}
 			}
-		},
-	);
+			# if we're fullscreen we should unpause no matter what event we get
+			$self->_options->fullscreen;
+		};
+		$event_pause = sub {
+			# toggle pause when either alt is pressed
+			my ($e, $app) = @_;
+			state $lalt;
+			state $ralt;
+			if($e->type == SDL_KEYDOWN) {
+				if($e->key_sym == SDLK_LALT) {
+					$lalt = 1;
+				}
+				elsif($e->key_sym == SDLK_RALT) {
+					$ralt = 1;
+				}
+				else {
+					undef $lalt;
+					undef $ralt;
+				}
+			}
+			elsif($e->type == SDL_KEYUP and $e->key_sym == SDLK_LALT && $lalt || $e->key_sym == SDLK_RALT && $ralt) {
+				undef($e->key_sym == SDLK_LALT ? $lalt : $ralt);
+				return 1 if $app->paused;
+				$app->pause($event_pause);
+			}
+			return;
+		};
 
-	my ($want_frequency, $want_format, $want_channels) = (22050, AUDIO_S16SYS, 1);
-	SDL::Mixer::open_audio($want_frequency, $want_format, $want_channels, 256);
+		$self->app(SDLx::App->new(
+			title      => 'The Neverhood',
+			width      => 640,
+			height     => 480,
+			depth      => 16,
+			dt         => 1 / 10,
+			max_t      => 1 / 10,
+			min_t      => $self->_options->fps_limit &&  1 / $self->_options->fps_limit,
+			delay      => 0,
+			eoq        => 1,
+			init       => ['video', 'audio'],
+			no_cursor  => 1,
+			centered   => 1,
+			fullscreen => $self->_options->fullscreen,
+			no_frame   => $self->_options->no_frame,
+			grab_input => $self->_options->grab_input,
+			hw_surface => 1,
+	#		double_buf => 1,
+	#		sw_surface => 1,
+			any_format => 1,
+	#		async_blit => 1,
+	#		hw_palette => 1,
 
-	my ($status, $got_frequency, $got_format, $got_channels) = @{SDL::Mixer::query_spec()};
-	unless($status > 0 and $got_frequency == $want_frequency and $got_format !~~ [AUDIO_U8, AUDIO_S8] and $got_channels == $want_channels) {
-		error("Could not get the desired audio:\n\t got: frequency=>%d, format=>0x%04X, channels=>%d\n\twant: frequency=>%d, format=>0x%04X, channels=>%d\n",
-				$got_frequency, $got_format, $got_channels, $want_frequency, $want_format, $want_channels);
+			icon => share_file('icon.bmp'),
+			icon_alpha_key => SDL::Color->new(255, 0, 255),
+
+			event_handlers => [
+				$event_window_pause,
+				$event_pause,
+				sub{},
+			],
+			show_handler => sub {
+				my ($time, $app) = @_;
+
+				# move
+
+				$player->advance_in_time($time);
+				$player->invalidate_all() if $player->is_invalidated;
+
+				# show
+
+				SDL::Video::fill_rect(
+					$_[1],
+					SDL::Rect->new(0, 0, 640, 480),
+					SDL::Video::map_RGBA($_[1]->format, 255, 255, 255, 255)
+				) if debug();
+
+				$player->draw() if $player->is_invalidated;
+				# $sprite->draw();
+
+				Games::Neverhood::Drawable->update_screen();
+			},
+			stop_handler => sub {
+				my ($e, $app) = @_;
+					$app->stop()
+				if
+					$e->type == SDL_QUIT
+					or
+					$e->type == SDL_KEYDOWN and $e->key_sym == SDLK_F4
+					and $e->key_mod & KMOD_ALT and not $e->key_mod & (KMOD_CTRL | KMOD_SHIFT | KMOD_META)
+				;
+			},
+			before_pause => sub {
+				my ($app) = @_;
+				SDL::Mixer::Channels::pause(-1);
+				SDL::Mixer::Music::pause_music();
+			},
+			after_pause => sub {
+				my ($app) = @_;
+				unless(defined $app->stopped and $app->stopped eq 1) {
+					SDL::Mixer::Channels::resume(-1);
+					SDL::Mixer::Music::resume_music();
+				}
+			},
+		));
+
+		Games::Neverhood::AudioVideo::init_audio();
 	}
 
-	SDL::Mixer::Channels::allocate_channels(8);
-	if(SDL::Mixer::Channels::allocate_channels(-1) <= 0) {
-		error("Mixer could not allocate any channels");
-	}
 }
 
-no Games::Neverhood::Moose;
-__PACKAGE__->meta->make_immutable;
 1;

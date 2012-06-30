@@ -3,56 +3,43 @@
 # See the LICENSE file for the full terms of the license.
 
 use 5.01;
-package Games::Neverhood::Sprite;
-use Games::Neverhood::Moose;
+use MooseX::Declare;
 
-use constant invalidator_checks => ( 'is_mirrored', 'x', 'y' );
+class Games::Neverhood::Sprite with Games::Neverhood::Drawable {
+	use constant invalidator_checks => ( 'is_mirrored', 'x', 'y' );
 
-with 'Games::Neverhood::Drawable';
+	# public attributes
 
-# public attributes
+	has file        => ro Str, required => 1;
+	has is_mirrored => rw Bool;
 
-has file => ro Str,
-	required => 1,
-;
+	# private attributes
 
-has is_mirrored => rw Bool;
+	has _surface          => private 'SDL::Surface';
+	has _mirrored_surface => private 'SDL::Surface';
+	has _resource         => private 'Games::Neverhood::SpriteResource';
 
-# private attributes
+	# methods
 
-private _surface =>
-	isa => 'SDL::Surface',
-;
-private _mirrored_surface =>
-	isa => 'SDL::Surface',
-;
+	sub BUILD {
+		my $self = shift;
 
-private _resource =>
-	isa => 'Games::Neverhood::SpriteResource',
-;
+		my $stream = SDL::RWOps->new_file($self->file, 'r') // error(SDL::get_error());
+		$self->_resource(Games::Neverhood::SpriteResource->new($stream));
+		$self->_surface($self->_resource->get_surface);
 
-# methods
+		return $self;
+	}
 
-sub BUILD {
-	my $self = shift;
+	sub x { $_[0]->_resource->get_x }
+	sub y { $_[0]->_resource->get_y }
 
-	my $stream = SDL::RWOps->new_file($self->file, 'r') // error(SDL::get_error());
-	$self->_resource(Games::Neverhood::SpriteResource->new($stream));
-	$self->_surface($self->_resource->get_surface);
+	sub surface {
+		my $self = shift;
+		# TODO: mirrored_surface
 
-	return $self;
+		$self->_surface;
+	}
 }
 
-sub x { $_[0]->_resource->get_x }
-sub y { $_[0]->_resource->get_y }
-
-sub surface {
-	my $self = shift;
-	# TODO: mirrored_surface
-	
-	$self->_surface;
-}
-
-no Games::Neverhood::Moose;
-__PACKAGE__->meta->make_immutable;
 1;

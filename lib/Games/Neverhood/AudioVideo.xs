@@ -10,6 +10,7 @@
 #include "ppport.h"
 
 #include <helper.h>
+#include <resource.h>
 #include <SDL/SDL.h>
 
 SDL_Surface* AudioVideo_mirrorSurface(SDL_Surface* surface)
@@ -33,6 +34,22 @@ SDL_Surface* AudioVideo_mirrorSurface(SDL_Surface* surface)
 	return mirrored_surface;
 }
 
+void AudioVideo_initAudio() {
+	int wantFrequency = 22050, wantFormat = AUDIO_S16SYS, wantChannels = 1, wantChunkSize = 256;
+	Mix_OpenAudio(wantFrequency, wantFormat, wantChannels, wantChunkSize);
+
+	int gotFrequency, gotChannels;
+	Uint16 gotFormat;
+	int status = Mix_QuerySpec(&gotFrequency, &gotFormat, &gotChannels);
+
+	if(status <= 0 || gotFrequency <= 0 || gotFormat <= 0 || gotChannels <= 0)
+		error("Audio did not open correctly");
+
+	Mix_AllocateChannels(SOUND_CHANNELS);
+	if(Mix_AllocateChannels(-1) <= 0)
+		error("Mixer could not allocate any channels");
+}
+
 MODULE = Games::Neverhood::AudioVideo		PACKAGE = Games::Neverhood::AudioVideo		PREFIX = Neverhood_AudioVideo_
 
 SDL_Surface*
@@ -44,3 +61,8 @@ Neverhood_AudioVideo_mirror_surface(surface)
 		RETVAL = AudioVideo_mirrorSurface(surface);
 	OUTPUT:
 		RETVAL
+
+void
+Neverhood_AudioVideo_init_audio()
+	CODE:
+		AudioVideo_initAudio();

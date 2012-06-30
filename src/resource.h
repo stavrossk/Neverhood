@@ -14,6 +14,8 @@
 #include <helper.h>
 #include <SDL/SDL.h>
 
+#define SOUND_CHANNELS 8
+
 void Resource_unpackSpriteRLE(SDL_RWops* stream, SDL_Surface* surface) {
 	Uint16 rows   = SDL_RWreadUint16(stream);
 	Uint16 chunks = SDL_RWreadUint16(stream);
@@ -43,6 +45,8 @@ int SDL_BuildSpecAudioCVT(SDL_AudioCVT *cvt, Uint16 src_format, Uint8 src_channe
 	Uint16 dst_format;
 	Mix_QuerySpec(&dst_rate, &dst_format, &dst_channels);
 	SDL_BuildAudioCVT(cvt, src_format, src_channels, src_rate, dst_format, dst_channels, dst_rate);
+	if(cvt->len_mult <= 0 || cvt->len_ratio <= 0)
+		error("Neverhood's audio can not be converted to your opened audio");
 }
 
 #endif

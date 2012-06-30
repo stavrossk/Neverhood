@@ -1,4 +1,10 @@
 Todo list for Games::Neverhood
 Since 27 Sep 2010
 
-Starting again from scratch with Moose
+Make all hooked music stuff recursive
+Check if I need to mix together music and smacker
+Make that fading code better
+Big endian compat
+Make sound and music use the shift value once BLBArchive is implemented
+Fix requires in Build.PL
+do something gimmicky with the 1; at the end of each pm

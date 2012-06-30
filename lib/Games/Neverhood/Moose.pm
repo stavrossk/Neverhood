@@ -1,92 +1,132 @@
-# Games::Neverhood::Moose - imports Moose stuff as well as my own stuff
+# Games::Neverhood::Moose - sets up MooseX::Declare to export a bunch of subs into all my classes and roles
 # Copyright (C) 2012  Blaise Roth
 # See the LICENSE file for the full terms of the license.
 
 use 5.01;
 package Games::Neverhood::Moose;
-use Mouse ();
-use Mouse::Exporter;
+
+use Moose ();
+use Moose::Role ();
+use Moose::Exporter ();
+use MooseX::ClassAttribute ();
+use MooseX::StrictConstructor ();
+use Moose::Util::TypeConstraints;
+use Class::Load 'is_class_loaded';
+use XSLoader ();
 use Carp ();
 use File::Spec ();
+use List::Util ();
 
-use SDL;
-use SDLx::App;
-use SDL::Video;
-use SDL::Rect;
-use SDLx::Rect;
-use SDL::Color;
-use SDL::Event;
-use SDL::Events;
-use SDL::Mixer;
-use SDL::Mixer::Channels;
-use SDL::Mixer::Music;
-use SDL::RWOps;
-use SDL::GFX::Rotozoom;
+# use all the SDL stuff we need here
+# then you only need to import constants in each class
+use SDL ();
+use SDL::Constants ();
+use SDLx::App ();
+use SDL::Video ();
+use SDL::Rect ();
+use SDLx::Rect ();
+use SDL::Color ();
+use SDL::Event ();
+use SDL::Events ();
+use SDL::Mixer ();
+use SDL::Mixer::Channels ();
+use SDL::Mixer::Music ();
+use SDL::RWOps ();
+use SDL::GFX::Rotozoom ();
 
-our $Extra_Subs = [
-	\&private, \&private_set,
-	\&rw, \&ro,
-	\&Any, \&Item, \&Bool, \&Maybe, \&Undef, \&Defined, \&Value, \&Str, \&Num, \&Int, \&ClassName, \&RoleName, \&Ref, \&ScalarRef, \&ArrayRef, \&HashRef, \&CodeRef, \&RegexpRef, \&GlobRef, \&FileHandle, \&Object,
-	\&debug, \&error, \&Carp::carp, \&Carp::croak, \&Carp::cluck, \&Carp::confess,
-	\&data_file, \&share_file, \&share_dir,
-];
-
-Mouse::Exporter->setup_import_methods(
-	as_is => $Extra_Subs,
-	also => 'Mouse',
-);
-
-sub private {
-	my ($method) = shift;
-	@_ = (
-		$method,
-		is => 'rw',
-		init_arg => undef,
-		@_
-	);
-	goto \&Mouse::has;
+# use all my XS stuff here also
+# can't use the perl stuff because that needs to be done after use Games::Neverhood::Moose
+BEGIN {
+	XSLoader::load('Games::Neverhood::AudioVideo');
+	XSLoader::load('Games::Neverhood::SpriteResource');
+	XSLoader::load('Games::Neverhood::SoundResource');
+	XSLoader::load('Games::Neverhood::MusicResource');
+	XSLoader::load('Games::Neverhood::SmackerResource');
 }
+
+sub do_import {
+	my $moose = shift;
+
+	my ($import) = Moose::Exporter->build_import_methods(
+		as_is => [
+			\&rw, \&ro, \&private, \&private_set, \&init_private_set,
+			\&Any, \&Item, \&Bool, \&Maybe, \&Undef, \&Defined, \&Value, \&Str, \&Num, \&Int, \&ClassName, \&RoleName, \&Ref, \&ScalarRef, \&ArrayRef, \&HashRef, \&CodeRef, \&RegexpRef, \&GlobRef, \&FileHandle, \&Object, \&Rect, \&SceneName,
+			\&debug, \&error, \&Carp::carp, \&Carp::croak, \&Carp::cluck, \&Carp::confess,
+			\&data_file, \&data_dir, \&share_file, \&share_dir,
+			\&maybe, \&List::Util::max, \&List::Util::min, \&unindent,
+		],
+		also => [$moose, 'MooseX::ClassAttribute', 'MooseX::StrictConstructor'],
+	);
+
+	$import->($_[0] => {into_level => 1});
+};
+
+{
+	# redefining subs! hacky but it works!
+	no warnings 'redefine';
+	*MooseX::Declare::Syntax::Keyword::Class::import_symbols_from = sub { 'Games::Neverhood::Moose::Class' };
+	*MooseX::Declare::Syntax::Keyword::Role::import_symbols_from  = sub { 'Games::Neverhood::Moose::Role' };
+}
+
+sub rw          { is => 'rw', maybe(isa => shift), @_ }
+sub ro          { is => 'ro', maybe(isa => shift), @_ }
+sub private     { is => 'rw', maybe(isa => shift), init_arg => undef, @_ }
 sub private_set {
-	my ($method) = shift;
-	Carp::croak("private_set doesn't work with arrayref method") if ref $method;
-	@_ = (
-		$method,
-		is => 'ro',
-		writer => "_set_$method",
-		init_arg => undef,
-		@_
-	);
-	goto \&Mouse::has;
+	is => 'rw',
+	maybe(isa => shift),
+	init_arg => undef,
+	trigger => sub {
+		 my $sub_1 = (caller 1)[0];
+		(my $sub_2 = (caller 2)[3]) =~ s/::[^:]+$//;
+
+		Carp::confess("This method can only be set privately\n\n'", $sub_1, "' '", $sub_2, "'\n\n", join " ", (caller(1))[0,3],"\n\n", join " ", (caller(2))[0,3], "\n\n" )
+
+		unless $sub_1 eq $sub_2;
+	},
+	@_
+}
+sub init_private_set {
+	is => 'rw',
+	maybe(isa => shift),
+	trigger => sub {
+		 my $sub_1 = (caller 1)[0];
+		(my $sub_2 = (caller 2)[3]) =~ s/::[^:]+$//;
+
+		Carp::confess("This method can only be set privately\n\n'", $sub_1, "' '", $sub_2, "'\n\n", join " ", (caller(1))[0,3],"\n\n", join " ", (caller(2))[0,3], "\n\n" )
+
+		unless $sub_1 eq $sub_2;
+	},
+	@_
 }
 
-sub rw { is => 'rw', @_ }
-sub ro { is => 'ro', @_ }
+sub Any        () { 'Any' }
+sub Item       () { 'Item' }
+sub Bool       () { 'Bool' }
+sub Maybe         { @_ ? sprintf('Maybe[%s]', shift) : 'Maybe' }
+sub Undef      () { 'Undef' }
+sub Defined    () { 'Defined' }
+sub Value      () { 'Value' }
+sub Str        () { 'Str' }
+sub Num        () { 'Num' }
+sub Int        () { 'Int' }
+sub ClassName  () { 'ClassName' }
+sub RoleName   () { 'RoleName' }
+sub Ref        () { 'Ref' }
+sub ScalarRef     { @_ ? sprintf('ScalarRef[%s]', shift) : 'ScalarRef', @_ }
+sub ArrayRef      { @_ ? sprintf('ArrayRef[%s]',  shift) : 'ArrayRef',  @_, default => sub { [] } }
+sub HashRef       { @_ ? sprintf('HashRef[%s]',   shift) : 'HashRef',   @_, default => sub { {} } }
+sub CodeRef    () { 'CodeRef' }
+sub RegexpRef  () { 'RegexpRef' }
+sub GlobRef    () { 'GlobRef' }
+sub FileHandle () { 'FileHandle' }
+sub Object     () { 'Object' }
 
-sub Any        ()  { isa => 'Any' }
-sub Item       ()  { isa => 'Item' }
-sub Bool       ()  { isa => 'Bool' }
-sub Maybe     (;$) { isa => @_ ? 'Maybe[$_[0]]' : 'Maybe' }
-sub Undef      ()  { isa => 'Undef' }
-sub Defined    ()  { isa => 'Defined' }
-sub Value      ()  { isa => 'Value' }
-sub Str        ()  { isa => 'Str' }
-sub Num        ()  { isa => 'Num' }
-sub Int        ()  { isa => 'Int' }
-sub ClassName  ()  { isa => 'ClassName' }
-sub RoleName   ()  { isa => 'RoleName' }
-sub Ref        ()  { isa => 'Ref' }
-sub ScalarRef (;$) { isa => @_ ? "ScalarRef[$_[0]]" : 'ScalarRef' }
-sub ArrayRef  (;$) { isa => @_ ? "ArrayRef[$_[0]]"  : 'ArrayRef' }
-sub HashRef   (;$) { isa => @_ ? "HashRef[$_[0]]"   : 'HashRef' }
-sub CodeRef    ()  { isa => 'CodeRef' }
-sub RegexpRef  ()  { isa => 'RegexpRef' }
-sub GlobRef    ()  { isa => 'GlobRef' }
-sub FileHandle ()  { isa => 'FileHandle' }
-sub Object     ()  { isa => 'Object' }
+sub Rect      () { 'Rect' }
+sub SceneName () { 'SceneName' }
 
 sub debug {
-	return $Games::Neverhood::Debug unless @_;
-	return unless $Games::Neverhood::Debug;
+	return $;->_options->debug unless @_;
+	return unless $;->_options->debug;
 
 	my ($sub, $filename, $line) = _get_sub_filename_line();
 
@@ -95,10 +135,7 @@ sub debug {
 	return;
 }
 sub error {
-	my ($sub, $filename, $line) = _get_sub_filename_line();
-
-	say STDERR sprintf "%s at %s(), %s line %d", sprintf(shift, @_), $sub, $filename, $line;
-	exit 1;
+	Carp::confess(sprintf shift, @_);
 }
 sub _get_sub_filename_line {
 	my ($package, $filename, $line) = (caller 1);
@@ -114,8 +151,32 @@ sub _get_sub_filename_line {
 	return($sub, $filename, $line);
 }
 
-sub data_file  { File::Spec->catfile($Games::Neverhood::Data_Dir,  @_) }
-sub share_file { File::Spec->catfile($Games::Neverhood::Share_Dir, @_) }
-sub share_dir  { File::Spec->catdir ($Games::Neverhood::Share_Dir, @_) }
+sub data_dir   { File::Spec->catdir ($;->_options->data_dir,  @_) }
+sub share_dir  { File::Spec->catdir ($;->_options->share_dir, @_) }
+sub data_file  { File::Spec->catfile($;->_options->data_dir,  @_) }
+sub share_file { File::Spec->catfile($;->_options->share_dir, @_) }
+
+# return a key-value pair only if the value is defined
+sub maybe {
+	if(@_ == 2) { return @_ if defined $_[1] }
+	else { error("maybe() needs 2 arguments but was called with %s", scalar @_) }
+	return;
+}
+
+# for use on heredocs
+sub unindent {
+	my ($str) = @_;
+	$str =~ s/^\t+//gm;
+	$str;
+}
+
+subtype Rect =>
+	as Object,
+	where { $_->isa('SDL::Rect') },
+;
+subtype SceneName =>
+	as Str,
+	# where { is_class_loaded('Games::Neverhood::Scene::' . $_) },
+;
 
 1;

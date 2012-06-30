@@ -1,15 +1,15 @@
 # nothing to see here
 
-package Games::Neverhood::Moose::Role;
+package Games::Neverhood::Moose::Class;
 use Games::Neverhood::Moose;
 
 sub import {
 	if(caller(0) =~ /^Games::Neverhood/) {
-		unshift @_, 'Moose::Role';
+		unshift @_, 'Moose';
 		goto(Games::Neverhood::Moose->can('do_import'));
 	}
 	else {
-		goto(Moose::Role->can('import'));
+		goto(Moose->can('import'));
 	}
 }
 

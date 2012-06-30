@@ -25,7 +25,6 @@ typedef Mix_Chunk SoundResource;
 static SDL_AudioCVT* cvt;
 
 /* sounds that don't belong to any objects (orphans) are destroyed when finished */
-#define SOUND_CHANNELS 8
 static Uint8 isOrphan[SOUND_CHANNELS];
 
 SoundResource* SoundResource_new(SDL_RWops* stream) {

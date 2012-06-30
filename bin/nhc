@@ -1,8 +1,7 @@
 #!/usr/bin/perl
 
-# bin/nhc - script that should be run to play Neverhood. Starts it up with all the
-# necessary command-line options, The respective module handles the default
-# values for these options.
+# bin/nhc - script that should be run to play Neverhood.
+# sets it up with options from the command line
 # Copyright (C) 2012  Blaise Roth
 # See the LICENSE file for the full terms of the license.
 
@@ -10,77 +9,9 @@ use 5.01;
 use strict;
 use warnings;
 
-use Getopt::Long ();
-
-my ($starting_scene, $starting_prev_scene);
-
-BEGIN {
-	Getopt::Long::GetOptions(
-		'data-dir=s'       => \$Games::Neverhood::Data_Dir,
-		'debug'            => \$Games::Neverhood::Debug,
-		'fps-limit=i'      => \$Games::Neverhood::FPS_Limit,
-		'fullscreen'       => \$Games::Neverhood::Fullscreen,
-		'grab-input'       => \$Games::Neverhood::Grab_Input,
-		'help|?'           => sub { require Pod::Usage; Pod::Usage::pod2usage(1) },
-		'normal-window'    => sub { $Games::Neverhood::Fullscreen = 0; $Games::Neverhood::No_Frame = 0 },
-		'share-dir=s'      => \$Games::Neverhood::Share_Dir,
-		'starting-scene=s' => sub { ($starting_scene, $starting_prev_scene) = split /,/, $_[1] },
-		'window'           => sub { $Games::Neverhood::Fullscreen = 0; },
-	) or require Pod::Usage, Pod::Usage::pod2usage(2);
-}
-
 use Games::Neverhood;
-Games::Neverhood->new()->run($starting_scene, $starting_prev_scene);
+use Games::Neverhood::Options;
 
-1;
-
-__END__
-
-=head1 SYNOPSIS
-
-nhc [options]
-
-=head2 Options
-
- --data-dir=DIR     Set the dir for the game's assets (default=./DATA)
- --debug            Enable all debugging features
- --fps-limit=FPS    Limit the fps to FPS, 0 for no limit (default=60)
- --fullscreen       Run the game fullscreen
- --grab-input       Confine the mouse to the window (default)
- --help             Show this help
- --normal-window    Run the game in a normal window
- --share-dir=DIR    Set the dir for the game's config files
- --starting-scene=SET[,UNSET]
-                    Start the game in SET (default=Scene::Nursery::One)
-                    Optional UNSET of what the scene was before SET
- --window           Run the game in a frame-less window (default)
-
-=head2 In-game keys
-
- Alt-F4    Quit the game
- Alt       Toggle freeze-frame
-
-Other than that, the keys are different for the 3 game modes:
-
-=head3 Scene mode
-
- A to Z    Add the letter to the cheat text
- escape    Enter menu mode
- return    Submit the cheat text and clear it. See Cheats
-
-=head3 Video mode
-
- space     Skip walking cutscenes and previously seen cutscenes
- escape    Enter menu mode
-
-=head3 Menu mode
-
- escape    Return to previous mode
-
-=head2 Cheats
-
- FASTFORWARD             Toggle fast sprite animation
- SCREENSNAPSHOT          Save a screenshot to C:\NevShot.bmp
- HAPPYBIRTHDAYKLAYMEN    Skip the Nursery (the first room)
- LETMEOUTOFHERE          Skip the Nursery Lobby (the second room)
- PLEASE                  Solve the puzzle in the Dynamite Shack
+my $options = Games::Neverhood::Options->new_with_options();
+my $game = Games::Neverhood->new(options => $options);
+$game->run($options->starting_scene, $options->starting_prev_scene);
