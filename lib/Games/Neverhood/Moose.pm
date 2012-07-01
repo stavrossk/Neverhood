@@ -10,7 +10,6 @@ package Games::Neverhood::Moose;
 use Moose ();
 use Moose::Role ();
 use Moose::Exporter ();
-use MooseX::ClassAttribute ();
 use MooseX::StrictConstructor ();
 use Moose::Util::TypeConstraints;
 use Class::Load 'is_class_loaded';
