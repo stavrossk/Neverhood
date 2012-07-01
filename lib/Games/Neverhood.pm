@@ -1,19 +1,18 @@
 # Games::Neverhood - The Neverhood remade in SDL Perl
-# Copyright (C) 2012  Blaise Roth
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
+# Copyright (C) 2012 Blaise Roth
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
+
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 $Games::Neverhood::VERSION = 0.12;
 
@@ -71,6 +70,8 @@ class Games::Neverhood {
 		# my $music_stream = SDL::RWOps->new_file(share_file('a', '132.08'), 'r') // error(SDL::get_error());
 		# my $music = Games::Neverhood::SoundResource->new($music_stream);
 		# $music->play(-1);
+		
+		my $archive = Games::Neverhood::BLBArchive->new(data_file "i.blb");
 
 		while($self->app->stopped ne 1) {
 			Games::Neverhood::Drawable->invalidate_all();
@@ -180,11 +181,7 @@ class Games::Neverhood {
 
 				# show
 
-				SDL::Video::fill_rect(
-					$_[1],
-					SDL::Rect->new(0, 0, 640, 480),
-					SDL::Video::map_RGBA($_[1]->format, 255, 255, 255, 255)
-				) if debug();
+				$app->draw_rect([0, 0, $app->w, $app->h], [255, 255, 255, 255]) if debug();
 
 				$player->draw() if $player->is_invalidated;
 				# $sprite->draw();
@@ -214,6 +211,9 @@ class Games::Neverhood {
 				}
 			},
 		));
+		
+		$self->app->draw_rect([0, 0, $self->app->w, $self->app->h], [0, 0, 0, 255]);
+		$self->app->update();
 
 		Games::Neverhood::AudioVideo::init_audio();
 	}

@@ -28,28 +28,13 @@
 	}\
 }
 
-/* convenience functions for returning numbers read from RWops */
-Uint32 SDL_RWreadUint32(SDL_RWops* stream) {
-	Uint32 num;
-	SDL_RWread(stream, &num, 4, 1);
-	return num;
-}
-Sint32 SDL_RWreadSint32(SDL_RWops* stream) {
-	Sint32 num;
-	SDL_RWread(stream, &num, 4, 1);
-	return num;
-}
-Uint16 SDL_RWreadUint16(SDL_RWops* stream) {
-	Uint16 num;
-	SDL_RWread(stream, &num, 2, 1);
-	return num;
-}
 Uint8 SDL_RWreadUint8(SDL_RWops* stream) {
 	Uint8 num;
 	SDL_RWread(stream, &num, 1, 1);
 	return num;
 }
 
+/* convenience function for returning the length of a RWops file */
 int SDL_RWlen(SDL_RWops* stream) {
 	int cur = SDL_RWtell(stream);
 	int len = SDL_RWseek(stream, 0, SEEK_END);

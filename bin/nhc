@@ -2,15 +2,16 @@
 
 # bin/nhc - script that should be run to play Neverhood.
 # sets it up with options from the command line
-# Copyright (C) 2012  Blaise Roth
-# See the LICENSE file for the full terms of the license.
+# Copyright (C) 2012 Blaise Roth
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use 5.01;
 use strict;
 use warnings;
 
 use Games::Neverhood;
-use Games::Neverhood::Options;
 
 my $options = Games::Neverhood::Options->new_with_options();
 my $game = Games::Neverhood->new(options => $options);

@@ -1,6 +1,8 @@
 # Games::Neverhood::Moose - sets up MooseX::Declare to export a bunch of subs into all my classes and roles
-# Copyright (C) 2012  Blaise Roth
-# See the LICENSE file for the full terms of the license.
+# Copyright (C) 2012 Blaise Roth
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use 5.01;
 package Games::Neverhood::Moose;
@@ -38,6 +40,7 @@ use SDL::GFX::Rotozoom ();
 # can't use the perl stuff because that needs to be done after use Games::Neverhood::Moose
 BEGIN {
 	XSLoader::load('Games::Neverhood::AudioVideo');
+	XSLoader::load('Games::Neverhood::BLBArchive');
 	XSLoader::load('Games::Neverhood::SpriteResource');
 	XSLoader::load('Games::Neverhood::SoundResource');
 	XSLoader::load('Games::Neverhood::MusicResource');
@@ -55,7 +58,7 @@ sub do_import {
 			\&data_file, \&data_dir, \&share_file, \&share_dir,
 			\&maybe, \&List::Util::max, \&List::Util::min, \&unindent,
 		],
-		also => [$moose, 'MooseX::ClassAttribute', 'MooseX::StrictConstructor'],
+		also => [$moose, 'MooseX::StrictConstructor'],
 	);
 
 	$import->($_[0] => {into_level => 1});
@@ -81,7 +84,7 @@ sub private_set {
 
 		Carp::confess("This method can only be set privately\n\n'", $sub_1, "' '", $sub_2, "'\n\n", join " ", (caller(1))[0,3],"\n\n", join " ", (caller(2))[0,3], "\n\n" )
 
-		unless $sub_1 eq $sub_2;
+		if $sub_1 ne $sub_2;
 	},
 	@_
 }
@@ -89,12 +92,14 @@ sub init_private_set {
 	is => 'rw',
 	maybe(isa => shift),
 	trigger => sub {
-		 my $sub_1 = (caller 1)[0];
-		(my $sub_2 = (caller 2)[3]) =~ s/::[^:]+$//;
+		my $sub_1 = (caller 1)[0];
+		my $sub_2 = (caller 2)[3];
+		return unless defined $sub_2;
+		$sub_2 =~ s/::[^:]+$//;
 
 		Carp::confess("This method can only be set privately\n\n'", $sub_1, "' '", $sub_2, "'\n\n", join " ", (caller(1))[0,3],"\n\n", join " ", (caller(2))[0,3], "\n\n" )
 
-		unless $sub_1 eq $sub_2;
+		if defined $sub_2 and $sub_1 ne $sub_2;
 	},
 	@_
 }

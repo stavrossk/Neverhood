@@ -1,8 +1,10 @@
 /*
 // SpriteResource - decodes Neverhood image files and loads them as a surface
 // Based on the ScummVM Neverhood Engine's sprite resource code
-// Copyright (C) 2012  Blaise Roth
-// See the LICENSE file for the full terms of the license.
+// Copyright (C) 2012 Blaise Roth
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "EXTERN.h"
@@ -23,12 +25,12 @@ typedef struct {
 SpriteResource* SpriteResource_new(SDL_RWops* stream) {
 	SpriteResource* this = safemalloc(sizeof(SpriteResource));
 
-	Uint16 flags = SDL_RWreadUint16(stream);
+	Uint16 flags = SDL_ReadLE16(stream);
 
 	Uint16 width, height;
 	if (flags & 2) {
-		width  = SDL_RWreadUint16(stream);
-		height = SDL_RWreadUint16(stream);
+		width  = SDL_ReadLE16(stream);
+		height = SDL_ReadLE16(stream);
 	} else {
 		width  = 1;
 		height = 1;
@@ -36,8 +38,8 @@ SpriteResource* SpriteResource_new(SDL_RWops* stream) {
 	this->_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 8, 0, 0, 0, 0);
 
 	if (flags & 4) {
-		this->_x = SDL_RWreadUint16(stream);
-		this->_y = SDL_RWreadUint16(stream);
+		this->_x = SDL_ReadLE16(stream);
+		this->_y = SDL_ReadLE16(stream);
 	} else {
 		this->_x = 0;
 		this->_y = 0;

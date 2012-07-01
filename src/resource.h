@@ -16,9 +16,13 @@
 
 #define SOUND_CHANNELS 8
 
+typedef struct {
+
+} Resource;
+
 void Resource_unpackSpriteRLE(SDL_RWops* stream, SDL_Surface* surface) {
-	Uint16 rows   = SDL_RWreadUint16(stream);
-	Uint16 chunks = SDL_RWreadUint16(stream);
+	Uint16 rows   = SDL_ReadLE16(stream);
+	Uint16 chunks = SDL_ReadLE16(stream);
 
 	Uint8* dest = surface->pixels;
 	do {
@@ -28,15 +32,15 @@ void Resource_unpackSpriteRLE(SDL_RWops* stream, SDL_Surface* surface) {
 			while (rows-- > 0) {
 				Uint16 rowChunks = chunks;
 				while (rowChunks-- > 0) {
-					Uint16 skip = SDL_RWreadUint16(stream);
-					Uint16 copy = SDL_RWreadUint16(stream);
+					Uint16 skip = SDL_ReadLE16(stream);
+					Uint16 copy = SDL_ReadLE16(stream);
 					SDL_RWread(stream, dest + skip, copy, 1);
 				}
 				dest += surface->pitch;
 			}
 		}
-		rows   = SDL_RWreadUint16(stream);
-		chunks = SDL_RWreadUint16(stream);
+		rows   = SDL_ReadLE16(stream);
+		chunks = SDL_ReadLE16(stream);
 	} while (rows > 0);
 }
 

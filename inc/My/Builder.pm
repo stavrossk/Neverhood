@@ -3,15 +3,12 @@ package My::Builder;
 use strict;
 use warnings;
 use base 'Module::Build';
-use autodie ':all';
 
 # So SDL doesn't go crazy on us when we require Games::Neverhood
 $ENV{SDL_VIDEODRIVER} = 'dummy';
 $ENV{SDL_AUDIODRIVER} = 'dummy';
 
 =head1 ACTIONS
-
-=over
 
 =item uninstall
 
@@ -34,8 +31,8 @@ specifying --force option.
 =cut
 
 sub ACTION_uninstall {
-	eval { require Games::Neverhood };
-	$! and leave("Games::Neverhood wouldn't load: $@Maybe install before uninstalling?");
+	require Games::Neverhood;
+	$@ and leave("Games::Neverhood wouldn't load: $@Maybe install before uninstalling?");
 	require File::ShareDir;
 	require File::Spec;
 	my $dir = File::ShareDir::module_dir('Games::Neverhood');
@@ -57,6 +54,7 @@ WARNING
 		}
 	}
 
+	use autodie ':all';
 	open LIST, ">>", $packlist; #Just makin' sure we can write in it later
 	open LIST, "<", $packlist;
 	my $leftover;
@@ -97,14 +95,12 @@ WARNING
 	close LIST;
 }
 
-=over
-
 =item license
 
-[version 0.01] (Blaise Roth)
+[version 0.02] (Blaise Roth)
 
 This action will generate a copy of this distribution's license - The
-GNU General Public License version 2. This requires Software::License to
+GNU General Public License version 3. This requires Software::License to
 be installed. It will write it into a file called LICENSE in the current
 directory. BEWARE: it will overwrite the file if it already exists (if
 it can).
@@ -115,9 +111,9 @@ it can).
 
 sub ACTION_license {
 	require Software::License;
-	require Software::License::GPL_2;
+	require Software::License::GPL_3;
 	require File::Spec;
-	my $license = Software::License::GPL_2->new({
+	my $license = Software::License::GPL_3->new({
 		holder => 'Blaise Roth',
 	});
 	open LICENSE, ">", File::Spec->catfile('LICENSE');

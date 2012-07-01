@@ -1,8 +1,10 @@
 #!/usr/bin/perl
 
 # Build.PL - creates a build script to install Games::Neverhood
-# Copyright (C) 2012  Blaise Roth
-# See the LICENSE file for the full terms of the license.
+# Copyright (C) 2012 Blaise Roth
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use strict;
 use warnings;
@@ -20,14 +22,13 @@ my $build = My::Builder->new(
 	dist_abstract => 'The Neverhood remade in SDL Perl',
 	license       => 'gpl',
 	requires => {
-		'perl'                      => 5.010,
+		'perl'                      => 5.01,
 		'SDL'                       => 2.541,
-		'File::ShareDir'            => 0,
+		'File::ShareDir'            => 1.03,
 		'ExtUtils::ParseXS'         => 3.01,
-		'Moose'                     => 0,
-		'MooseX::Declare'           => 0,
-		'MooseX::ClassAttribute'    => 0,
-		'MooseX::StrictConstructor' => 0,
+		'Moose'                     => 2.06,
+		'MooseX::Declare'           => 0.34,
+		'MooseX::StrictConstructor' => 0.19,
 	},
 	configure_requires   => { 'Module::Build' => 0.34 },
 	share_dir            => File::Spec->catdir('share'),

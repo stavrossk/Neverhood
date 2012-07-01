@@ -1,7 +1,9 @@
 /*
 // AudioVideo - Miscellaneous audio/video things that are better written in C, but called from Perl
-// Copyright (C) 2012  Blaise Roth
-// See the LICENSE file for the full terms of the license.
+// Copyright (C) 2012 Blaise Roth
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "EXTERN.h"

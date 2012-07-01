@@ -5,19 +5,22 @@ no warnings 'once';
 
 use Test::More;
 
-$Games::Neverhood::Fullscreen = 0;
-$Games::Neverhood::No_Frame = 0;
 use_ok('Games::Neverhood');
 
-isnt( $Games::Neverhood::Share_Dir, undef, 'Have a share dir' );
+my $options = Games::Neverhood::Options->new(
+	fullscreen => 0,
+	no_frame => 0,
+);
 
-Games::Neverhood->new();
+isnt( $options->share_dir, undef, 'Have a share dir' );
+
+Games::Neverhood->new(options => $options);
 
 isa_ok( $;, 'Games::Neverhood', "Game object created" );
 
 $;->init_app();
 isa_ok( $;->app, 'SDL::Surface', "App created" );
-is( Games::Neverhood->app, $;->app, "Getting the same app object every time" );
+is( $;->app, $;->app, "Getting the same app object every time" );
 
 undef $;;
 pass( "Game object destroyed" );

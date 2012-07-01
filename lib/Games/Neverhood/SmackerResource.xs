@@ -3,8 +3,10 @@
 // Based heavily on the ScummVM v1.3.1 Smacker decoder (video/smkdecoder).
 // https://github.com/scummvm/scummvm/tree/42ab839dd6c8a1570b232101eb97f4e54de57935/video
 // However it removes any code that the Neverhood smacker files don't need
-// Copyright (C) 2012  Blaise Roth
-// See the LICENSE file for the full terms of the license.
+// Copyright (C) 2012 Blaise Roth
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #undef NDEBUG
@@ -105,16 +107,16 @@ SmackerResource* SmackerResource_new(SDL_RWops* stream) {
 	this->_fileStream = stream;
 
 	/* Read in the Smacker header */
-	this->_header.signature = SDL_RWreadUint32(stream);
+	this->_header.signature = SDL_ReadLE32(stream);
 
 	if (this->_header.signature != ('S'<<0)+('M'<<8)+('K'<<16)+('2'<<24))
 		error("Invalid Smacker file");
 
-	Uint32 width  = SDL_RWreadUint32(stream);
-	Uint32 height = SDL_RWreadUint32(stream);
+	Uint32 width  = SDL_ReadLE32(stream);
+	Uint32 height = SDL_ReadLE32(stream);
 
-	this->_frameCount = SDL_RWreadUint32(stream);
-	Sint32 frameRate  = SDL_RWreadSint32(stream);
+	this->_frameCount = SDL_ReadLE32(stream);
+	Sint32 frameRate  = SDL_ReadLE32(stream);
 
 	/* framerate contains 2 digits after the comma, so 1497 is actually 14.97 fps */
 	this->_frameRate =
@@ -128,17 +130,17 @@ SmackerResource* SmackerResource_new(SDL_RWops* stream) {
 	// 2 - set to 1 if file is Y-doubled
 	// If bits 1 or 2 are set, the frame should be scaled to twice its height
 	// before it is displayed. */
-	this->_header.flags = SDL_RWreadUint32(stream);
+	this->_header.flags = SDL_ReadLE32(stream);
 
 	int i;
 	for (i = 0; i < 7; i++)
-		this->_header.audioSize[i] = SDL_RWreadUint32(stream);
+		this->_header.audioSize[i] = SDL_ReadLE32(stream);
 
-	this->_header.treesSize = SDL_RWreadUint32(stream);
-	this->_header.mMapSize  = SDL_RWreadUint32(stream);
-	this->_header.mClrSize  = SDL_RWreadUint32(stream);
-	this->_header.fullSize  = SDL_RWreadUint32(stream);
-	this->_header.typeSize  = SDL_RWreadUint32(stream);
+	this->_header.treesSize = SDL_ReadLE32(stream);
+	this->_header.mMapSize  = SDL_ReadLE32(stream);
+	this->_header.mClrSize  = SDL_ReadLE32(stream);
+	this->_header.fullSize  = SDL_ReadLE32(stream);
+	this->_header.typeSize  = SDL_ReadLE32(stream);
 
 	for (i = 0; i < 7; i++) {
 		/* AudioRate - Frequency and format information for each sound track, up to 7 audio tracks.
@@ -151,7 +153,7 @@ SmackerResource* SmackerResource_new(SDL_RWops* stream) {
 		// * bit 26 - indicates Bink DCT compression
 		// * bits 25-24 - unused
 		// * bits 23-0 - audio sample rate */
-		Uint32 audioInfo = SDL_RWreadUint32(stream);
+		Uint32 audioInfo = SDL_ReadLE32(stream);
 		this->_header.audioInfo[i].hasAudio   = (audioInfo & 0x40000000) >> 30;
 		this->_header.audioInfo[i].is16Bits   = (audioInfo & 0x20000000) >> 29;
 		this->_header.audioInfo[i].isStereo   = (audioInfo & 0x10000000) >> 28;
@@ -170,11 +172,11 @@ SmackerResource* SmackerResource_new(SDL_RWops* stream) {
 			error("Unhandled Smacker audio: %d", (int)this->_header.audioInfo[i].compression);
 	}
 
-	this->_header.dummy = SDL_RWreadUint32(stream);
+	this->_header.dummy = SDL_ReadLE32(stream);
 
 	this->_frameSizes = safemalloc(sizeof(Uint32) * this->_frameCount);
 	for (i = 0; i < this->_frameCount; i++)
-		this->_frameSizes[i] = SDL_RWreadUint32(stream);
+		this->_frameSizes[i] = SDL_ReadLE32(stream);
 
 	this->_frameTypes = safemalloc(this->_frameCount);
 	for (i = 0; i < this->_frameCount; i++)
@@ -262,13 +264,13 @@ int SmackerResource_nextFrame(SmackerResource* this) {
 		if (!(this->_frameTypes[this->_curFrame] & (2 << i)))
 			continue;
 
-		chunkSize = SDL_RWreadUint32(this->_fileStream);
+		chunkSize = SDL_ReadLE32(this->_fileStream);
 		chunkSize -= 4;    /* subtract the first 4 bytes (chunk size) */
 
 		if (this->_header.audioInfo[i].compression == kCompressionNone) {
 			dataSizeUnpacked = chunkSize;
 		} else {
-			dataSizeUnpacked = SDL_RWreadUint32(this->_fileStream);
+			dataSizeUnpacked = SDL_ReadLE32(this->_fileStream);
 			chunkSize -= 4;    /* subtract the next 4 bytes (unpacked data size) */
 		}
 

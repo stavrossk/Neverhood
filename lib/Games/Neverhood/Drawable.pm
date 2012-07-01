@@ -1,7 +1,9 @@
 # Drawable - role that standardises drawing
 # Also handles "invalidating" of rects on the screen to call $app->update() minimally.
-# Copyright (C) 2012  Blaise Roth
-# See the LICENSE file for the full terms of the license.
+# Copyright (C) 2012 Blaise Roth
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use 5.01;
 use MooseX::Declare;
