@@ -125,7 +125,7 @@ int SoundResource_maybeDestroy(SoundResource* this) {
 MODULE = Games::Neverhood::SoundResource		PACKAGE = Games::Neverhood::SoundResource		PREFIX = Neverhood_SoundResource_
 
 BOOT:
-	av_push(get_av("Games::Neverhood::SoundResource::ISA", 0), newSVpv("SDL::Mixer::MixChunk", 0));
+	av_push(get_av("Games::Neverhood::SoundResource::ISA", GV_ADD), newSVpv("SDL::Mixer::MixChunk", 0));
 	Mix_ChannelFinished(SoundResource_finished);
 
 SoundResource*

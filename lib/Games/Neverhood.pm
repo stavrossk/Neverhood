@@ -48,7 +48,7 @@ class Games::Neverhood {
 		$self->init_app();
 		$self->app->stop($scene);
 
-		$player = Games::Neverhood::MoviePlayer->new(file => share_file('c', '56.0A'));
+		$player = Games::Neverhood::MoviePlayer->new(file => share_file('m', '0.0A'));
 		debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
 				$player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
 
@@ -71,7 +71,7 @@ class Games::Neverhood {
 		# my $music = Games::Neverhood::SoundResource->new($music_stream);
 		# $music->play(-1);
 		
-		my $archive = Games::Neverhood::BLBArchive->new(data_file "i.blb");
+		# my $archive = Games::Neverhood::BLBArchive->new(data_file "i.blb");
 
 		while($self->app->stopped ne 1) {
 			Games::Neverhood::Drawable->invalidate_all();
