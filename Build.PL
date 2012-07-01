@@ -29,6 +29,7 @@ my $build = My::Builder->new(
 		'Moose'                     => 2.06,
 		'MooseX::Declare'           => 0.34,
 		'MooseX::StrictConstructor' => 0.19,
+		'Getopt::Long::Descriptive' => 0.09,
 	},
 	configure_requires   => { 'Module::Build' => 0.34 },
 	share_dir            => File::Spec->catdir('share'),
