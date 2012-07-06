@@ -1,0 +1,19 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Use native line endings
+Improvements text
+LICENSE      text
+README       text
+Thanks       text
+TODO         text
+
+# binary files
+share/icon.bmp
+share/a/*
+share/c/*
+share/hd/*
+share/i/*
+share/m/*
+share/s/*
+share/t/*
