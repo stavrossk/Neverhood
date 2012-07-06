@@ -22,9 +22,10 @@
 }
 
 #define debug(...) {\
-	if(SvTRUE(get_sv("Games::Neverhood::Debug", 0))) {\
+	if(1||SvTRUE(get_sv("Games::Neverhood::Options::Debug", 0))) {\
+		fprintf(stderr, "----- at %s line %d\n", __FILE__, __LINE__);\
 		fprintf(stderr, __VA_ARGS__);\
-		fprintf(stderr, "\n----- at %s line %d\n", __FILE__, __LINE__);\
+		fprintf(stderr, "\n");\
 	}\
 }
 
@@ -40,6 +41,13 @@ int SDL_RWlen(SDL_RWops* stream) {
 	int len = SDL_RWseek(stream, 0, SEEK_END);
 	SDL_RWseek(stream, cur, SEEK_SET);
 	return len;
+}
+
+/* open a RWops file for reading and die on error */
+SDL_RWops* SDL_RWopen(const char* filename) {
+	SDL_RWops* stream = SDL_RWFromFile(filename, "r");
+	if(!stream) error(SDL_GetError());
+	return stream;
 }
 
 #endif

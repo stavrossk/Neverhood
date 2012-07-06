@@ -26,6 +26,9 @@ class Games::Neverhood::Options {
 	method BUILD {
 		$self->grab_input($self->no_frame || $self->fullscreen) unless defined $self->grab_input;
 		$self->starting_prev_scene($self->starting_scene) unless defined $self->starting_prev_scene;
+		
+		# for access from XS
+		*Debug = \$self->debug;
 	}
 
 	method new_with_options (ClassName $class:) {

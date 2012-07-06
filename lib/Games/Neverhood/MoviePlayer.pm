@@ -76,11 +76,12 @@ class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable {
 	method advance_in_time (Num $time) {
 		my $return = PLAYING; # didn't invalidate
 
-		# go to the first frame on the first advance_in_time
+		# go to the first frame on the first update
 		if($self->cur_frame == -1) {
 			$return = $self->next_frame();
+			$self->_time_remainder(0);
 		}
-
+		
 		$time += $self->_time_remainder;
 		my $frame_time = 1 / $self->frame_rate;
 		if($time >= $frame_time) {
@@ -90,9 +91,9 @@ class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable {
 		$self->_time_remainder($time);
 		return $return;
 	}
-
-	method surface ($ ?) {
-		return $self->is_double_size ? $self->_double_size_surface : $self->_surface;
+	
+	method draw_surfaces () {
+		$self->draw_surface($self->is_double_size ? $self->_double_size_surface : $self->_surface);
 	}
 }
 

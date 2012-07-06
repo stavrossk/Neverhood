@@ -9,17 +9,16 @@ use 5.01;
 use MooseX::Declare;
 
 role Games::Neverhood::Drawable {
-	# surface needs to return an SDL::Surface
+	# draw_surfaces needs to draw the surfaces and update w and h
 	# invalidator_checks needs to return a list of method names to check for changes
-	requires 'surface', 'invalidator_checks', 'x', 'y';
+	requires 'draw_surfaces', 'invalidator_checks', 'x', 'y';
 
 	my $_is_all_invalidated; # => private Bool;
-	my @_invalidated_rects;  # => private ArrayRef('SDL::Surface');
+	my @_invalidated_rects;  # => private ArrayRef(Surface);
 
 	use constant is_visible => 1;
 
-	method w ($ ?) { $self->surface->w }
-	method h ($ ?) { $self->surface->h }
+	has ['w', 'h'] => private_set Int;
 
 	has is_invalidated => private_set Bool;
 	has _checked       => private HashRef;
@@ -134,12 +133,15 @@ role Games::Neverhood::Drawable {
 	}
 
 	method draw () {
-		$self->draw_surface() if $self->is_visible;
+		$self->draw_surfaces() if $self->is_visible;
 		$self->_is_checked(0);
 		$self->is_invalidated(0);
 	}
-	method draw_surface () {
-		SDL::Video::blit_surface($self->surface, undef, $;->app, SDL::Rect->new($self->x, $self->y, 0, 0));
+	
+	method draw_surface (Surface $surface) {
+		$self->w($surface->w);
+		$self->h($surface->h);
+		SDL::Video::blit_surface($surface, undef, $;->app, SDL::Rect->new($self->x, $self->y, 0, 0));
 	}
 }
 

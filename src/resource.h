@@ -17,8 +17,20 @@
 #define SOUND_CHANNELS 8
 
 typedef struct {
+	const char* filename;
+	SDL_RWops* stream;
+} BlbArchive;
 
-} Resource;
+typedef struct {
+	BlbArchive* archive;
+	Uint8 type;
+	Uint8 comprType;
+	Uint16 extDataOfset;
+	Uint32 timeStamp;
+	Uint32 offset;
+	Uint32 size;
+	Uint32 unpackedSize;
+} ResourceHandle;
 
 void Resource_unpackSpriteRLE(SDL_RWops* stream, SDL_Surface* surface) {
 	Uint16 rows   = SDL_ReadLE16(stream);

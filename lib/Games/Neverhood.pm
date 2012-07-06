@@ -48,9 +48,9 @@ class Games::Neverhood {
 		$self->init_app();
 		$self->app->stop($scene);
 
-		$player = Games::Neverhood::MoviePlayer->new(file => share_file('m', '0.0A'));
-		debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
-				$player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
+		# $player = Games::Neverhood::MoviePlayer->new(file => share_file('m', '0.0A'));
+		# debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
+				# $player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
 
 		# $sprite = Games::Neverhood::Sprite->new(file => share_file('i', '496.02'));
 
@@ -71,7 +71,15 @@ class Games::Neverhood {
 		# my $music = Games::Neverhood::SoundResource->new($music_stream);
 		# $music->play(-1);
 		
-		# my $archive = Games::Neverhood::BLBArchive->new(data_file "i.blb");
+		my $file_hash = {};
+		my @archives;
+		push @archives, Games::Neverhood::BlbArchive->new(data_file("a.blb"),  $file_hash),
+		                Games::Neverhood::BlbArchive->new(data_file("c.blb"),  $file_hash),
+		                Games::Neverhood::BlbArchive->new(data_file("hd.blb"), $file_hash),
+		                Games::Neverhood::BlbArchive->new(data_file("i.blb"),  $file_hash),
+		                Games::Neverhood::BlbArchive->new(data_file("m.blb"),  $file_hash),
+		                Games::Neverhood::BlbArchive->new(data_file("s.blb"),  $file_hash),
+		                Games::Neverhood::BlbArchive->new(data_file("t.blb"),  $file_hash);
 
 		while($self->app->stopped ne 1) {
 			Games::Neverhood::Drawable->invalidate_all();
@@ -175,15 +183,16 @@ class Games::Neverhood {
 				my ($time, $app) = @_;
 
 				# move
-
-				$player->advance_in_time($time);
-				$player->invalidate_all() if $player->is_invalidated;
+				
+				# $player->advance_in_time($time);
+				# $player->invalidate_all() if $player->is_invalidated;
 
 				# show
 
 				$app->draw_rect([0, 0, $app->w, $app->h], [255, 255, 255, 255]) if debug();
 
-				$player->draw() if $player->is_invalidated;
+				# $player->draw() if $player->is_invalidated;
+				
 				# $sprite->draw();
 
 				Games::Neverhood::Drawable->update_screen();

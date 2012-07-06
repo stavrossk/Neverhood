@@ -32,10 +32,10 @@ class Games::Neverhood::Sprite with Games::Neverhood::Drawable {
 	method x ($ ?) { $self->_resource->get_x };
 	method y ($ ?) { $self->_resource->get_y };
 
-	method surface ($ ?) {
+	method draw_surfaces () {
 		# TODO: mirrored_surface
 
-		$self->_surface;
+		$self->draw_surface($self->_surface);
 	}
 }
 

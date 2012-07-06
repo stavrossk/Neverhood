@@ -39,7 +39,7 @@ use SDL::GFX::Rotozoom ();
 # can't use the perl stuff because that needs to be done after use Games::Neverhood::Moose
 BEGIN {
 	XSLoader::load('Games::Neverhood::AudioVideo');
-	XSLoader::load('Games::Neverhood::BLBArchive');
+	XSLoader::load('Games::Neverhood::BlbArchive');
 	XSLoader::load('Games::Neverhood::SpriteResource');
 	XSLoader::load('Games::Neverhood::SoundResource');
 	XSLoader::load('Games::Neverhood::MusicResource');
@@ -52,7 +52,7 @@ sub do_import {
 	my ($import) = Moose::Exporter->build_import_methods(
 		as_is => [
 			\&rw, \&ro, \&private, \&private_set, \&init_private_set,
-			\&Any, \&Item, \&Bool, \&Maybe, \&Undef, \&Defined, \&Value, \&Str, \&Num, \&Int, \&ClassName, \&RoleName, \&Ref, \&ScalarRef, \&ArrayRef, \&HashRef, \&CodeRef, \&RegexpRef, \&GlobRef, \&FileHandle, \&Object, \&Rect, \&SceneName,
+			\&Any, \&Item, \&Bool, \&Maybe, \&Undef, \&Defined, \&Value, \&Str, \&Num, \&Int, \&ClassName, \&RoleName, \&Ref, \&ScalarRef, \&ArrayRef, \&HashRef, \&CodeRef, \&RegexpRef, \&GlobRef, \&FileHandle, \&Object, \&Rect, \&Surface, \&SceneName,
 			\&debug, \&error, \&Carp::carp, \&Carp::croak, \&Carp::cluck, \&Carp::confess,
 			\&data_file, \&data_dir, \&share_file, \&share_dir,
 			\&maybe, \&List::Util::max, \&List::Util::min, \&unindent,
@@ -127,6 +127,7 @@ sub Object     () { 'Object' }
 
 sub Rect      () { 'Rect' }
 sub SceneName () { 'SceneName' }
+sub Surface   () { 'Surface' }
 
 sub debug {
 	return $;->_options->debug unless @_;
@@ -177,6 +178,10 @@ sub unindent {
 subtype Rect =>
 	as Object,
 	where { $_->isa('SDL::Rect') },
+;
+subtype Surface =>
+	as Object,
+	where { $_->isa('SDL::Surface') },
 ;
 subtype SceneName =>
 	as Str,
