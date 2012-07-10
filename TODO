@@ -1,10 +1,64 @@
-Todo list for Games::Neverhood
+TODO and Milestones for Games::Neverhood
 Since 27 Sep 2010
 
-Make all hooked music stuff recursive
-Check if I need to mix together music and smacker
-Make that fading code better
-Big endian compat
-Make sound and music use the shift value once BLBArchive is implemented
-Fix requires in Build.PL
-do something gimmicky with the 1; at the end of each pm
+TODO
+    Make all hooked music stuff recursive
+    Check if I need to mix together music and smacker
+    Make that fading code better
+    Big endian compat
+    Make sound and music use the shift value once BlbArchive is implemented
+    Do something gimmicky with the 1; at the end of each pm
+    Maybe not use Getopt::Long::Descriptive
+
+Milestones
+    0.2 - Main resources loading from archives and functional
+        Files load from archives either with full buffer or RWops
+        Static sprites can show, change palette, mirror
+        Animated sprites can show, loop, move with details in file, play sounds, change palette, mirror
+        Sounds can play, be stopped, Audible role working
+        Music can play, fade, needa check exactly what else
+        Movies can play, loop, change palette
+    0.3 - Nursery scenes done
+        Scene and Sprite well designed
+        z-values working, start in order of adding then move by saying "put this in front or behind that"
+        Cursor implemented
+        Smart updating when new frame or cursor has moved
+        Klaymen movement worked out
+        Game Vars working
+        Mail scene looking good, but don't need reading the mail done yet
+    0.32 - Movie and travel scenes designed
+        Travel space outside the nursery done
+    0.36 - Dynamite shack done
+        First person puzzle done
+        Disk item pickups done
+        Travel scenes outside the shack done, including bush and fountain
+        Blowing up weasel done
+    0.4 - Info resources and cart working
+        The cart moves correctly, plays sounds, handles branching paths
+        Scenes past meeting the weasel done, including foghorn button
+    0.5 - Game done up to bridge
+        hall
+        disk scene
+        music
+        menu
+    0.6 - Game done up to lab place
+        bridge
+        cannon
+        radio
+        lake wall
+    0.7 - Game done up to whale place
+        shrink
+        lab
+        teleporter
+    0.8 - Game done up to final area
+        fast door
+        mouse
+        memory
+        slow puzzle
+        bil
+    0.9 - Game done
+        projector
+        keys
+        finale
+    1.0 - Everything done
+        polish
