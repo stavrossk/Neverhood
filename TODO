@@ -3,12 +3,11 @@ Since 27 Sep 2010
 
 TODO
     Make all hooked music stuff recursive
-    Check if I need to mix together music and smacker
-    Make that fading code better
+    Mix together music and smacker
+    Make that fading code better, don't halt just mute ready for fade back in
     Big endian compat
     Make sound and music use the shift value once BlbArchive is implemented
     Do something gimmicky with the 1; at the end of each pm
-    Maybe not use Getopt::Long::Descriptive
 
 Milestones
     0.2 - Main resources loading from archives and functional

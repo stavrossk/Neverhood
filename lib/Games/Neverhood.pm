@@ -17,6 +17,9 @@
 $Games::Neverhood::VERSION = 0.12;
 
 use 5.01;
+
+BEGIN { say "\nCompiling Games-Neverhood" }
+
 use MooseX::Declare;
 
 use Games::Neverhood::Moose;
@@ -37,8 +40,7 @@ class Games::Neverhood {
 
 	method run (SceneName $scene, SceneName $prev_scene) {
 		printf unindent(<<'		HELLO'), data_dir(), share_dir(), '=' x 69;
-
-		Games::Neverhood started
+		Starting
 		 Data dir:  %s
 		Share dir:  %s
 		%s
