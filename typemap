@@ -1,5 +1,5 @@
 TYPEMAP
-BlbArchive*      O_OBJECT_NPGC
+ResourceEntry*   O_OBJECT_NPGC
 SmackerResource* O_OBJECT_NPGC
 SpriteResource*  O_OBJECT_NPGC
 SoundResource*   O_OBJECT_NPGC

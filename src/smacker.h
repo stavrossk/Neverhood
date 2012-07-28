@@ -31,14 +31,14 @@ BitStream* BitStream_new(Uint8* buf, Uint32 length) {
 	return this;
 }
 
-Uint8 BitStream_getBit(BitStream* this) {
+bool BitStream_getBit(BitStream* this) {
 	if (this->_bitCount == 0) {
 		assert(this->_buf < this->_end);
 		this->_curByte = *this->_buf++;
 		this->_bitCount = 8;
 	}
 
-	Uint8 v = this->_curByte & 1;
+	bool v = this->_curByte & 1;
 
 	this->_curByte >>= 1;
 	this->_bitCount--;
@@ -97,7 +97,7 @@ SmallTree* SmallTree_new(BitStream* bs) {
 	SmallTree* this = safemalloc(sizeof(SmallTree));
 	this->_treeSize = 0;
 
-	Uint8 bit = BitStream_getBit(bs);
+	bool bit = BitStream_getBit(bs);
 	assert(bit);
 
 	int i;
@@ -209,7 +209,7 @@ BigTree* BigTree_new(BitStream* bs, int allocSize) {
 
 	BigTree_decodeTree(this, bs, 0, 0);
 
-	Uint8 bit = BitStream_getBit(bs);
+	bool bit = BitStream_getBit(bs);
 	assert(!bit);
 
 	for (i = 0; i < 3; i++) {

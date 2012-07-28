@@ -454,9 +454,9 @@ static void SmackerResource_unpackCompressedAudio
 		return;
 	}
 
-	Uint8 isStereo = BitStream_getBit(audioBS);
+	bool isStereo = BitStream_getBit(audioBS);
 	assert(isStereo == this->_header.audioInfo[0].isStereo);
-	Uint8 is16Bits = BitStream_getBit(audioBS);
+	bool is16Bits = BitStream_getBit(audioBS);
 	assert(is16Bits == this->_header.audioInfo[0].is16Bits);
 	assert(!isStereo);
 

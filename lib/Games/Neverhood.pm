@@ -17,9 +17,6 @@
 $Games::Neverhood::VERSION = 0.12;
 
 use 5.01;
-
-BEGIN { say "\nCompiling Games-Neverhood" }
-
 use MooseX::Declare;
 
 use Games::Neverhood::Moose;
@@ -33,16 +30,17 @@ class Games::Neverhood {
 	my ($player, $sprite);
 
 	has scene    => private_set 'Games::Neverhood::Scene';
-	has app      => private_set Maybe('SDL::Surface');
+	has app      => private_set Maybe(Surface);
 	has _options => ro 'Games::Neverhood::Options', init_arg => 'options', required => 1;
 
 	method BUILD { $; = $self }
 
 	method run (SceneName $scene, SceneName $prev_scene) {
 		printf unindent(<<'		HELLO'), data_dir(), share_dir(), '=' x 69;
-		Starting
-		 Data dir:  %s
-		Share dir:  %s
+
+		Starting Games-Neverhood
+		 Data dir: %s
+		Share dir: %s
 		%s
 		HELLO
 
@@ -72,16 +70,15 @@ class Games::Neverhood {
 		# my $music_stream = SDL::RWOps->new_file(share_file('a', '132.08'), 'r') // error(SDL::get_error());
 		# my $music = Games::Neverhood::SoundResource->new($music_stream);
 		# $music->play(-1);
-		
+
 		my $file_hash = {};
-		my @archives;
-		push @archives, Games::Neverhood::BlbArchive->new(data_file("a.blb"),  $file_hash),
-		                Games::Neverhood::BlbArchive->new(data_file("c.blb"),  $file_hash),
-		                Games::Neverhood::BlbArchive->new(data_file("hd.blb"), $file_hash),
-		                Games::Neverhood::BlbArchive->new(data_file("i.blb"),  $file_hash),
-		                Games::Neverhood::BlbArchive->new(data_file("m.blb"),  $file_hash),
-		                Games::Neverhood::BlbArchive->new(data_file("s.blb"),  $file_hash),
-		                Games::Neverhood::BlbArchive->new(data_file("t.blb"),  $file_hash);
+		Games::Neverhood::ResourceEntry->load_from_archive(data_file("a.blb"),  $file_hash);
+		Games::Neverhood::ResourceEntry->load_from_archive(data_file("c.blb"),  $file_hash);
+		Games::Neverhood::ResourceEntry->load_from_archive(data_file("hd.blb"), $file_hash);
+		Games::Neverhood::ResourceEntry->load_from_archive(data_file("i.blb"),  $file_hash);
+		Games::Neverhood::ResourceEntry->load_from_archive(data_file("m.blb"),  $file_hash);
+		Games::Neverhood::ResourceEntry->load_from_archive(data_file("s.blb"),  $file_hash);
+		Games::Neverhood::ResourceEntry->load_from_archive(data_file("t.blb"),  $file_hash);
 
 		while($self->app->stopped ne 1) {
 			Games::Neverhood::Drawable->invalidate_all();
@@ -185,7 +182,7 @@ class Games::Neverhood {
 				my ($time, $app) = @_;
 
 				# move
-				
+
 				# $player->advance_in_time($time);
 				# $player->invalidate_all() if $player->is_invalidated;
 
@@ -194,7 +191,7 @@ class Games::Neverhood {
 				$app->draw_rect([0, 0, $app->w, $app->h], [255, 255, 255, 255]) if debug();
 
 				# $player->draw() if $player->is_invalidated;
-				
+
 				# $sprite->draw();
 
 				Games::Neverhood::Drawable->update_screen();
@@ -222,7 +219,7 @@ class Games::Neverhood {
 				}
 			},
 		));
-		
+
 		$self->app->draw_rect([0, 0, $self->app->w, $self->app->h], [0, 0, 0, 255]);
 		$self->app->update();
 
