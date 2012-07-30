@@ -16,6 +16,7 @@ UNDATA*
 *.txt
 unshare*
 *.c
+!src/*.c
 *.o
 lib/Games/Neverhood/typemap
 nhc.pl
