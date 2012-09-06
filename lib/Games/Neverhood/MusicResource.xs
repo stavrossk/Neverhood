@@ -23,6 +23,8 @@ typedef struct {
 	Uint8 _shift;
 	SDL_RWops* _stream;
 	Uint32 _streamLen;
+	Uint32 _streamStart;
+	Uint32 _streamPos;
 
 	int _fading;
 	int _fade_step;
@@ -35,14 +37,16 @@ Uint8* myBuf;
 
 int msPerStep;
 
-MusicResource* MusicResource_new(SDL_RWops* stream) {
+MusicResource* MusicResource_new(ResourceEntry* entry) {
 	MusicResource* this = safemalloc(sizeof(MusicResource));
 
 	this->_curValue = 0;
-	this->_shift = 5;
-	this->_stream = stream;
-	this->_streamLen = SDL_RWlen(stream);
-
+	this->_shift = ResourceEntry_getExtData8(entry);
+	this->_stream = ResourceEntry_getStream(entry);
+	this->_streamLen = entry->size;
+	this->_streamStart = entry->offset;
+	this->_streamPos = 0;
+	
 	return this;
 }
 
@@ -71,14 +75,16 @@ static void MusicResource_player(void* udata, Uint8* buf, int len) {
 		inputBuf = myBuf + inputLen;
 	}
 
-	int remainingLen = this->_streamLen - SDL_RWtell(this->_stream);
+	int remainingLen = this->_streamLen - this->_streamPos;
 	SDL_RWread(this->_stream, inputBuf, remainingLen < inputLen ? remainingLen : inputLen, 1);
+	this->_streamPos += inputLen;
 
 	Sint8* inputLoopPos;
 	if (inputLen >= remainingLen) { /* loop */
-		SDL_RWseek(this->_stream, 0, SEEK_SET);
+		SDL_RWseek(this->_stream, this->_streamStart, SEEK_SET);
 		inputLoopPos = inputBuf + remainingLen;
-		SDL_RWread(this->_stream, inputLoopPos, inputLen - remainingLen, 1);
+		this->_streamPos = inputLen - remainingLen;
+		SDL_RWread(this->_stream, inputLoopPos, this->_streamPos, 1);
 		this->_curValue = 0;
 	}
 
@@ -198,11 +204,11 @@ void MusicResource_init() {
 MODULE = Games::Neverhood::MusicResource		PACKAGE = Games::Neverhood::MusicResource		PREFIX = Neverhood_MusicResource_
 
 MusicResource*
-Neverhood_MusicResource_new(CLASS, stream)
+Neverhood_MusicResource_new(CLASS, entry)
 		const char* CLASS
-		SDL_RWops* stream
+		ResourceEntry* entry
 	CODE:
-		RETVAL = MusicResource_new(stream);
+		RETVAL = MusicResource_new(entry);
 	OUTPUT:
 		RETVAL
 

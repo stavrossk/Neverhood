@@ -33,9 +33,10 @@ my $build = My::Builder->new(
 	},
 	configure_requires   => { 'Module::Build' => 0.34 },
 	share_dir            => File::Spec->catdir('share'),
-	extra_compiler_flags => \@cflags,
-	extra_linker_flags   => \@lflags,
+	extra_compiler_flags => [ @cflags ],
+	extra_linker_flags   => [ @lflags ],
 	include_dirs         => [ File::Spec->catdir('src') ],
+	c_source             => [ File::Spec->catdir('src') ],
 	typemap_files        => { 'typemap' => File::Spec->catfile('lib', 'Games', 'Neverhood', 'typemap') },
 	dynamic_config       => 1,
 	add_to_cleanup => [

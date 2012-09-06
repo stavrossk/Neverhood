@@ -46,21 +46,26 @@ void ResourceEntry_loadFromArchive(const char* filename, HV* hash) {
 
 	/* extDataPos = headerSize + fileCount * (hashSize + entrySize) */
 	Uint16 extDataPos = 16 + header.fileCount * (4 + 20);
+	
+	int filename_len = strlen(filename) + 1;
+	char* filename_copy = safemalloc(filename_len);
+	memcpy(filename_copy, filename, filename_len);
 
 	/* file records */
 	for (i = 0; i < header.fileCount; i++) {
 		ResourceEntry* entry = safemalloc(sizeof(ResourceEntry));
-		entry->filename     = filename;
-		entry->type         = SDL_RWreadUint8(stream);
-		entry->comprType    = SDL_RWreadUint8(stream);
-		entry->extDataOfset = SDL_ReadLE16(stream) + extDataPos;
-		entry->timeStamp    = SDL_ReadLE32(stream);
-		entry->offset       = SDL_ReadLE32(stream);
-		entry->size         = SDL_ReadLE32(stream);
-		entry->unpackedSize = SDL_ReadLE32(stream);
-
+		entry->filename      = filename_copy;
+		entry->type          = SDL_RWreadUint8(stream);
+		entry->comprType     = SDL_RWreadUint8(stream);
+		entry->extDataOffset = SDL_ReadLE16(stream) + extDataPos;
+		entry->timeStamp     = SDL_ReadLE32(stream);
+		entry->offset        = SDL_ReadLE32(stream);
+		entry->size          = SDL_ReadLE32(stream);
+		entry->unpackedSize  = SDL_ReadLE32(stream);
+		
 		char key[9]; /* max 32-bit value is 8 Fs (FFFFFFFF) */
-		int klen = sprintf(key, "%X", hashes[i]);
+
+		int klen = sprintf(key, "%08X", hashes[i]);
 		SV* val = *hv_fetch(hash, key, klen, 1);
 
 		if(SvOK(val)) {
@@ -72,8 +77,6 @@ void ResourceEntry_loadFromArchive(const char* filename, HV* hash) {
 	}
 
 	safefree(hashes);
-
-	return this;
 }
 
 MODULE = Games::Neverhood::ResourceEntry		PACKAGE = Games::Neverhood::ResourceEntry		PREFIX = Neverhood_ResourceEntry_
@@ -86,9 +89,7 @@ Neverhood_ResourceEntry_load_from_archive(CLASS, filename, hashref)
 	CODE:
 		if (SvTYPE(SvRV(hashref)) != SVt_PVHV) error("Hashref needed");
 		HV* hash = (HV*)SvRV(hashref);
-		RETVAL = ResourceEntry_loadFromArchive(filename, hash);
-	OUTPUT:
-		RETVAL
+		ResourceEntry_loadFromArchive(filename, hash);
 
 void
 Neverhood_ResourceEntry_DESTROY(THIS)
@@ -124,7 +125,7 @@ Uint16
 Neverhood_ResourceEntry_get_ext_data_offset(THIS)
 		ResourceEntry* THIS
 	CODE:
-		RETVAL = THIS->extDataOfset;
+		RETVAL = THIS->extDataOffset;
 	OUTPUT:
 		RETVAL
 

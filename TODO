@@ -8,6 +8,7 @@ TODO
     Big endian compat
     Make sound and music use the shift value once BlbArchive is implemented
     Do something gimmicky with the 1; at the end of each pm
+    Split h and c apart in src/ and use so instead of o
 
 Milestones
     0.2 - Main resources loading from archives and functional

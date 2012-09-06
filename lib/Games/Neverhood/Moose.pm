@@ -39,7 +39,7 @@ use SDL::GFX::Rotozoom ();
 # can't use the perl stuff because that needs to be done after use Games::Neverhood::Moose
 BEGIN {
 	XSLoader::load('Games::Neverhood::AudioVideo');
-	XSLoader::load('Games::Neverhood::BlbArchive');
+	XSLoader::load('Games::Neverhood::ResourceEntry');
 	XSLoader::load('Games::Neverhood::SpriteResource');
 	XSLoader::load('Games::Neverhood::SoundResource');
 	XSLoader::load('Games::Neverhood::MusicResource');

@@ -13,7 +13,7 @@
 
 #include <helper.h>
 #include <SDL/SDL.h>
-#include <blast.c>
+#include <blast.h>
 #include <memory.h>
 
 #define SOUND_CHANNELS 8
@@ -22,7 +22,7 @@ typedef struct {
 	const char* filename;
 	Uint8 type;
 	Uint8 comprType;
-	Uint16 extDataOfset;
+	Uint16 extDataOffset;
 	Uint32 timeStamp;
 	Uint32 offset;
 	Uint32 size;
@@ -75,7 +75,7 @@ Uint8* ResourceEntry_getBuffer(ResourceEntry* this)
 			safefree(inputBuf);
 			safefree(in);
 
-			return outputBuf
+			return outputBuf;
 		}
 		default:
 			error("Unknown compression type %d", this->comprType);
@@ -85,7 +85,6 @@ Uint8* ResourceEntry_getBuffer(ResourceEntry* this)
 SDL_RWops* ResourceEntry_getStream(ResourceEntry* this) {
 	if (this->comprType != 1)
 		error("Can't get stream from compression type: %d; archive: %s", this->comprType, this->filename);
-
 	SDL_RWops* stream = SDL_RWopen(this->filename);
 	SDL_RWseek(stream, this->offset, SEEK_SET);
 

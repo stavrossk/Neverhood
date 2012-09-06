@@ -58,7 +58,7 @@ class Games::Neverhood {
 		# my $sound = Games::Neverhood::SoundResource->new($sound_stream);
 		# $sound->play(-1);
 
-		# Games::Neverhood::MusicResource->init();
+		Games::Neverhood::MusicResource->init();
 		# my $music_stream = SDL::RWOps->new_file(share_file('a', '132.08'), 'r') // error(SDL::get_error());
 		# my $music = Games::Neverhood::MusicResource->new($music_stream);
 		# $music->play(5_000);
@@ -79,6 +79,9 @@ class Games::Neverhood {
 		Games::Neverhood::ResourceEntry->load_from_archive(data_file("m.blb"),  $file_hash);
 		Games::Neverhood::ResourceEntry->load_from_archive(data_file("s.blb"),  $file_hash);
 		Games::Neverhood::ResourceEntry->load_from_archive(data_file("t.blb"),  $file_hash);
+		
+		my $music = Games::Neverhood::MusicResource->new($file_hash->{'061880C6'});
+		$music->play(0);
 
 		while($self->app->stopped ne 1) {
 			Games::Neverhood::Drawable->invalidate_all();
