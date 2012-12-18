@@ -15,179 +15,220 @@
 #include <helper.h>
 #include <assert.h>
 #include <resource.h>
+#include <music.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_mixer.h>
 
 typedef struct {
-	Sint16 _curValue;
-	Uint8 _shift;
-	SDL_RWops* _stream;
-	Uint32 _streamLen;
-	Uint32 _streamStart;
-	Uint32 _streamPos;
+	Sint16 curValue;
+	Uint8 shift;
+	SDL_RWops* stream;
+	Uint32 streamSize;
+	Uint32 streamStart;
+	Uint32 streamPos;
 
-	int _fading;
-	int _fade_step;
-	int _fade_steps;
+	int fading;
+	int fadeStep;
+	int fadeSteps;
 } MusicResource;
+
+static MusicResource* music_playing;
+static SmackerAudio* smacker_audio_playing;
+
+static Uint8* music_buf;
+static Uint8* smacker_audio_buf;
 
 static SDL_AudioCVT cvt;
 
-Uint8* myBuf;
+static int ms_per_step;
 
-int msPerStep;
-
-MusicResource* MusicResource_new(ResourceEntry* entry) {
+MusicResource* MusicResource_new (ResourceEntry* entry)
+{
 	MusicResource* this = safemalloc(sizeof(MusicResource));
-
-	this->_curValue = 0;
-	this->_shift = ResourceEntry_getExtData8(entry);
-	this->_stream = ResourceEntry_getStream(entry);
-	this->_streamLen = entry->size;
-	this->_streamStart = entry->offset;
-	this->_streamPos = 0;
 	
+	if (entry->type != 8)
+		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);
+
+	Uint8 ext_data[1];
+	ResourceEntry_getExtData(entry, ext_data, 1);
+	this->shift = *ext_data;
+	if (this->shift == 0xFF)
+		error("Uncompressed music resource: %08X not supported", entry->key);
+
+	this->curValue = 0;
+	this->stream = ResourceEntry_getStream(entry);
+	this->streamSize = entry->size;
+	this->streamStart = entry->offset;
+	this->streamPos = 0;
+
 	return this;
 }
 
-/* Only call this if the the smacker music player is definitely not hooked */
-void MusicResource_stop() {
-	MusicResource* this = Mix_GetMusicHookData();
-	Mix_HookMusic(NULL, NULL);
-
-	if (this) {
-		SDL_RWclose(this->_stream);
-		safefree(this);
-	}
-}
-
-static void MusicResource_player(void* udata, Uint8* buf, int len) {
-	if (!udata || Mix_PausedMusic()) return;
-	MusicResource* this = (MusicResource*)udata;
-
-	int inputLen;
-	Sint8* inputBuf;
-	if (this->_shift == 0xFF) { /* uncompressed PCM */
-		inputLen = len * cvt.len_ratio;
-		inputBuf = myBuf;
-	} else {                    /* DW ADPCM compressed */
-		inputLen = len / 2.0 * cvt.len_ratio;
-		inputBuf = myBuf + inputLen;
-	}
-
-	int remainingLen = this->_streamLen - this->_streamPos;
-	SDL_RWread(this->_stream, inputBuf, remainingLen < inputLen ? remainingLen : inputLen, 1);
-	this->_streamPos += inputLen;
-
-	Sint8* inputLoopPos;
-	if (inputLen >= remainingLen) { /* loop */
-		SDL_RWseek(this->_stream, this->_streamStart, SEEK_SET);
-		inputLoopPos = inputBuf + remainingLen;
-		this->_streamPos = inputLen - remainingLen;
-		SDL_RWread(this->_stream, inputLoopPos, this->_streamPos, 1);
-		this->_curValue = 0;
-	}
-
-	if (this->_shift != 0xFF) { /* DW ADPCM compressed */
-		Sint8* inputEnd = inputBuf + inputLen;
-		Sint16* outputBuf = (Sint16*)myBuf;
-
-		while (inputBuf < inputEnd) {
-			this->_curValue += *inputBuf++;
-			*outputBuf++ = this->_curValue << this->_shift;
-		}
-	}
-
-	cvt.buf = myBuf;
-	cvt.len = len * cvt.len_ratio;
-	SDL_ConvertAudio(&cvt);
-
-	/* Handle fading */
-	int volume = Mix_VolumeMusic(-1);
-	if (this->_fading != MIX_NO_FADING) {
-		if (this->_fade_step++ < this->_fade_steps) {
-			int fade_step  = this->_fade_step;
-			int fade_steps = this->_fade_steps;
-
-			if (this->_fading == MIX_FADING_OUT) {
-				volume = (volume * (fade_steps-fade_step)) / fade_steps;
-			} else { /* Fading in */
-				volume = (volume * fade_step) / fade_steps;
-			}
-		} else {
-			if (this->_fading == MIX_FADING_OUT) {
-				/* you still have to stop this yourself */
-				return;
-			}
-			this->_fading = MIX_NO_FADING;
-		}
-	}
-
-	SDL_MixAudio(buf, cvt.buf, cvt.len, volume);
-}
-
-void MusicResource_play(MusicResource* this, int ms) {
+void MusicResource_play (MusicResource* this, int ms)
+{
 	if (ms > 0) {
-		this->_fading = MIX_FADING_IN;
-		this->_fade_step = 0;
-		this->_fade_steps = ms / msPerStep;
+		this->fading = MIX_FADING_IN;
+		this->fadeStep = 0;
+		this->fadeSteps = ms / ms_per_step;
 	} else {
-		this->_fading = MIX_NO_FADING;
+		this->fading = MIX_NO_FADING;
 	}
 
-	Mix_HookMusic(MusicResource_player, (void*)this);
+	SDL_LockAudio();
+	music_playing = this;
+	SDL_UnlockAudio();
 }
 
-void MusicResource_fadeOut(int ms) {
-	MusicResource* this = Mix_GetMusicHookData();
+void MusicResource_fadeOut (MusicResource* this, int ms)
+{
+	if (this != music_playing) return;
 
+	SDL_LockAudio();
 	if (ms <= 0) {  /* just halt immediately. */
-		MusicResource_stop();
-		return;
+		music_playing = NULL;
+	}
+	else if (this) {
+		int fade_steps = (ms + ms_per_step - 1) / ms_per_step;
+		if (this->fading == MIX_NO_FADING) {
+			this->fadeStep = 0;
+		}
+		else {
+			int step;
+			int old_fade_steps = this->fadeSteps;
+			if (this->fading == MIX_FADING_OUT) {
+				step = this->fadeStep;
+			}
+			else {
+				step = old_fade_steps - this->fadeStep + 1;
+			}
+			this->fadeStep = (step * fade_steps) / old_fade_steps;
+		}
+		this->fading = MIX_FADING_OUT;
+		this->fadeSteps = fade_steps;
+
+	}
+	SDL_UnlockAudio();
+}
+
+static void SmackerResource_player (SmackerAudio* this, Uint8* buf, int size)
+{
+	if (!this->curLink) return;
+
+	int size_taken = this->remainingSize < size ? this->remainingSize : size;
+	memcpy(buf, this->curPos, size_taken);
+	buf += size_taken;
+	size -= size_taken;
+	this->curPos += size_taken;
+	this->remainingSize -= size_taken;
+
+	if (this->remainingSize <= 0) {
+		this->curLink = this->curLink->nextLink;
+		if (this->curLink) {
+			this->curPos = this->curLink->buf;
+			this->remainingSize = this->curLink->size;
+		}
 	}
 
-	if (this) {
-		SDL_LockAudio();
+	if (size > 0)
+		SmackerResource_player(this, buf, size);
+}
 
-		int fade_steps = (ms + msPerStep - 1) / msPerStep;
-		if ( this->_fading == MIX_NO_FADING ) {
-			this->_fade_step = 0;
-		} else {
-			int step;
-			int old_fade_steps = this->_fade_steps;
-			if ( this->_fading == MIX_FADING_OUT ) {
-				step = this->_fade_step;
-			} else {
-				step = old_fade_steps - this->_fade_step + 1;
+static void MusicResource_player_recurse (MusicResource* this, Sint16* buf, int size, Sint8* input_buf, int input_size)
+{
+	int remaining_size = this->streamSize - this->streamPos;
+	int input_size_taken = remaining_size < input_size ? remaining_size : input_size;
+	SDL_RWread(this->stream, input_buf, input_size_taken, 1);
+
+	/* DW ADPCM compressed */
+	Sint8* input_end = input_buf + input_size_taken;
+
+	while (input_buf < input_end) {
+		this->curValue += *input_buf++;
+		*buf++ = this->curValue << this->shift;
+	}
+
+	this->streamPos += input_size_taken;
+	remaining_size -= input_size_taken;
+	size -= input_size_taken * 2;
+	input_size -= input_size_taken;
+
+	if (remaining_size <= 0) { /* loop */
+		SDL_RWseek(this->stream, this->streamStart, SEEK_SET);
+		this->streamPos = 0;
+		this->curValue = 0;
+	}
+
+	if (size > 0)
+		MusicResource_player_recurse(this, buf, size, input_buf, input_size);
+}
+
+static void MusicResource_player (void* udata, Uint8* buf, int size)
+{
+	if (music_playing && !Mix_PausedMusic()) {
+		/* DW ADPCM compressed */
+		int input_size;
+		Sint8* input_buf;
+		input_size = size / 2.0 * cvt.len_ratio;
+		input_buf = music_buf + input_size;
+
+		MusicResource_player_recurse(music_playing, (Sint16*)music_buf, size, input_buf, input_size);
+
+		cvt.buf = music_buf;
+		cvt.len = size * cvt.len_ratio;
+		SDL_ConvertAudio(&cvt);
+
+		/* Handle fading */
+		int volume = Mix_VolumeMusic(-1);
+		if (music_playing->fading != MIX_NO_FADING) {
+			if (music_playing->fadeStep++ < music_playing->fadeSteps) {
+				int fade_step  = music_playing->fadeStep;
+				int fade_steps = music_playing->fadeSteps;
+
+				if (music_playing->fading == MIX_FADING_OUT) {
+					volume = (volume * (fade_steps-fade_step)) / fade_steps;
+				}
+				else { /* Fading in */
+					volume = (volume * fade_step) / fade_steps;
+				}
 			}
-			this->_fade_step = (step * fade_steps) / old_fade_steps;
+			else {
+				if (music_playing->fading == MIX_FADING_OUT) /* finished fading out */
+					music_playing = NULL;
+				else
+					music_playing->fading = MIX_NO_FADING; /* finished fading in */
+			}
 		}
-		this->_fading = MIX_FADING_OUT;
-		this->_fade_steps = fade_steps;
+		SDL_MixAudio(buf, cvt.buf, cvt.len, volume);
+	}
 
-		SDL_UnlockAudio();
+	if(smacker_audio_playing && !Mix_PausedMusic()) {
+		SmackerResource_player(smacker_audio_playing, smacker_audio_buf, size);
+		SDL_MixAudio(buf, smacker_audio_buf, size, MIX_MAX_VOLUME);
+		memset(smacker_audio_buf, 0, size);
 	}
 }
 
-static void MusicResource_initializer(void* udata, Uint8* buf, int len) {
-	if(len <= 0) {
-		printf("Error: audio opened with no length\n");
+static void MusicResource_initializer (void* udata, Uint8* buf, int size)
+{
+	if (size <= 0) {
+		printf("Error: audio opened with no size\n");
 		*(int*)udata = 0;
 	}
 	else {
-		*(int*)udata = len;
+		*(int*)udata = size;
 	}
 }
 
-void MusicResource_init() {
-	if (myBuf)
+void MusicResource_init ()
+{
+	if (music_buf)
 		return;
 
-	int len = -1;
-	Mix_HookMusic(MusicResource_initializer, &len);
+	int size = -1;
+	Mix_HookMusic(MusicResource_initializer, &size);
 	while (1) {
 		SDL_Delay(1); /* Wait one tick */
-		if (len >= 0) break;
+		if (size >= 0) break;
 	}
 	Mix_HookMusic(NULL, NULL);
 
@@ -196,44 +237,53 @@ void MusicResource_init() {
 	Mix_QuerySpec(&dst_rate, &dst_format, &dst_channels);
 	SDL_BuildAudioCVT(&cvt, AUDIO_S16LSB, 1, 22050, dst_format, dst_channels, dst_rate);
 
-	myBuf = safemalloc(len * cvt.len_mult);
+	music_buf = safemalloc(size * cvt.len_mult);
+	smacker_audio_buf = safemalloc(size);
 
-	msPerStep = (int)(((double)len * 1000.0 / 2) / dst_rate);
+	ms_per_step = (int)(((double)size * 1000.0 / 2) / dst_rate);
+
+	Mix_HookMusic(MusicResource_player, &smacker_audio_playing);
+}
+
+void MusicResource_DESTROY (MusicResource* this)
+{
+	MusicResource_fadeOut(this, 0);
+	SDL_RWclose(this->stream);
+	safefree(this);
 }
 
 MODULE = Games::Neverhood::MusicResource		PACKAGE = Games::Neverhood::MusicResource		PREFIX = Neverhood_MusicResource_
 
 MusicResource*
-Neverhood_MusicResource_new(CLASS, entry)
+Neverhood_MusicResource_new (CLASS, entry)
 		const char* CLASS
 		ResourceEntry* entry
 	CODE:
-		RETVAL = MusicResource_new(entry);
+		RETVAL = MusicResource_new (entry);
 	OUTPUT:
 		RETVAL
 
 void
-Neverhood_MusicResource_stop(CLASS)
-		const char* CLASS
-	CODE:
-		MusicResource_stop();
-
-void
-Neverhood_MusicResource_play(THIS, ms)
+Neverhood_MusicResource_play (THIS, ms)
 		MusicResource* THIS
 		int ms
 	CODE:
-		MusicResource_play(THIS, ms);
+		MusicResource_play (THIS, ms);
 
 void
-Neverhood_MusicResource_init(CLASS)
-		const char* CLASS
+Neverhood_MusicResource_fade_out (THIS, ms)
+		MusicResource* THIS
+		int ms
+	CODE:
+		MusicResource_fadeOut(THIS, ms);
+
+void
+Neverhood_MusicResource_init ()
 	CODE:
 		MusicResource_init();
 
 void
-Neverhood_MusicResource_fade_out(CLASS, ms)
-		const char* CLASS
-		int ms
+Neverhood_MusicResource_DESTROY (THIS)
+		MusicResource* THIS
 	CODE:
-		MusicResource_fadeOut(ms);
+		MusicResource_DESTROY(THIS);

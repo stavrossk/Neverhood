@@ -2,24 +2,22 @@ TODO and Milestones for Games::Neverhood
 Since 27 Sep 2010
 
 TODO
-    Make all hooked music stuff recursive
-    Mix together music and smacker
-    Make that fading code better, don't halt just mute ready for fade back in
-    Big endian compat
-    Make sound and music use the shift value once BlbArchive is implemented
+    Do something better with AudioVideo
+    Make smacker audio resync with video
+    Fuck big endian compat
     Do something gimmicky with the 1; at the end of each pm
     Split h and c apart in src/ and use so instead of o
 
 Milestones
-    0.2 - Main resources loading from archives and functional
-        Files load from archives either with full buffer or RWops
-        Static sprites can show, change palette, mirror
-        Animated sprites can show, loop, move with details in file, play sounds, change palette, mirror
-        Sounds can play, be stopped, Audible role working
-        Music can play, fade, needa check exactly what else
-        Movies can play, loop, change palette
+        0.2 - Main resources loading from archives and functional
+            Static sprites can show, change palette, mirror
+            Animated sprites can show, change palette, switch colors, mirror
+            Sounds can play, be stopped
+            Music can play, fade, pause
+            Movies can play, loop
+            Resource Manager working
     0.3 - Nursery scenes done
-        Scene and Sprite well designed
+        Scene, Sprite, Sequence, Audible, Drawable well designed
         z-values working, start in order of adding then move by saying "put this in front or behind that"
         Cursor implemented
         Smart updating when new frame or cursor has moved

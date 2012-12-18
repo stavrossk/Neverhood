@@ -12,59 +12,30 @@
 #include "ppport.h"
 
 #include <helper.h>
-#include <resource.h>
+#include <audio.h>
 #include <SDL/SDL.h>
+#include <SDL/SDL_mixer.h>
 
-SDL_Surface* AudioVideo_mirrorSurface(SDL_Surface* surface)
+void AudioVideo_initAudio ()
 {
-	SDL_Surface* mirrored_surface = SDL_ConvertSurface(surface, surface->format, surface->flags);
+	int want_frequency = 22050, want_format = AUDIO_S16SYS, want_channels = 1, want_chunk_size = 256;
+	Mix_OpenAudio(want_frequency, want_format, want_channels, want_chunk_size);
 
-	Uint8* pixels = surface->pixels;
-	Uint8* mirrored_pixels = mirrored_surface->pixels;
-	Uint8* pixels_end = pixels + surface->h * surface->pitch;
+	int got_frequency, got_channels;
+	Uint16 got_format;
+	int status = Mix_QuerySpec(&got_frequency, &got_format, &got_channels);
 
-	Uint16 off = surface->w - 1;
-	Uint16 x;
-	while (pixels < pixels_end) {
-		for (x = 0; x < surface->w; x++)
-			mirrored_pixels[x] = pixels[off - x];
-
-		pixels += surface->pitch;
-		mirrored_pixels += surface->pitch;
-	}
-
-	return mirrored_surface;
-}
-
-void AudioVideo_initAudio() {
-	int wantFrequency = 22050, wantFormat = AUDIO_S16SYS, wantChannels = 1, wantChunkSize = 256;
-	Mix_OpenAudio(wantFrequency, wantFormat, wantChannels, wantChunkSize);
-
-	int gotFrequency, gotChannels;
-	Uint16 gotFormat;
-	int status = Mix_QuerySpec(&gotFrequency, &gotFormat, &gotChannels);
-
-	if(status <= 0 || gotFrequency <= 0 || gotFormat <= 0 || gotChannels <= 0)
+	if (status <= 0 || got_frequency <= 0 || got_format <= 0 || got_channels <= 0)
 		error("Audio did not open correctly");
 
 	Mix_AllocateChannels(SOUND_CHANNELS);
-	if(Mix_AllocateChannels(-1) <= 0)
+	if (Mix_AllocateChannels(-1) <= 0)
 		error("Mixer could not allocate any channels");
 }
 
 MODULE = Games::Neverhood::AudioVideo		PACKAGE = Games::Neverhood::AudioVideo		PREFIX = Neverhood_AudioVideo_
 
-SDL_Surface*
-Neverhood_AudioVideo_mirror_surface(surface)
-		SDL_Surface* surface
-	INIT:
-		const char* CLASS = "SDL::Surface";
-	CODE:
-		RETVAL = AudioVideo_mirrorSurface(surface);
-	OUTPUT:
-		RETVAL
-
 void
-Neverhood_AudioVideo_init_audio()
+Neverhood_AudioVideo_init_audio ()
 	CODE:
 		AudioVideo_initAudio();

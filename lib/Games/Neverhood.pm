@@ -14,24 +14,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-$Games::Neverhood::VERSION = 0.12;
+$Games::Neverhood::VERSION = 0.20;
 
 use 5.01;
 use MooseX::Declare;
 
 use Games::Neverhood::Moose;
 use Games::Neverhood::Options;
+use Games::Neverhood::ResourceMan;
 use Games::Neverhood::MoviePlayer;
 use Games::Neverhood::Sprite;
 
 class Games::Neverhood {
 	use SDL::Constants ':SDL::Events', ':SDL::Audio';
 
-	my ($player, $sprite);
+	my ($player, $sprite, $sprite_on_top, $sequence);
 
 	has scene    => private_set 'Games::Neverhood::Scene';
 	has app      => private_set Maybe(Surface);
 	has _options => ro 'Games::Neverhood::Options', init_arg => 'options', required => 1;
+	has resource_man => private_set 'Games::Neverhood::ResourceMan';
 
 	method BUILD { $; = $self }
 
@@ -47,41 +49,30 @@ class Games::Neverhood {
 		# app stop is used to hold the scene name to be set
 		$self->init_app();
 		$self->app->stop($scene);
-
-		# $player = Games::Neverhood::MoviePlayer->new(file => share_file('m', '0.0A'));
-		# debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
-				# $player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
-
-		# $sprite = Games::Neverhood::Sprite->new(file => share_file('i', '496.02'));
-
-		# my $sound_stream = SDL::RWOps->new_file(share_file('a', '11.07'), 'r') // error(SDL::get_error());
-		# my $sound = Games::Neverhood::SoundResource->new($sound_stream);
-		# $sound->play(-1);
-
-		Games::Neverhood::MusicResource->init();
-		# my $music_stream = SDL::RWOps->new_file(share_file('a', '132.08'), 'r') // error(SDL::get_error());
-		# my $music = Games::Neverhood::MusicResource->new($music_stream);
-		# $music->play(5_000);
-
-		# sleep(10);
-
-		# Games::Neverhood::MusicResource->fade_out(5_000);
-
-		# my $music_stream = SDL::RWOps->new_file(share_file('a', '132.08'), 'r') // error(SDL::get_error());
-		# my $music = Games::Neverhood::SoundResource->new($music_stream);
-		# $music->play(-1);
-
-		my $file_hash = {};
-		Games::Neverhood::ResourceEntry->load_from_archive(data_file("a.blb"),  $file_hash);
-		Games::Neverhood::ResourceEntry->load_from_archive(data_file("c.blb"),  $file_hash);
-		Games::Neverhood::ResourceEntry->load_from_archive(data_file("hd.blb"), $file_hash);
-		Games::Neverhood::ResourceEntry->load_from_archive(data_file("i.blb"),  $file_hash);
-		Games::Neverhood::ResourceEntry->load_from_archive(data_file("m.blb"),  $file_hash);
-		Games::Neverhood::ResourceEntry->load_from_archive(data_file("s.blb"),  $file_hash);
-		Games::Neverhood::ResourceEntry->load_from_archive(data_file("t.blb"),  $file_hash);
 		
-		my $music = Games::Neverhood::MusicResource->new($file_hash->{'061880C6'});
+		$self->resource_man(Games::Neverhood::ResourceMan->new());
+
+		$player = Games::Neverhood::MoviePlayer->new(file => '40800711');
+		# $player = Games::Neverhood::MoviePlayer->new(file => '210C2009');
+		debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
+				$player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
+
+		$sprite        = Games::Neverhood::Sprite->new(file => '4086520E');
+		$sprite_on_top = Games::Neverhood::Sprite->new(file => '809861A6');
+		Games::Neverhood::SurfaceUtil::set_palette($sprite_on_top->_surface, $sprite->_surface->format->palette);
+		Games::Neverhood::SurfaceUtil::set_color_keying($sprite_on_top->_surface, 1);
+		
+		$sequence = $self->resource_man->get_sequence('022C90D4');
+
+		Games::Neverhood::MusicResource::init();
+		
+		my $music = $self->resource_man->get_music('00103144');
 		$music->play(0);
+		$music->fade_out(30_000);
+		
+		# my $sound = $self->resource_man->get_sound('ED403E03'); # compressed
+		my $sound = $self->resource_man->get_sound('CD4F8411'); # uncompressed
+		my $id = $sound->play(0);
 
 		while($self->app->stopped ne 1) {
 			Games::Neverhood::Drawable->invalidate_all();
@@ -186,16 +177,22 @@ class Games::Neverhood {
 
 				# move
 
-				# $player->advance_in_time($time);
-				# $player->invalidate_all() if $player->is_invalidated;
+				$player->advance_in_time($time);
+				$player->invalidate_all() if $player->is_invalidated;
 
 				# show
 
 				$app->draw_rect([0, 0, $app->w, $app->h], [255, 255, 255, 255]) if debug();
 
-				# $player->draw() if $player->is_invalidated;
-
 				# $sprite->draw();
+				
+				$player->draw() if $player->is_invalidated;
+				
+				my $frame = $sequence->get_frame_surface(2);
+				Games::Neverhood::SurfaceUtil::set_color_keying($frame, 1);
+				SDL::Video::blit_surface($frame, undef, $;->app, SDL::Rect->new(380, 109, 0, 0));
+				
+				$sprite_on_top->draw();
 
 				Games::Neverhood::Drawable->update_screen();
 			},

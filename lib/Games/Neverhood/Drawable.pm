@@ -11,13 +11,14 @@ use MooseX::Declare;
 role Games::Neverhood::Drawable {
 	# draw_surfaces needs to draw the surfaces and update w and h
 	# invalidator_checks needs to return a list of method names to check for changes
-	requires 'draw_surfaces', 'invalidator_checks', 'x', 'y';
+	requires 'draw_surfaces', 'invalidator_checks';
 
 	my $_is_all_invalidated; # => private Bool;
 	my @_invalidated_rects;  # => private ArrayRef(Surface);
 
 	use constant is_visible => 1;
 
+	has ['x', 'y'] => rw Int, default => 0;
 	has ['w', 'h'] => private_set Int;
 
 	has is_invalidated => private_set Bool;

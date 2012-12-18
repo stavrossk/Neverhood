@@ -21,7 +21,6 @@ class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable {
 
 	# public attributes
 
-	has ['x', 'y']     => rw Int, default => 0;
 	has file           => ro Str, required => 1;
 	has is_double_size => ro Bool, default => 1;
 	has is_loopy       => rw Bool, default => 1;
@@ -33,7 +32,6 @@ class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable {
 	# private attributes
 
 	has _time_remainder      => private Num, default => 0;
-	has _stream              => private 'SDL::RWOps';
 	has _resource            => private 'Games::Neverhood::SmackerResource';
 	has _surface             => private 'SDL::Surface';
 	has _double_size_surface => private 'SDL::Surface';
@@ -41,8 +39,7 @@ class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable {
 	# methods
 
 	method BUILD {
-		$self->_stream(SDL::RWOps->new_file($self->file, 'r')) // error(SDL::get_error());
-		$self->_resource(Games::Neverhood::SmackerResource->new($self->_stream));
+		$self->_resource($;->resource_man->get_smacker($self->file));
 		$self->_surface($self->_resource->get_surface);
 		$self->_double_size_surface(SDL::GFX::Rotozoom::surface($self->_surface, 0, 2, SMOOTHING_OFF));
 	}
@@ -68,7 +65,7 @@ class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable {
 		if($self->is_double_size) {
 			$self->_double_size_surface(SDL::GFX::Rotozoom::surface($self->_surface, 0, 2, SMOOTHING_OFF));
 			# remove the color key from it now because rotozoom makes 0,0,0 transparent for some reason
-			SDL::Video::set_color_key($self->_double_size_surface, 0, 0);
+			Games::Neverhood::SurfaceUtil::set_color_keying($self->_double_size_surface, 0);
 		}
 		$self->invalidate();
 	}

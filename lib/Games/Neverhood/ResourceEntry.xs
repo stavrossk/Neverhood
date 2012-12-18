@@ -14,6 +14,7 @@
 
 #include <helper.h>
 #include <resource.h>
+#include <stdio.h>
 #include <SDL/SDL.h>
 
 typedef struct {
@@ -24,7 +25,19 @@ typedef struct {
 	Uint32 fileCount;
 } BlbHeader;
 
-void ResourceEntry_loadFromArchive(const char* filename, HV* hash) {
+char*  a_filename;
+char*  c_filename;
+char* hd_filename;
+char*  i_filename;
+char*  m_filename;
+char*  s_filename;
+char*  t_filename;
+
+static void ResourceEntry_loadArchive (char* filename, const char* prefix, const char* name, HV* hash)
+{
+	filename = safemalloc(strlen(prefix) + strlen(name) + 1);
+	sprintf(filename, "%s%s", prefix, name);
+
 	SDL_RWops* stream = SDL_RWopen(filename);
 
 	BlbHeader header;
@@ -37,76 +50,91 @@ void ResourceEntry_loadFromArchive(const char* filename, HV* hash) {
 	if (header.id1 != 0x2004940 || header.id2 != 7 || header.fileSize != SDL_RWlen(stream))
 		error("Archive %s seems to be corrupt", filename);
 
-	/* file hashes */
-	Uint32* hashes = safemalloc(header.fileCount * 4);
+	Uint32* keys = safemalloc(header.fileCount * 4);
 	int i;
 	for (i = 0; i < header.fileCount; i++) {
-		hashes[i] = SDL_ReadLE32(stream);
+		keys[i] = SDL_ReadLE32(stream);
 	}
 
-	/* extDataPos = headerSize + fileCount * (hashSize + entrySize) */
-	Uint16 extDataPos = 16 + header.fileCount * (4 + 20);
-	
-	int filename_len = strlen(filename) + 1;
-	char* filename_copy = safemalloc(filename_len);
-	memcpy(filename_copy, filename, filename_len);
+	/* ext_data_pos = header_size + file_count * (hash_size + entry_size) */
+	Uint16 ext_data_pos = 16 + header.fileCount * (4 + 20);
 
 	/* file records */
 	for (i = 0; i < header.fileCount; i++) {
-		ResourceEntry* entry = safemalloc(sizeof(ResourceEntry));
-		entry->filename      = filename_copy;
-		entry->type          = SDL_RWreadUint8(stream);
-		entry->comprType     = SDL_RWreadUint8(stream);
-		entry->extDataOffset = SDL_ReadLE16(stream) + extDataPos;
-		entry->timeStamp     = SDL_ReadLE32(stream);
-		entry->offset        = SDL_ReadLE32(stream);
-		entry->size          = SDL_ReadLE32(stream);
-		entry->unpackedSize  = SDL_ReadLE32(stream);
-		
+		ResourceEntry* entry   = safemalloc(sizeof(ResourceEntry));
+		entry->filename        = filename;
+		entry->key             = keys[i];
+		entry->type            = SDL_RWreadUint8(stream);
+		entry->comprType       = SDL_RWreadUint8(stream);
+		Uint16 ext_data_offset = SDL_ReadLE16(stream);
+		entry->extDataOffset   = ext_data_offset > 0 ? ext_data_pos + ext_data_offset - 1 : 0;
+		entry->timeStamp       = SDL_ReadLE32(stream);
+		entry->offset          = SDL_ReadLE32(stream);
+		entry->diskSize        = SDL_ReadLE32(stream);
+		entry->size            = SDL_ReadLE32(stream);
+
 		char key[9]; /* max 32-bit value is 8 Fs (FFFFFFFF) */
 
-		int klen = sprintf(key, "%08X", hashes[i]);
+		int klen = sprintf(key, "%08X", keys[i]);
 		SV* val = *hv_fetch(hash, key, klen, 1);
 
-		if(SvOK(val)) {
+		if (SvOK(val)) {
 			ResourceEntry* valEntry = (ResourceEntry*)SvIV((SV*)SvRV(val));
-			if(valEntry->timeStamp > entry->timeStamp) continue;
+			if (valEntry->timeStamp > entry->timeStamp) continue;
 		}
 
 		sv_setref_pv(val, "Games::Neverhood::ResourceEntry", (void*)entry);
 	}
 
-	safefree(hashes);
+	safefree(keys);
+}
+
+void ResourceEntry_loadArchives (const char* prefix, HV* hash)
+{
+	ResourceEntry_loadArchive( a_filename, prefix,  "a.blb", hash);
+	ResourceEntry_loadArchive( c_filename, prefix,  "c.blb", hash);
+	ResourceEntry_loadArchive(hd_filename, prefix, "hd.blb", hash);
+	ResourceEntry_loadArchive( i_filename, prefix,  "i.blb", hash);
+	ResourceEntry_loadArchive( m_filename, prefix,  "m.blb", hash);
+	ResourceEntry_loadArchive( s_filename, prefix,  "s.blb", hash);
+	ResourceEntry_loadArchive( t_filename, prefix,  "t.blb", hash);
 }
 
 MODULE = Games::Neverhood::ResourceEntry		PACKAGE = Games::Neverhood::ResourceEntry		PREFIX = Neverhood_ResourceEntry_
 
 void
-Neverhood_ResourceEntry_load_from_archive(CLASS, filename, hashref)
-		const char* CLASS
-		const char* filename
+Neverhood_ResourceEntry_load_archives (prefix, hashref)
+		const char* prefix
 		SV* hashref
 	CODE:
 		if (SvTYPE(SvRV(hashref)) != SVt_PVHV) error("Hashref needed");
 		HV* hash = (HV*)SvRV(hashref);
-		ResourceEntry_loadFromArchive(filename, hash);
+		ResourceEntry_loadArchives(prefix, hash);
 
 void
-Neverhood_ResourceEntry_DESTROY(THIS)
+Neverhood_ResourceEntry_DESTROY (THIS)
 		ResourceEntry* THIS
 	CODE:
 		safefree(THIS);
 
 const char*
-Neverhood_ResourceEntry_get_filename(THIS)
+Neverhood_ResourceEntry_get_filename (THIS)
 		ResourceEntry* THIS
 	CODE:
 		RETVAL = THIS->filename;
 	OUTPUT:
 		RETVAL
+		
+Uint32
+Neverhood_ResourceEntry_get_key (THIS)
+		ResourceEntry* THIS
+	CODE:
+		RETVAL = THIS->key;
+	OUTPUT:
+		RETVAL
 
 Uint8
-Neverhood_ResourceEntry_get_type(THIS)
+Neverhood_ResourceEntry_get_type (THIS)
 		ResourceEntry* THIS
 	CODE:
 		RETVAL = THIS->type;
@@ -114,23 +142,15 @@ Neverhood_ResourceEntry_get_type(THIS)
 		RETVAL
 
 Uint8
-Neverhood_ResourceEntry_get_compr_type(THIS)
+Neverhood_ResourceEntry_get_compr_type (THIS)
 		ResourceEntry* THIS
 	CODE:
 		RETVAL = THIS->comprType;
 	OUTPUT:
 		RETVAL
 
-Uint16
-Neverhood_ResourceEntry_get_ext_data_offset(THIS)
-		ResourceEntry* THIS
-	CODE:
-		RETVAL = THIS->extDataOffset;
-	OUTPUT:
-		RETVAL
-
 Uint32
-Neverhood_ResourceEntry_get_time_stamp(THIS)
+Neverhood_ResourceEntry_get_time_stamp (THIS)
 		ResourceEntry* THIS
 	CODE:
 		RETVAL = THIS->timeStamp;
@@ -138,25 +158,17 @@ Neverhood_ResourceEntry_get_time_stamp(THIS)
 		RETVAL
 
 Uint32
-Neverhood_ResourceEntry_get_offset(THIS)
+Neverhood_ResourceEntry_get_disk_size (THIS)
 		ResourceEntry* THIS
 	CODE:
-		RETVAL = THIS->offset;
+		RETVAL = THIS->diskSize;
 	OUTPUT:
 		RETVAL
 
 Uint32
-Neverhood_ResourceEntry_get_size(THIS)
+Neverhood_ResourceEntry_get_size (THIS)
 		ResourceEntry* THIS
 	CODE:
 		RETVAL = THIS->size;
-	OUTPUT:
-		RETVAL
-
-Uint32
-Neverhood_ResourceEntry_get_unpacked_size(THIS)
-		ResourceEntry* THIS
-	CODE:
-		RETVAL = THIS->unpackedSize;
 	OUTPUT:
 		RETVAL

@@ -16,6 +16,7 @@ use Class::Load 'is_class_loaded';
 use XSLoader ();
 use Carp ();
 use File::Spec ();
+use Scalar::Util ();
 use List::Util ();
 
 # use all the SDL stuff we need here
@@ -39,8 +40,10 @@ use SDL::GFX::Rotozoom ();
 # can't use the perl stuff because that needs to be done after use Games::Neverhood::Moose
 BEGIN {
 	XSLoader::load('Games::Neverhood::AudioVideo');
+	XSLoader::load('Games::Neverhood::SurfaceUtil');
 	XSLoader::load('Games::Neverhood::ResourceEntry');
 	XSLoader::load('Games::Neverhood::SpriteResource');
+	XSLoader::load('Games::Neverhood::SequenceResource');
 	XSLoader::load('Games::Neverhood::SoundResource');
 	XSLoader::load('Games::Neverhood::MusicResource');
 	XSLoader::load('Games::Neverhood::SmackerResource');
@@ -53,9 +56,9 @@ sub do_import {
 		as_is => [
 			\&rw, \&ro, \&private, \&private_set, \&init_private_set,
 			\&Any, \&Item, \&Bool, \&Maybe, \&Undef, \&Defined, \&Value, \&Str, \&Num, \&Int, \&ClassName, \&RoleName, \&Ref, \&ScalarRef, \&ArrayRef, \&HashRef, \&CodeRef, \&RegexpRef, \&GlobRef, \&FileHandle, \&Object, \&Rect, \&Surface, \&SceneName,
-			\&debug, \&error, \&Carp::carp, \&Carp::croak, \&Carp::cluck, \&Carp::confess,
+			\&debug, \&error, \&debug_stack,
 			\&data_file, \&data_dir, \&share_file, \&share_dir,
-			\&maybe, \&List::Util::max, \&List::Util::min, \&unindent,
+			\&maybe, \&List::Util::max, \&List::Util::min, \&unindent, \&Scalar::Util::weaken,
 		],
 		also => [$moose, 'MooseX::StrictConstructor'],
 	);
@@ -78,12 +81,14 @@ sub private_set {
 	maybe(isa => shift),
 	init_arg => undef,
 	trigger => sub {
-		 my $sub_1 = (caller 1)[0];
-		(my $sub_2 = (caller 2)[3]) =~ s/::[^:]+$//;
+		my $sub_1 = (caller 1)[0];
+		my $sub_2 = (caller 2)[3];
+		return unless defined $sub_2;
+		$sub_2 =~ s/::[^:]+$//;
 
 		Carp::confess("This method can only be set privately\n\n'", $sub_1, "' '", $sub_2, "'\n\n", join " ", (caller(1))[0,3],"\n\n", join " ", (caller(2))[0,3], "\n\n" )
 
-		if $sub_1 ne $sub_2;
+		if defined $sub_2 and $sub_1 ne $sub_2;
 	},
 	@_
 }
@@ -139,7 +144,14 @@ sub debug {
 	say STDERR sprintf(shift, @_);
 	return;
 }
+sub debug_stack {
+	return $;->_options->debug unless @_;
+	return unless $;->_options->debug;
+	say STDERR sprintf "-----";
+	Carp::cluck(sprintf shift, @_);
+}
 sub error {
+	say STDERR sprintf "-----";
 	Carp::confess(sprintf shift, @_);
 }
 sub _get_sub_filename_line {

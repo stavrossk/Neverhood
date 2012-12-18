@@ -13,7 +13,7 @@ class Games::Neverhood::Sprite with Games::Neverhood::Drawable {
 	# public attributes
 
 	has file        => ro Str, required => 1;
-	has is_mirrored => rw Bool;
+	has is_mirrored => rw Bool, trigger => \&_mirror_set;
 
 	# private attributes
 
@@ -24,18 +24,21 @@ class Games::Neverhood::Sprite with Games::Neverhood::Drawable {
 	# methods
 
 	method BUILD {
-		my $stream = SDL::RWOps->new_file($self->file, 'r') // error(SDL::get_error());
-		$self->_resource(Games::Neverhood::SpriteResource->new($stream));
+		$self->_resource($;->resource_man->get_sprite($self->file));
 		$self->_surface($self->_resource->get_surface);
+		
+		$self->x($self->_resource->get_x);
+		$self->y($self->_resource->get_y);
 	}
 
-	method x ($ ?) { $self->_resource->get_x };
-	method y ($ ?) { $self->_resource->get_y };
-
 	method draw_surfaces () {
-		# TODO: mirrored_surface
-
 		$self->draw_surface($self->_surface);
+	}
+	
+	method _mirror_set (Bool $mirror, Bool $old_mirror?) {
+		if($mirror xor $old_mirror) { # inequivalent
+			Games::Neverhood::SurfaceUtil::mirror_surface($self->_surface);
+		}
 	}
 }
 

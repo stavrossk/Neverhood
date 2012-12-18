@@ -14,6 +14,7 @@
 
 #include <helper.h>
 #include <resource.h>
+#include <audio.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_mixer.h>
 
@@ -26,11 +27,15 @@ typedef Mix_Chunk SoundResource;
 
 static SDL_AudioCVT* cvt;
 
-/* sounds that don't belong to any objects (orphans) are destroyed when finished */
-static Uint8 isOrphan[SOUND_CHANNELS];
+static Uint32 current_id;
+static Uint32 playing_ids[SOUND_CHANNELS];
 
-SoundResource* SoundResource_new(SDL_RWops* stream) {
+SoundResource* SoundResource_new (ResourceEntry* entry)
+{
 	SoundResource* this = safemalloc(sizeof(SoundResource));
+	
+	if (entry->type != 7)
+		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);
 
 	if (!cvt) {
 		cvt = safemalloc(sizeof(SDL_AudioCVT));
@@ -39,31 +44,34 @@ SoundResource* SoundResource_new(SDL_RWops* stream) {
 			error("Obtained audio did not meet minimum requirements");
 	}
 
-	this->allocated = 0; /* commandeering this for use as a refcount */
+	this->allocated = 1;
 	this->volume = MIX_MAX_VOLUME;
 
-	Uint32 inputLen = SDL_RWlen(stream);
+	Uint32 input_size = entry->size;
+	Uint8* input = ResourceEntry_getBuffer(entry);
+	Uint8 ext_data[1];
+	ResourceEntry_getExtData(entry, ext_data, 1);
+	Uint8 shift = *ext_data;
 
-	Uint8 shift = 5;
 	if (shift == 0xFF) { /* uncompressed PCM */
-		this->alen = inputLen;
-		this->abuf = safemalloc(this->alen);
-		SDL_RWread(stream, this->abuf, this->alen, 1);
+		this->alen = input_size;
+		this->abuf = input;
 	}
 	else { /* DW ADPCM compressed */
-		this->alen = inputLen * 2;
+		this->alen = input_size * 2;
 		this->abuf = safemalloc(this->alen);
 
-		Sint8* inputBuf = this->abuf + inputLen;
-		Sint8* inputEnd = inputBuf + inputLen;
-		SDL_RWread(stream, inputBuf, inputLen, 1);
+		Sint8* input_buf = input;
+		Sint8* input_end = input_buf + input_size;
 
-		Sint16 curValue = 0;
-		Sint16* outputBuf = (Sint16*)this->abuf;
-		while (inputBuf < inputEnd) {
-			curValue += *inputBuf++;
-			*outputBuf++ = curValue << shift;
+		Sint16 cur_value = 0;
+		Sint16* output_buf = (Sint16*)this->abuf;
+		while (input_buf < input_end) {			
+			cur_value += *input_buf++;
+			*output_buf++ = cur_value << shift;
 		}
+
+		safefree(input);
 	}
 
 	cvt->buf = this->abuf;
@@ -73,53 +81,48 @@ SoundResource* SoundResource_new(SDL_RWops* stream) {
 	return this;
 }
 
-void SoundResource_incRefcount(SoundResource* this) {
-	this->allocated++;
-}
-void SoundResource_decRefcount(SoundResource* this) {
-	this->allocated--;
-}
-
-void SoundResource_play(SoundResource* this, int loops) {
-	SDL_LockAudio();
-	int channel = Mix_PlayChannel(-1, this, loops);
-	if (channel >= 0)
-		isOrphan[channel] = 0;
-	SDL_UnlockAudio();
-}
-
-void SoundResource_playOrphan(SoundResource* this, int loops) {
+Uint32 SoundResource_play (SoundResource* this, int loops)
+{
 	SDL_LockAudio();
 	int channel = Mix_PlayChannel(-1, this, loops);
 	if (channel >= 0) {
-		isOrphan[channel] = 1;
-		SoundResource_incRefcount(this);
+		playing_ids[channel] = ++current_id;
 	}
 	SDL_UnlockAudio();
+	
+	return current_id;
 }
 
-void SoundResource_finished(int channel) {
-	SoundResource* this = Mix_GetChunk(channel);
-	if (this && isOrphan[channel]) {
-		isOrphan[channel] = 0;
-		SoundResource_decRefcount(this);
-	}
-}
-
-int SoundResource_maybeDestroy(SoundResource* this) {
-	if (this->allocated <= 0) {
-		int i;
-		int channels = Mix_AllocateChannels(-1);
-		for (i = 0; i < channels; i++) {
-			if (this == Mix_GetChunk(i))
-				Mix_HaltChannel(i);
+void SoundResource_stop (SoundResource* this, Uint32 id)
+{
+	int channels = Mix_AllocateChannels(-1);
+	int i;
+	for (i = 0; i < channels; i++) {
+		if (id == playing_ids[i] && this == Mix_GetChunk(i)) {
+			Mix_HaltChannel(i);
+			playing_ids[i] = 0;
+			break;
 		}
-
-		this->allocated = 1;
-		Mix_FreeChunk(this);
-		return 1;
 	}
-	return 0;
+}
+
+static void SoundResource_finished (int channel) {
+	playing_ids[channel] = 0;
+}
+
+void SoundResource_DESTROY (SoundResource* this)
+{
+	int channels = Mix_AllocateChannels(-1);
+	int i;
+	for (i = 0; i < channels; i++) {
+		if (this == Mix_GetChunk(i)) {
+			Mix_HaltChannel(i);
+			playing_ids[i] = 0;
+		}
+	}
+
+	this->allocated = 1;
+	Mix_FreeChunk(this);
 }
 
 MODULE = Games::Neverhood::SoundResource		PACKAGE = Games::Neverhood::SoundResource		PREFIX = Neverhood_SoundResource_
@@ -129,30 +132,33 @@ BOOT:
 	Mix_ChannelFinished(SoundResource_finished);
 
 SoundResource*
-Neverhood_SoundResource_new(CLASS, stream)
+Neverhood_SoundResource_new (CLASS, entry)
 		const char* CLASS
-		SDL_RWops* stream
+		ResourceEntry* entry
 	CODE:
-		RETVAL = SoundResource_new(stream);
-		SoundResource_incRefcount(RETVAL);
+		RETVAL = SoundResource_new(entry);
+	OUTPUT:
+		RETVAL
+
+Uint32
+Neverhood_SoundResource_play (THIS, loops)
+		SoundResource* THIS
+		int loops
+	CODE:
+		RETVAL = SoundResource_play(THIS, loops);
 	OUTPUT:
 		RETVAL
 
 void
-Neverhood_SoundResource_inc_refcount(THIS)
+Neverhood_SoundResource_stop (THIS, id)
 		SoundResource* THIS
+		Uint32 id
 	CODE:
-		SoundResource_incRefcount(THIS);
-
+		SoundResource_stop(THIS, id);
+		
 void
-Neverhood_SoundResource_DESTROY(THIS)
+Neverhood_SoundResource_DESTROY (THIS)
 		SoundResource* THIS
 	CODE:
-		SoundResource_decRefcount(THIS);
-
-void
-Neverhood_SoundResource_play(THIS, loops)
-		SoundResource* THIS
-		int loops
-	CODE:
-		SoundResource_play(THIS, loops);
+		SoundResource_DESTROY(THIS);
+		
