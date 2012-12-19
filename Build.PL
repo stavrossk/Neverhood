@@ -39,9 +39,9 @@ my $build = My::Builder->new(
 	license       => 'gpl',
 	requires => {
 		'perl'                      => 5.01,
-		'SDL'                       => 2.541,
+		'SDL'                       => 2.541, # raise me
 		'File::ShareDir'            => 1.03,
-		'ExtUtils::ParseXS'         => 3.01,
+		'YAML::XS'                  => 0.38, # lower me
 		'Moose'                     => 2.06,
 		'MooseX::Declare'           => 0.34,
 		'MooseX::StrictConstructor' => 0.19, # remove me at v1.0
@@ -64,11 +64,12 @@ my $build = My::Builder->new(
 	],
 	meta_merge => {
 		resources => {
-			license    => 'http://www.gnu.org/licenses/gpl-2.0.html',
+			license    => 'http://www.gnu.org/licenses/gpl-3.0.html', # check url
 			repository => 'http://github.com/Blaizer/Neverhood',
 		},
 	},
 );
 
 $build->add_build_element('typemap');
+# $build->fix_shebang_line(File::Spec->catfile('bin', 'nhc')); # enable this when building dist only
 $build->create_build_script;

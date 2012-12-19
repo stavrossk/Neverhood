@@ -1,4 +1,4 @@
-Although my aim was to make you feel like you're playing the orginal when playing Neverhood, I took the liberty of making changes when I felt it would improve the game/experience.
+Although my aim was to make you feel like you're playing the orginal when playing Games::Neverhood, I took the liberty of making changes when I felt it would improve the game/experience.
 
 If you are unhappy with any of the changes, deciding that any ruin the game's old feel, you should definitely contact me. I'd be very happy to share thoughts with you. Conversely, if you think I should have changed anything I didn't, you could also contact me.
 
@@ -12,15 +12,17 @@ The following is a list of ``improvements" that were made.
 
 * Klaymen's movement isn't an exact replica of the original, but it probably works a bit better
 
-* In the original many of Klaymen's animations can be prematurely ended by getting Klaymen to walk somewhere. The ones that look better uninterruptable have been made that way, but the ones that affect gameplay (pressing wall and floor buttons) have been left that way
+* In the original many of Klaymen's animations can be prematurely ended by getting Klaymen to walk somewhere. The ones that look better uninterruptable have been made that way, but the ones that affect gameplay (pressing wall and floor buttons) have been left alone
 
 - Possibly just an incompatability error, but the graphics no longer glitch for a frame at the start of a new screen
 
 - When the cursor changes from one type to another (say from pointing forwards to pointing left) it no longer gets misplaced for a frame
 
-* Saves now save the exact positions and states of everything. Even the position of the music is now saved
-
 - Keys now respect key modifiers (e.g. Alt and Ctrl)
+
+- You can press escape a second time to leave the pause menu
+
+* You can now skip all cutscenes by pressing space. If you press other buttons during a cutscene a "press space to skip" prompt will show. Important cutscenes ask you to confirm before skipping them
 
 
 Of course, there are many other slight differences but these are less `changes' and more `imperfections'. The idea is to lower the amount of this kind of change as much as possible.
