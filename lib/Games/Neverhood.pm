@@ -1,5 +1,14 @@
-# Games::Neverhood - The Neverhood remade in SDL Perl
-# Copyright (C) 2012 Blaise Roth
+=head1 NAME
+
+Games::Neverhood - The Neverhood remade in SDL Perl
+
+=head1 AUTHOR
+
+Blaise Roth <blaizer@cpan.org>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright (C) 2012 Blaise Roth
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,6 +22,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=cut
 
 $Games::Neverhood::VERSION = 0.20;
 

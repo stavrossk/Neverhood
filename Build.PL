@@ -36,7 +36,6 @@ sub xs_files {
 
 my $build = My::Builder->new(
 	module_name   => 'Games::Neverhood',
-	dist_abstract => 'The Neverhood remade in SDL Perl',
 	license       => 'gpl',
 	requires => {
 		'perl'                      => 5.01,
@@ -45,8 +44,7 @@ my $build = My::Builder->new(
 		'ExtUtils::ParseXS'         => 3.01,
 		'Moose'                     => 2.06,
 		'MooseX::Declare'           => 0.34,
-		'MooseX::StrictConstructor' => 0.19,
-		'Getopt::Long::Descriptive' => 0.09,
+		'MooseX::StrictConstructor' => 0.19, # remove me at v1.0
 	},
 	configure_requires   => { 'Module::Build' => 0.34 },
 	share_dir            => File::Spec->catdir('share'),

@@ -2,11 +2,13 @@ TODO and Milestones for Games::Neverhood
 Since 27 Sep 2010
 
 TODO
-    Do something better with AudioVideo
+    Use SDL_CDName to search CD drives for neverhood disk
+    Use YAML::XS for save files and config files
+    Make startup interactive
     Make smacker audio resync with video
     Fuck big endian compat
-    Do something gimmicky with the 1; at the end of each pm
     Split h and c apart in src/ and use so instead of o
+    Do something gimmicky with the 1; at the end of each pm
 
 Milestones
         0.2 - Main resources loading from archives and functional
@@ -38,7 +40,8 @@ Milestones
         hall
         disk scene
         music
-        menu
+        menu and saving
+        mail reading
     0.6 - Game done up to lab place
         bridge
         cannon
@@ -59,4 +62,5 @@ Milestones
         keys
         finale
     1.0 - Everything done
+        easter eggs
         polish
