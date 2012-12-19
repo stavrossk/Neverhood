@@ -43,6 +43,7 @@ class Games::Neverhood::ResourceMan {
 	}
 	
 	method get_sprite   (Str $key) { $self->_get_resource($key, 'Sprite'  ) }
+	method get_palette  (Str $key) { $self->_get_resource($key, 'Palette' ) }
 	method get_sequence (Str $key) { $self->_get_resource($key, 'Sequence') }
 	method get_sound    (Str $key) { $self->_get_resource($key, 'Sound'   ) }
 	method get_music    (Str $key) { $self->_get_resource($key, 'Music'   ) }

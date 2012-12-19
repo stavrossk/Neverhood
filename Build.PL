@@ -17,6 +17,23 @@ use My::Builder;
 my @cflags = ExtUtils::CBuilder->new->split_like_shell( File::Spec->catfile('-I' . Alien::SDL->config('prefix'), 'include') );
 my @lflags = ExtUtils::CBuilder->new->split_like_shell( Alien::SDL->config('libs', '-lSDL_mixer') );
 
+my @xs_files = qw/
+	MusicResource
+	PaletteResource
+	ResourceEntry
+	SequenceResource
+	SmackerResource
+	SoundResource
+	SpriteResource
+	SurfaceUtil
+/;
+
+sub xs_files {
+	my ($name) = @_;
+	$name = "$name.xs";
+	File::Spec->catfile('src', $name) => File::Spec->catfile('lib', 'Games', 'Neverhood', $name);
+}
+
 my $build = My::Builder->new(
 	module_name   => 'Games::Neverhood',
 	dist_abstract => 'The Neverhood remade in SDL Perl',
@@ -35,6 +52,7 @@ my $build = My::Builder->new(
 	share_dir            => File::Spec->catdir('share'),
 	extra_compiler_flags => [ @cflags ],
 	extra_linker_flags   => [ @lflags ],
+	xs_files             => { map xs_files($_), @xs_files },
 	include_dirs         => [ File::Spec->catdir('src') ],
 	c_source             => [ File::Spec->catdir('src') ],
 	typemap_files        => { 'typemap' => File::Spec->catfile('lib', 'Games', 'Neverhood', 'typemap') },

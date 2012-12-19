@@ -164,6 +164,9 @@ static void MusicResource_player_recurse (MusicResource* this, Sint16* buf, int 
 
 static void MusicResource_player (void* udata, Uint8* buf, int size)
 {
+	if(Mix_PausedMusic())
+		return;
+
 	if (music_playing && !Mix_PausedMusic()) {
 		/* DW ADPCM compressed */
 		int input_size;
@@ -203,7 +206,7 @@ static void MusicResource_player (void* udata, Uint8* buf, int size)
 
 	if(smacker_audio_playing && !Mix_PausedMusic()) {
 		SmackerResource_player(smacker_audio_playing, smacker_audio_buf, size);
-		SDL_MixAudio(buf, smacker_audio_buf, size, MIX_MAX_VOLUME);
+		SDL_MixAudio(buf, smacker_audio_buf, size, Mix_VolumeMusic(-1));
 		memset(smacker_audio_buf, 0, size);
 	}
 }

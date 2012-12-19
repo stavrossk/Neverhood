@@ -20,6 +20,7 @@ class Games::Neverhood::Options {
 	has fps_limit           => init_private_set Int, default => 60;
 	has grab_input          => init_private_set Maybe(Bool);
 	has debug               => init_private_set Bool, default => 0;
+	has mute                => init_private_set Bool, default => 0;
 	has starting_scene      => init_private_set SceneName, default => 'TP::Nursery::One';
 	has starting_prev_scene => init_private_set Maybe(SceneName);
 
@@ -33,7 +34,7 @@ class Games::Neverhood::Options {
 
 	method new_with_options (ClassName $class:) {
 		my ($data_dir, $share_dir, $fullscreen, $no_frame, $fps_limit, $grab_input);
-		my ($debug, $starting_scene, $starting_prev_scene);
+		my ($debug, $mute, $starting_scene, $starting_prev_scene);
 
 		Getopt::Long::GetOptions(
 			'data-dir=s'    => \$data_dir,
@@ -45,6 +46,7 @@ class Games::Neverhood::Options {
 			'grab-input'    => \$grab_input,
 
 			'debug|d'                 => \$debug,
+			'mute'                    => \$mute,
 			'starting-scene|s=s'      => \$starting_scene,
 			'starting-prev-scene|p=s' => \$starting_prev_scene,
 			'help|h|?'                => sub { $class->print_usage() },
@@ -58,6 +60,7 @@ class Games::Neverhood::Options {
 			maybe(fps_limit           => $fps_limit),
 			maybe(grab_input          => $grab_input),
 			maybe(debug               => $debug),
+			maybe(mute                => $mute),
 			maybe(starting_scene      => $starting_scene),
 			maybe(starting_prev_scene => $starting_prev_scene),
 		);
@@ -95,6 +98,7 @@ nhc [-?dhps] [long options]
  --grab-input       Confine the mouse to the window (default)
 
  -d --debug         Enable all debugging features
+ --mute             Mute all music and sound
  -s --starting-scene=SCENE
                     Set the starting scene (default=TP::Nursery::1)
  --starting-prev-scene=SCENE

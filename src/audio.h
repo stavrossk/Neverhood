@@ -10,8 +10,6 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_mixer.h>
 
-#define SOUND_CHANNELS 8
-
 int SDL_BuildSpecAudioCVT (SDL_AudioCVT *cvt, Uint16 src_format, Uint8 src_channels, int src_rate)
 {
 	int dst_rate, dst_channels;

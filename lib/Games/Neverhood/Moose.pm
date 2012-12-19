@@ -28,12 +28,13 @@ use SDL::Video ();
 use SDL::Rect ();
 use SDLx::Rect ();
 use SDL::Color ();
+use SDL::Palette ();
 use SDL::Event ();
 use SDL::Events ();
 use SDL::Mixer ();
 use SDL::Mixer::Channels ();
+use SDL::Mixer::MixChunk ();
 use SDL::Mixer::Music ();
-use SDL::RWOps ();
 use SDL::GFX::Rotozoom ();
 
 # use all my XS stuff here also
@@ -43,10 +44,14 @@ BEGIN {
 	XSLoader::load('Games::Neverhood::SurfaceUtil');
 	XSLoader::load('Games::Neverhood::ResourceEntry');
 	XSLoader::load('Games::Neverhood::SpriteResource');
+	XSLoader::load('Games::Neverhood::PaletteResource');
 	XSLoader::load('Games::Neverhood::SequenceResource');
 	XSLoader::load('Games::Neverhood::SoundResource');
 	XSLoader::load('Games::Neverhood::MusicResource');
 	XSLoader::load('Games::Neverhood::SmackerResource');
+	
+	push @Games::Neverhood::PaletteResource::ISA, 'SDL::Palette';
+	push @Games::Neverhood::SoundResource::ISA,   'SDL::Mixer::MixChunk';
 }
 
 sub do_import {

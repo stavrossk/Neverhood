@@ -3,8 +3,9 @@ ResourceEntry*    O_OBJECT_NPGC
 SmackerResource*  O_OBJECT_NPGC
 SpriteResource*   O_OBJECT_NPGC
 SequenceResource* O_OBJECT_NPGC
-SoundResource*    O_OBJECT_NPGC
+SoundResource*    O_OBJECT
 MusicResource*    O_OBJECT_NPGC
+PaletteResource*  O_OBJECT
 
 const Uint16 *		T_PTR
 const Sint16 *		T_PTR

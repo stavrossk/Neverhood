@@ -56,15 +56,24 @@ class Games::Neverhood {
 		# $player = Games::Neverhood::MoviePlayer->new(file => '210C2009');
 		debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
 				$player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
+				
+		my $palette = $self->resource_man->get_palette('92CA2C9B');
 
 		$sprite        = Games::Neverhood::Sprite->new(file => '4086520E');
 		$sprite_on_top = Games::Neverhood::Sprite->new(file => '809861A6');
 		Games::Neverhood::SurfaceUtil::set_palette($sprite_on_top->_surface, $sprite->_surface->format->palette);
+		# Games::Neverhood::SurfaceUtil::set_palette($sprite_on_top->_surface, $palette);
 		Games::Neverhood::SurfaceUtil::set_color_keying($sprite_on_top->_surface, 1);
 		
 		$sequence = $self->resource_man->get_sequence('022C90D4');
 
+		Games::Neverhood::SoundResource::init();
 		Games::Neverhood::MusicResource::init();
+		
+		if ($self->_options->mute) {
+			SDL::Mixer::Music::volume_music(0);
+			SDL::Mixer::Channels::volume(-1, 0);
+		}
 		
 		my $music = $self->resource_man->get_music('00103144');
 		$music->play(0);
@@ -222,8 +231,6 @@ class Games::Neverhood {
 
 		$self->app->draw_rect([0, 0, $self->app->w, $self->app->h], [0, 0, 0, 255]);
 		$self->app->update();
-
-		Games::Neverhood::AudioVideo::init_audio();
 	}
 
 }

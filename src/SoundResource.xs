@@ -25,6 +25,9 @@ typedef Mix_Chunk SoundResource;
 	Uint8 volume;
 } Mix_Chunk; */
 
+#define SOUND_CHANNELS 8
+static int channels;
+
 static SDL_AudioCVT* cvt;
 
 static Uint32 current_id;
@@ -33,7 +36,7 @@ static Uint32 playing_ids[SOUND_CHANNELS];
 SoundResource* SoundResource_new (ResourceEntry* entry)
 {
 	SoundResource* this = safemalloc(sizeof(SoundResource));
-	
+
 	if (entry->type != 7)
 		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);
 
@@ -66,7 +69,7 @@ SoundResource* SoundResource_new (ResourceEntry* entry)
 
 		Sint16 cur_value = 0;
 		Sint16* output_buf = (Sint16*)this->abuf;
-		while (input_buf < input_end) {			
+		while (input_buf < input_end) {
 			cur_value += *input_buf++;
 			*output_buf++ = cur_value << shift;
 		}
@@ -89,13 +92,12 @@ Uint32 SoundResource_play (SoundResource* this, int loops)
 		playing_ids[channel] = ++current_id;
 	}
 	SDL_UnlockAudio();
-	
+
 	return current_id;
 }
 
 void SoundResource_stop (SoundResource* this, Uint32 id)
 {
-	int channels = Mix_AllocateChannels(-1);
 	int i;
 	for (i = 0; i < channels; i++) {
 		if (id == playing_ids[i] && this == Mix_GetChunk(i)) {
@@ -110,9 +112,40 @@ static void SoundResource_finished (int channel) {
 	playing_ids[channel] = 0;
 }
 
+bool SoundResource_isPlaying (SoundResource* this, Uint32 id)
+{
+	int i;
+	for (i = 0; i < channels; i++) {
+		if (id == playing_ids[i] && this == Mix_GetChunk(i)) {
+			Mix_HaltChannel(i);
+			playing_ids[i] = 0;
+			break;
+		}
+	}
+}
+
+void SoundResource_init ()
+{
+	int want_frequency = 22050, want_format = AUDIO_S16SYS, want_channels = 1, want_chunk_size = 256;
+	Mix_OpenAudio(want_frequency, want_format, want_channels, want_chunk_size);
+
+	int got_frequency, got_channels;
+	Uint16 got_format;
+	int status = Mix_QuerySpec(&got_frequency, &got_format, &got_channels);
+
+	if (status <= 0 || got_frequency <= 0 || got_format <= 0 || got_channels <= 0)
+		error("Audio did not open correctly");
+
+	Mix_AllocateChannels(SOUND_CHANNELS);
+	channels = Mix_AllocateChannels(-1);
+	if (channels <= 0)
+		error("Mixer could not allocate any channels");
+
+	Mix_ChannelFinished(SoundResource_finished);
+}
+
 void SoundResource_DESTROY (SoundResource* this)
 {
-	int channels = Mix_AllocateChannels(-1);
 	int i;
 	for (i = 0; i < channels; i++) {
 		if (this == Mix_GetChunk(i)) {
@@ -126,10 +159,6 @@ void SoundResource_DESTROY (SoundResource* this)
 }
 
 MODULE = Games::Neverhood::SoundResource		PACKAGE = Games::Neverhood::SoundResource		PREFIX = Neverhood_SoundResource_
-
-BOOT:
-	av_push(get_av("Games::Neverhood::SoundResource::ISA", GV_ADD), newSVpv("SDL::Mixer::MixChunk", 0));
-	Mix_ChannelFinished(SoundResource_finished);
 
 SoundResource*
 Neverhood_SoundResource_new (CLASS, entry)
@@ -155,10 +184,14 @@ Neverhood_SoundResource_stop (THIS, id)
 		Uint32 id
 	CODE:
 		SoundResource_stop(THIS, id);
-		
+
+void
+Neverhood_SoundResource_init ()
+	CODE:
+		SoundResource_init();
+
 void
 Neverhood_SoundResource_DESTROY (THIS)
 		SoundResource* THIS
 	CODE:
 		SoundResource_DESTROY(THIS);
-		
