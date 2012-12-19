@@ -15,8 +15,8 @@ blbconv*
 UNDATA*
 *.txt
 unshare*
+*.o
 lib/Games/Neverhood/*.c
-lib/Games/Neverhood/*.o
 lib/Games/Neverhood/*.xs
 lib/Games/Neverhood/typemap
 nhc.pl

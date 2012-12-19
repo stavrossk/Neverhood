@@ -15,6 +15,7 @@
 ^UNDATA/
 \.txt$
 ^unshare/
-^lib/Games/Neverhood/.*\.(c|o|xs)$
+\.o$
+^lib/Games/Neverhood/.*\.(c|xs)$
 ^lib/Games/Neverhood/typemap$
 ^nhc.pl$
