@@ -9,20 +9,21 @@ use MooseX::Declare;
 
 class Games::Neverhood::Options {
 	use Getopt::Long ();
-	use File::Spec ();
 	use File::ShareDir ();
-	use Games::Neverhood;
+	use Digest::SHA ();
+	use SDL::Constants ':SDL::CDROM';
 
-	has data_dir            => init_private_set Str, default => sub { File::Spec->catdir('DATA') };
-	has share_dir           => init_private_set Str, default => sub { File::ShareDir::dist_dir('Games-Neverhood') };
+	has data_dir            => init_private_set Str;
 	has fullscreen          => init_private_set Bool, default => 0;
 	has no_frame            => init_private_set Bool, default => 0;
 	has fps_limit           => init_private_set Int, default => 60;
 	has grab_input          => init_private_set Maybe(Bool);
+
 	has debug               => init_private_set Bool, default => 0;
 	has mute                => init_private_set Bool, default => 0;
-	has starting_scene      => init_private_set SceneName, default => 'TP::Nursery::One';
+	has starting_scene      => init_private_set SceneName, default => 'Nursery::One';
 	has starting_prev_scene => init_private_set Maybe(SceneName);
+	has share_dir           => private_set Str;
 
 	method BUILD {
 		$self->grab_input($self->no_frame || $self->fullscreen) unless defined $self->grab_input;
@@ -33,42 +34,95 @@ class Games::Neverhood::Options {
 	}
 
 	method new_with_options (ClassName $class:) {
-		my ($data_dir, $share_dir, $fullscreen, $no_frame, $fps_limit, $grab_input);
-		my ($debug, $mute, $starting_scene, $starting_prev_scene);
+		my (%o, $config, $share_dir);
+		my @saved_options   = qw/data_dir fullscreen no_frame fps_limit grab_input/;
+		my @unsaved_options = qw/debug mute starting_scene starting_prev_scene/;
 
 		Getopt::Long::GetOptions(
-			'data-dir=s'    => \$data_dir,
-			'share-dir=s'   => \$share_dir,
-			'fullscreen'    => \$fullscreen,
-			'window'        => sub { $fullscreen = 0; $no_frame = 1 },
-			'normal-window' => sub { $fullscreen = 0; $no_frame = 0 },
-			'fps-limit=i'   => \$fps_limit,
-			'grab-input'    => \$grab_input,
+			'data-dir=s'    => \$o{data_dir},
+			'cd'            => sub { $o{data_dir} = "" },
+			'fullscreen'    => \$o{fullscreen},
+			'window'        => sub { $o{fullscreen} = 0; $o{no_frame} = 1 },
+			'normal-window' => sub { $o{fullscreen} = 0; $o{no_frame} = 0 },
+			'fps-limit=i'   => \$o{fps_limit},
+			'grab-input'    => \$o{grab_input},
 
-			'debug|d'                 => \$debug,
-			'mute'                    => \$mute,
-			'starting-scene|s=s'      => \$starting_scene,
-			'starting-prev-scene|p=s' => \$starting_prev_scene,
-			'help|h|?'                => sub { $class->print_usage() },
-		) or $class->print_usage(exitval => 1);
+			'config'                  => \$config,
+			'debug|d'                 => \$o{debug},
+			'mute'                    => \$o{mute},
+			'starting-scene|s=s'      => \$o{starting_scene},
+			'starting-prev-scene|p=s' => \$o{starting_prev_scene},
+			'help|h|?'                => sub { $class->_print_usage() },
+		) or $class->_print_usage(exitval => 1);
+		
+		$share_dir = File::ShareDir::dist_dir('Games-Neverhood');
+		my $config_file = cat_file($share_dir, 'config.yaml');
 
+		my $saved_options;
+		eval { $saved_options = retrieve($config_file) };
+		if ($saved_options and ref $saved_options eq 'HASH') {
+			for (@saved_options) {
+				$o{$_} = $saved_options->{$_} if !defined $o{$_} and defined $saved_options->{$_};
+			}
+		}
+
+		say '';
+		$config = $config || !$saved_options;
+		if ($config or !defined $o{data_dir}) {
+			say("Gonna config");
+			delete $o{data_dir};
+			say("Data dirs are where all dem blb files are hidden");
+		}
+		
+		my $valid_data_dir;
+		{
+			if (defined $o{data_dir}) {
+				if ($o{data_dir} eq "") { # check CD drives for data dir
+					SDLx::App->init(['cdrom']);
+					for my $drive (0..SDL::CDROM::num_drives()-1) {
+						my $cd = SDL::CD->new($drive);
+						if ($cd and $cd->status > CD_TRAYEMPTY) {
+							my $data_dir = cat_dir(SDL::CDROM::name($drive), 'DATA');
+							if ($class->_is_valid_data_dir($data_dir, $share_dir)) {
+								$valid_data_dir = $data_dir;
+								last;
+							}
+						}
+					}
+					unless (defined $valid_data_dir) {
+						say("You got no valid CD, yo");
+					}
+				}
+				else { # check string for being data dir
+					if ($class->_is_valid_data_dir($o{data_dir}, $share_dir)) {
+						$valid_data_dir = $o{data_dir};
+					}
+					else {
+						say("That shit wasn't valid. Try again")
+					}
+				}
+				
+			}
+
+			unless (defined $valid_data_dir) {
+				say("Where is your data dir? Empty line for cd");
+				chomp($o{data_dir} = <STDIN> || "");
+				redo;
+			}
+		}
+		
 		my $options = $class->new(
-			maybe(data_dir            => $data_dir),
-			maybe(share_dir           => $share_dir),
-			maybe(fullscreen          => $fullscreen),
-			maybe(no_frame            => $no_frame),
-			maybe(fps_limit           => $fps_limit),
-			maybe(grab_input          => $grab_input),
-			maybe(debug               => $debug),
-			maybe(mute                => $mute),
-			maybe(starting_scene      => $starting_scene),
-			maybe(starting_prev_scene => $starting_prev_scene),
+			map maybe($_, $o{$_}), @saved_options, @unsaved_options,
 		);
+		store($config_file, { map {$_ => $options->$_} @saved_options });
+		
+		$options->data_dir($valid_data_dir);
+		$options->share_dir($share_dir);
 
 		return $options;
 	}
-	
-	method print_usage ($self: Int :$verbose=1, Int :$exitval=0) {
+
+	method _print_usage ($self: Int :$verbose=1, Int :$exitval=0) {
 		require Pod::Usage;
 		require Pod::Find;
 		Pod::Usage::pod2usage(
@@ -76,6 +130,64 @@ class Games::Neverhood::Options {
 			-verbose => $verbose,
 			-exitval => $exitval,
 		);
+	}
+	
+	method _is_valid_data_dir ($self: Str $data_dir, Str $share_dir) {
+		-d $data_dir or return 0;
+		
+		my $valid = 1;
+		my @files =  qw/a c hd i m s t/;
+		for (@files) {
+			my $file = cat_file($data_dir, "$_.blb");
+			if (-s $file <= 0) {
+				$valid = 0;
+				last;
+			}
+		}
+		
+		my $checksums_passed = 1;
+		my $checksums = eval { retrieve(cat_file($share_dir, 'checksums.yaml')) };
+		my $write_checksums;
+		unless (defined $checksums) {
+			$write_checksums = 1;
+			$checksums = {};
+		}
+		
+		for (@files) {
+			my $file = cat_file($data_dir, "$_.blb");
+			unless (open FILE, "<", $file) {
+				say STDERR "Couldn't open $file for testing checksum: $!";
+				$checksums_passed = 0;
+				next;
+			}
+			
+			my $data;
+			binmode FILE;
+			# Generating these checksums takes too long, so we're only checking the start of each file
+			unless (defined read FILE, $data, 4096) {
+				say STDERR "Couldn't read from $file for testing checksum: $!";
+				$checksums_passed = 0;
+				next;
+			}
+			
+			my $digest = Digest::SHA::sha256_base64($data);
+			if ($write_checksums) {
+				$checksums->{$_} = $digest;
+			}
+			elsif (!defined $checksums->{$_} or $digest ne $checksums->{$_}) {
+				say STDERR "Checksum on $file failed";
+				$checksums_passed = 0;
+			}
+		}
+		unless ($checksums_passed) {
+			say STDERR "Checksums failed. Gonna continue anyway, but it doesn't look good";
+		}
+		
+		if ($write_checksums) {
+			eval { store("checksums.yaml", $checksums); 1 } and say "Checksums saved to current directory";
+		}
+		
+		return $valid;
 	}
 }
 
@@ -89,8 +201,8 @@ nhc [-?dhps] [long options]
 
 =head1 Options
 
- --data-dir=DIR     Set the data dir with the Blb files (default=./DATA)
- --share-dir=DIR    Set the game's share dir
+ --data-dir=DIR     Set the data dir (BLB files) (default=./DATA)
+ --share-dir=DIR    Set the share dir (save files)
  --fullscreen       Run the game fullscreen
  --window           Run the game in a frame-less window (default)
  --normal-window    Run the game in a normal window
@@ -100,7 +212,7 @@ nhc [-?dhps] [long options]
  -d --debug         Enable all debugging features
  --mute             Mute all music and sound
  -s --starting-scene=SCENE
-                    Set the starting scene (default=TP::Nursery::1)
+                    Set the starting scene (default=Nursery::One)
  --starting-prev-scene=SCENE
                     Set the starting prev scene (default=starting-scene)
  -? -h --help       Show this help

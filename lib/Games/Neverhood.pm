@@ -49,13 +49,12 @@ class Games::Neverhood {
 	method BUILD { $; = $self }
 
 	method run (SceneName $scene, SceneName $prev_scene) {
-		printf unindent(<<'		HELLO'), data_dir(), share_dir(), '=' x 69;
-
-		Starting Games-Neverhood
+		printf unindent(<<'		HELLO'), data_dir(), share_dir();
 		 Data dir: %s
 		Share dir: %s
-		%s
 		HELLO
+		
+		say '=' x 69 if debug();
 
 		# app stop is used to hold the scene name to be set
 		$self->init_app();
@@ -103,16 +102,12 @@ class Games::Neverhood {
 			$self->load_new_scene($self->app->stopped, $prev_scene);
 			$self->app->run();
 		}
+		
+		say '=' x 69 if debug();
 
 		$self->app(undef);
 		undef $self;
 		undef $;;
-
-		printf unindent(<<'		GOODBYE'), '=' x 69
-		%s
-		Games::Neverhood ended normally
-
-		GOODBYE
 	}
 
 	# called outside of the run loop to load a new scene
@@ -171,7 +166,7 @@ class Games::Neverhood {
 			min_t      => $self->_options->fps_limit &&  1 / $self->_options->fps_limit,
 			delay      => 0,
 			eoq        => 1,
-			init       => ['video', 'audio'],
+			init       => ['audio'],
 			no_cursor  => 1,
 			centered   => 1,
 			fullscreen => $self->_options->fullscreen,

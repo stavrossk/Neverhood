@@ -18,6 +18,7 @@ use Carp ();
 use File::Spec ();
 use Scalar::Util ();
 use List::Util ();
+use YAML::XS;
 
 # use all the SDL stuff we need here
 # then you only need to import constants in each class
@@ -36,6 +37,8 @@ use SDL::Mixer::Channels ();
 use SDL::Mixer::MixChunk ();
 use SDL::Mixer::Music ();
 use SDL::GFX::Rotozoom ();
+use SDL::CD ();
+use SDL::CDROM ();
 
 # use all my XS stuff here also
 # can't use the perl stuff because that needs to be done after use Games::Neverhood::Moose
@@ -50,6 +53,7 @@ BEGIN {
 	XSLoader::load('Games::Neverhood::MusicResource');
 	XSLoader::load('Games::Neverhood::SmackerResource');
 	
+	# have to modify @ISA here because XSLoader unceremoniously clobbers it
 	push @Games::Neverhood::PaletteResource::ISA, 'SDL::Palette';
 	push @Games::Neverhood::SoundResource::ISA,   'SDL::Mixer::MixChunk';
 }
@@ -62,8 +66,9 @@ sub do_import {
 			\&rw, \&ro, \&private, \&private_set, \&init_private_set,
 			\&Any, \&Item, \&Bool, \&Maybe, \&Undef, \&Defined, \&Value, \&Str, \&Num, \&Int, \&ClassName, \&RoleName, \&Ref, \&ScalarRef, \&ArrayRef, \&HashRef, \&CodeRef, \&RegexpRef, \&GlobRef, \&FileHandle, \&Object, \&Rect, \&Surface, \&SceneName,
 			\&debug, \&error, \&debug_stack,
-			\&data_file, \&data_dir, \&share_file, \&share_dir,
+			\&cat_file, \&cat_dir, \&data_file, \&data_dir, \&share_file, \&share_dir,
 			\&maybe, \&List::Util::max, \&List::Util::min, \&unindent, \&Scalar::Util::weaken,
+			\&store, \&retrieve,
 		],
 		also => [$moose, 'MooseX::StrictConstructor'],
 	);
@@ -173,6 +178,8 @@ sub _get_sub_filename_line {
 	return($sub, $filename, $line);
 }
 
+sub cat_file   { File::Spec->catfile(@_) }
+sub cat_dir    { File::Spec->catdir (@_) }
 sub data_dir   { File::Spec->catdir ($;->_options->data_dir,  @_) }
 sub share_dir  { File::Spec->catdir ($;->_options->share_dir, @_) }
 sub data_file  { File::Spec->catfile($;->_options->data_dir,  @_) }
@@ -191,6 +198,10 @@ sub unindent {
 	$str =~ s/^\t+//gm;
 	$str;
 }
+
+# serialization methods
+sub store    { &YAML::XS::DumpFile }
+sub retrieve { &YAML::XS::LoadFile }
 
 subtype Rect =>
 	as Object,

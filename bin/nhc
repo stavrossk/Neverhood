@@ -16,3 +16,5 @@ use Games::Neverhood;
 my $options = Games::Neverhood::Options->new_with_options();
 my $game = Games::Neverhood->new(options => $options);
 $game->run($options->starting_scene, $options->starting_prev_scene);
+
+1;

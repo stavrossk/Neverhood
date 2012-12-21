@@ -36,7 +36,7 @@ class Games::Neverhood::ResourceMan {
 		return $resource;
 	}
 	
-	method clean_resource_hash () {
+	method clean_destroyed_resources () {
 		while (my ($key, $value) = each %{$self->_resources}) {
 			delete $self->_resources->{$key} unless defined $value;
 		}
