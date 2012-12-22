@@ -20,3 +20,4 @@ lib/Games/Neverhood/*.c
 lib/Games/Neverhood/*.xs
 lib/Games/Neverhood/typemap
 nhc.pl
+checksums.yaml

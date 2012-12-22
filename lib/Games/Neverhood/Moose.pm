@@ -4,9 +4,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use 5.01;
 package Games::Neverhood::Moose;
 
+use 5.01;
 use Moose ();
 use Moose::Role ();
 use Moose::Exporter ();
@@ -43,7 +43,6 @@ use SDL::CDROM ();
 # use all my XS stuff here also
 # can't use the perl stuff because that needs to be done after use Games::Neverhood::Moose
 BEGIN {
-	XSLoader::load('Games::Neverhood::AudioVideo');
 	XSLoader::load('Games::Neverhood::SurfaceUtil');
 	XSLoader::load('Games::Neverhood::ResourceEntry');
 	XSLoader::load('Games::Neverhood::SpriteResource');

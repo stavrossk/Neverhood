@@ -5,7 +5,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use 5.01;
-use MooseX::Declare;
 
 class Games::Neverhood::Options {
 	use Getopt::Long ();
@@ -23,9 +22,10 @@ class Games::Neverhood::Options {
 	has mute                => init_private_set Bool, default => 0;
 	has starting_scene      => init_private_set SceneName, default => 'Nursery::One';
 	has starting_prev_scene => init_private_set Maybe(SceneName);
+	has write_checksums     => init_private_set Bool, default => 0;
 	has share_dir           => private_set Str;
 
-	method BUILD {
+	method BUILD (@_) {
 		$self->grab_input($self->no_frame || $self->fullscreen) unless defined $self->grab_input;
 		$self->starting_prev_scene($self->starting_scene) unless defined $self->starting_prev_scene;
 
@@ -33,8 +33,8 @@ class Games::Neverhood::Options {
 		*Debug = \$self->debug;
 	}
 
-	method new_with_options (ClassName $class:) {
-		my (%o, $config, $share_dir);
+	method new_with_options ($class:) {
+		my (%o, $config, $share_dir, $write_checksums);
 		my @saved_options   = qw/data_dir fullscreen no_frame fps_limit grab_input/;
 		my @unsaved_options = qw/debug mute starting_scene starting_prev_scene/;
 
@@ -52,6 +52,7 @@ class Games::Neverhood::Options {
 			'mute'                    => \$o{mute},
 			'starting-scene|s=s'      => \$o{starting_scene},
 			'starting-prev-scene|p=s' => \$o{starting_prev_scene},
+			'write-checksums'         => \$write_checksums,
 			'help|h|?'                => sub { $class->_print_usage() },
 		) or $class->_print_usage(exitval => 1);
 		
@@ -71,7 +72,7 @@ class Games::Neverhood::Options {
 		if ($config or !defined $o{data_dir}) {
 			say("Gonna config");
 			delete $o{data_dir};
-			say("Data dirs are where all dem blb files are hidden");
+			say("DATA dirs are where all dem blb files are hidden");
 		}
 		
 		my $valid_data_dir;
@@ -83,30 +84,31 @@ class Games::Neverhood::Options {
 						my $cd = SDL::CD->new($drive);
 						if ($cd and $cd->status > CD_TRAYEMPTY) {
 							my $data_dir = cat_dir(SDL::CDROM::name($drive), 'DATA');
-							if ($class->_is_valid_data_dir($data_dir, $share_dir)) {
+							if ($class->_is_valid_data_dir($data_dir, $share_dir, $write_checksums)) {
 								$valid_data_dir = $data_dir;
 								last;
 							}
 						}
 					}
 					unless (defined $valid_data_dir) {
-						say("You got no valid CD, yo");
+						say("No valid CD could be found. You may just need to enter the full path to the CDs DATA dir");
 					}
 				}
 				else { # check string for being data dir
-					if ($class->_is_valid_data_dir($o{data_dir}, $share_dir)) {
+					if ($class->_is_valid_data_dir($o{data_dir}, $share_dir, $write_checksums)) {
 						$valid_data_dir = $o{data_dir};
 					}
 					else {
-						say("That shit wasn't valid. Try again")
+						say("Data dir '".$o{data_dir}."' not valid. Data dir must contain the 7 blb files")
 					}
 				}
 				
 			}
 
 			unless (defined $valid_data_dir) {
-				say("Where is your data dir? Empty line for cd");
+				say("Enter the path to DATA dir or an empty line to search inserted CDs");
 				chomp($o{data_dir} = <STDIN> || "");
+				say '';
 				redo;
 			}
 		}
@@ -114,6 +116,9 @@ class Games::Neverhood::Options {
 		my $options = $class->new(
 			map maybe($_, $o{$_}), @saved_options, @unsaved_options,
 		);
+		
+		# TODO: more config stuff here
+		
 		store($config_file, { map {$_ => $options->$_} @saved_options });
 		
 		$options->data_dir($valid_data_dir);
@@ -132,7 +137,7 @@ class Games::Neverhood::Options {
 		);
 	}
 	
-	method _is_valid_data_dir ($self: Str $data_dir, Str $share_dir) {
+	method _is_valid_data_dir ($self: Str $data_dir, Str $share_dir, Bool $write_checksums) {
 		-d $data_dir or return 0;
 		
 		my $valid = 1;
@@ -147,7 +152,6 @@ class Games::Neverhood::Options {
 		
 		my $checksums_passed = 1;
 		my $checksums = eval { retrieve(cat_file($share_dir, 'checksums.yaml')) };
-		my $write_checksums;
 		unless (defined $checksums) {
 			$write_checksums = 1;
 			$checksums = {};

@@ -5,13 +5,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use 5.01;
-use MooseX::Declare;
 
 class Games::Neverhood::ResourceMan {
 	has _entries   => private HashRef;
 	has _resources => private HashRef;
 
-	method BUILD {
+	method BUILD (@_) {
 		chop(my $prefix = data_file("a")); # to get a dir separator at the end we have to put in a filename then chop it off
 		Games::Neverhood::ResourceEntry::load_archives($prefix, $self->_entries);
 	}

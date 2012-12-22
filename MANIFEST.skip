@@ -19,3 +19,4 @@
 ^lib/Games/Neverhood/.*\.(c|xs)$
 ^lib/Games/Neverhood/typemap$
 ^nhc.pl$
+^checksums.yaml$

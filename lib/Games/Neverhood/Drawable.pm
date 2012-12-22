@@ -6,7 +6,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use 5.01;
-use MooseX::Declare;
 
 role Games::Neverhood::Drawable {
 	# draw_surfaces needs to draw the surfaces and update w and h
@@ -38,12 +37,12 @@ role Games::Neverhood::Drawable {
 
 	# methods
 
-	after BUILD {
+	after BUILD (@_) {
 		$self->invalidate();
 	}
 
 	# done manually by anything that wants to invalidate the entire screen
-	method invalidate_all (Object|ClassName $self:) {
+	method invalidate_all ($self:) {
 		$_is_all_invalidated = 1;
 		$self->invalidate() if ref $self;
 		@_invalidated_rects = ();
@@ -121,7 +120,7 @@ role Games::Neverhood::Drawable {
 	}
 
 	# update rects on the app
-	method update_screen (Object|ClassName $self:) {
+	method update_screen ($self:) {
 		if($_is_all_invalidated) {
 			SDL::Video::update_rect($;->app, 0, 0, 0, 0);
 		}

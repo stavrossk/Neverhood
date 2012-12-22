@@ -41,9 +41,10 @@ my $build = My::Builder->new(
 		'perl'                      => 5.01,
 		'SDL'                       => 2.541, # raise me
 		'File::ShareDir'            => 1.03,
-		'YAML::XS'                  => 0.38, # lower me
+		'YAML::XS'                  => 0.37,
 		'Moose'                     => 2.06,
 		'MooseX::Declare'           => 0.34,
+		'Method::Signatures'        => 20121201,
 		'MooseX::StrictConstructor' => 0.19, # remove me at v1.0
 	},
 	configure_requires   => { 'Module::Build' => 0.34 },

@@ -3,7 +3,8 @@ Since 27 Sep 2010
 
 TODO
     Stuff in Build.PL
-    Make interactive startup better and complete config mode
+    Complete config mode
+    Write an icon mask thing for SDL
     Make smacker audio resync with video
     Fuck big endian compat
     Split h and c apart in src/ and use so instead of o

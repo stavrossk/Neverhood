@@ -5,7 +5,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use 5.01;
-use MooseX::Declare;
 
 class Games::Neverhood::Sprite with Games::Neverhood::Drawable {
 	use constant invalidator_checks => ( 'is_mirrored', 'x', 'y' );
@@ -23,7 +22,7 @@ class Games::Neverhood::Sprite with Games::Neverhood::Drawable {
 
 	# methods
 
-	method BUILD {
+	method BUILD (@_) {
 		$self->_resource($;->resource_man->get_sprite($self->file));
 		$self->_surface($self->_resource->get_surface);
 		

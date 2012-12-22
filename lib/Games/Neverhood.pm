@@ -29,9 +29,11 @@ $Games::Neverhood::VERSION = 0.20;
 
 use 5.01;
 use MooseX::Declare;
-
+use Method::Signatures::Modifiers;
 use Games::Neverhood::Moose;
+
 use Games::Neverhood::Options;
+use Games::Neverhood::Drawable;
 use Games::Neverhood::ResourceMan;
 use Games::Neverhood::MoviePlayer;
 use Games::Neverhood::Sprite;
@@ -46,7 +48,7 @@ class Games::Neverhood {
 	has _options => ro 'Games::Neverhood::Options', init_arg => 'options', required => 1;
 	has resource_man => private_set 'Games::Neverhood::ResourceMan';
 
-	method BUILD { $; = $self }
+	method BUILD (@_) { $; = $self }
 
 	method run (SceneName $scene, SceneName $prev_scene) {
 		printf unindent(<<'		HELLO'), data_dir(), share_dir();
@@ -117,6 +119,9 @@ class Games::Neverhood {
 
 	method init_app () {
 		return if $self->app;
+		
+		SDLx::App->init(['video']);
+		Games::Neverhood::SurfaceUtil::set_icon(share_file('icon.bmp'), SDL::Color->new(255, 0, 255));
 
 		my ($event_window_pause, $event_pause); # recursive subs
 		$event_window_pause = sub {
@@ -179,8 +184,8 @@ class Games::Neverhood {
 	#		async_blit => 1,
 	#		hw_palette => 1,
 
-			icon => share_file('icon.bmp'),
-			icon_alpha_key => SDL::Color->new(255, 0, 255),
+			# icon => share_file('icon.bmp'),
+			# icon_alpha_key => SDL::Color->new(255, 0, 255),
 
 			event_handlers => [
 				$event_window_pause,

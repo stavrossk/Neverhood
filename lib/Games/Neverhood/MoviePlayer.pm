@@ -5,7 +5,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use 5.01;
-use MooseX::Declare;
 
 class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable {
 	use SDL::Constants ':SDL::GFX';
@@ -25,9 +24,9 @@ class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable {
 	has is_double_size => ro Bool, default => 1;
 	has is_loopy       => rw Bool, default => 1;
 
-	method cur_frame   ($ ?) { $self->_resource->get_cur_frame   }
-	method frame_rate  ($ ?) { $self->_resource->get_frame_rate  }
-	method frame_count ($ ?) { $self->_resource->get_frame_count }
+	method cur_frame   ($a?) { $self->_resource->get_cur_frame   }
+	method frame_rate  ($a?) { $self->_resource->get_frame_rate  }
+	method frame_count ($a?) { $self->_resource->get_frame_count }
 
 	# private attributes
 
@@ -38,7 +37,7 @@ class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable {
 
 	# methods
 
-	method BUILD {
+	method BUILD (@_) {
 		$self->_resource($;->resource_man->get_smacker($self->file));
 		$self->_surface($self->_resource->get_surface);
 		$self->_double_size_surface(SDL::GFX::Rotozoom::surface($self->_surface, 0, 2, SMOOTHING_OFF));
