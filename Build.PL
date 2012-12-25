@@ -66,7 +66,7 @@ my $build = My::Builder->new(
 	],
 	meta_merge => {
 		resources => {
-			license    => 'http://www.gnu.org/licenses/gpl-3.0.html', # check url
+			license    => 'http://www.gnu.org/licenses/gpl-3.0.html',
 			repository => 'http://github.com/Blaizer/Neverhood',
 		},
 	},
