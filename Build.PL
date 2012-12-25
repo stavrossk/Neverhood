@@ -39,6 +39,7 @@ my $build = My::Builder->new(
 	license       => 'gpl',
 	requires => {
 		'perl'                      => 5.01,
+		'Alien::SDL'                => 1.438,
 		'SDL'                       => 2.541, # raise me
 		'File::ShareDir'            => 1.03,
 		'YAML::XS'                  => 0.37,
