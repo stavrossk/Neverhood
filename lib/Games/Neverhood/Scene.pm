@@ -1,254 +1,165 @@
-# Scene
+# Scene - the base class for all scenes
 # Copyright (C) 2012 Blaise Roth
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 use 5.01;
-use strict;
+
+class Games::Neverhood::Scene with Games::Neverhood::Ticker {
+	use SDL::Constants ':SDL::Events';
+
+	pvt   order      => 'Games::Neverhood::Order';
+	rpvt  background => 'Games::Neverhood::Drawable';
+	rpvt  movie      => Maybe('Games::Neverhood::MoviePlayer');
+	rpvt  palette    => Maybe(Palette);
+	rpvt  music      => Maybe('Games::Neverhood::MusicResource');
+	rwpvt prev_music => Maybe('Games::Neverhood::MusicResource');
+
+	method BUILD (@_) {
+		$self->_set_order(Games::Neverhood::Order->new());
+		$self->set_fps(24);
+	}
+	method setup (SceneName $prev_scene) {}
+	
+	method handle_time (Num $time) {
+		$self->movie->handle_time($time) if $self->movie;
+	}
+	
+	method handle_tick () {
+		for my $item (@{$self->_order}) {
+			$item->handle_tick()
+				unless $item->does('Games::Neverhood::Ticker');
+		}
+	}
+	
+	method draw () {
+		for my $item (@{$self->_order}) {
+			$item->draw();
+		}
+	}
+	
+	method add (Maybe[Str]|Maybe[ScalarRef] $name, Games::Neverhood::Drawable $item) {
+		if (defined $name) {
+			if (ref $name) {
+				$$name = $item;
+			}
+			else {
+				$self->$name($item);
+				$item->set_name($name) unless defined $item->name;
+			}
+		}
+		$self->_order->add($item);
+	}
+	
+	method add_sprite (Maybe[Str]|Maybe[ScalarRef] $name, Str|Games::Neverhood::Sprite $sprite, @args) {
+		unless (ref $sprite) {
+			$sprite = Games::Neverhood::Sprite->new(key => $sprite, @args);
+		}
+		$sprite->set_palette($self->palette) if !$sprite->palette and $self->palette;
+		$self->add($name, $sprite);
+	}
+	
+	method add_sequence (Maybe[Str]|Maybe[ScalarRef] $name, Str|Games::Neverhood::Sequence $sequence, @args) {
+		unless (ref $sequence) {
+			$sequence = Games::Neverhood::Sequence->new(key => $sequence, @args);
+		}
+		$self->add($name, $sequence);
+	}
+		
+	method set_movie (Str|Games::Neverhood::MoviePlayer $movie, @args) {
+		unless (ref $movie) {
+			$movie = Games::Neverhood::MoviePlayer->new(key => $movie, @args);
+		}
+		$self->_order->replace($movie, $self->movie) or $self->_order->add($movie);
+		$self->_set_movie($movie);
+		$movie->set_name('movie') unless defined $movie->name;
+	}
+	
+	method set_background (Str|Games::Neverhood::Drawable $background, @args) {
+		unless (ref $background) {
+			$background = Games::Neverhood::Sprite->new(key => $background, @args);
+		}
+		$self->_order->replace($background, $self->background) or $self->_order->add_at_bottom($background);
+		$self->_set_background($background);
+		$background->set_name('background') unless defined $background->name;
+		$self->set_palette($background) unless $self->palette;
+	}
+	
+	method set_palette (Str|Palette|Games::Neverhood::Sprite $palette) {
+		unless (ref $palette) {
+			$palette = $;->resource_man->get_palette($palette);
+		}
+		elsif ($palette->isa('Games::Neverhood::Sprite')) {
+			$palette = $palette->palette;
+		}
+		$self->_set_palette($palette);
+	}
+	
+	method set_music (Str|Games::Neverhood::MusicResource $music) {
+		unless (ref $music) {
+			$music = $;->resource_man->get_music($music);
+		}
+		$self->_set_music($music);
+	}
+}
+
+package Games::Neverhood::Order;
+
 use warnings;
-package Games::Neverhood::Scene;
+use strict;
+use Method::Signatures;
 
-use SDL;
-use SDL::Video;
-use SDL::Events;
-
-use Carp ();
-
-use parent
-	'Games::Neverhood',
-	'Exporter',
-;
-# The user entered text for the "cheat" system
-our $Cheat = '';
-
-# Globals from bin/nhc
-our ($FastForward);
-
-our @EXPORT_OK = qw/$Cheat $FastForward/;
-
-our ($Remainder, $Debug);
-use Games::Neverhood qw/$Remainder $Debug/;
-use Games::Neverhood::Sprite;
-use Games::Neverhood::OrderedHash;
-
-# Overloadable Methods and what they should return:
-
-# sub on_new
-# sub on_destroy
-
-# use constant
-	# vars            {}
-		# sprites    Games::Neverhood::OrderedHash->new
-		# frame      0
-	# sprites_list    []
-	# fps             0
-	# cursor_type     ""
-	# music           0
-	# rect
-
-# event
-	# sub on_space
-	# sub on_out
-	# sub on_left
-	# sub on_right
-	# sub on_up
-	# sub on_down
-# move
-	# sub on_click
-	# sub on_move
-# show
-	# sub on_show
-
-# don't overload this, use on_new, sprites_list and vars
-sub new {
-	my ($self, $unset_name) = @_;
-	$self = $self->SUPER::new;
-	%$self = %{$self->vars};
-
-	my $sprites = Games::Neverhood::OrderedHash->new;
-	my $name;
-	for my $sprite (@{$self->sprites_list}) {
-		if(ref $sprite) {
-			$name = $sprite->name or Carp::confess("All sprites must have a (unique) name");
-		}
-		else {
-			$name = $sprite;
-			my $sprite_class = ref($self) .'::'. $name;
-			my $sprite_isa = $sprite_class . '::ISA';
-			{
-				no strict 'refs';
-				@$sprite_isa = 'Games::Neverhood::Sprite' unless @$sprite_isa;
-			}
-			$sprite = $sprite_class->new;
-			$sprite->{name} = $name;
-		}
-	} continue {
-		$sprites->{$name} = $sprite;
-	}
-	$self->{sprites} = $sprites;
-
-	$self->{frame} = 0;
-	$self->on_new($unset_name);
-
-	for my $sprite (@{$self->sprites}) {
-		if(defined $sprite->sequence) {
-			$sprite->sequence($sprite->sequence);
-		}
-		else {
-			# gotta still call that on_move from within frame
-			$sprite->frame($sprite->frame // 0);
-		}
-	}
-	$self;
-}
-sub on_new {}
-
-# don't overload this either, use on_destroy
-# sub DESTROY {}
-sub on_destroy {}
-
-###############################################################################
-# accessors
-
-sub sprites { $_[0]->{sprites} }
-sub frame {
-	if(@_ > 1) {
-		$_[0]->{frame} = $_[1];
-		$_[0]->on_move;
-		return $_[0];
-	}
-	$_[0]->{frame};
+method new ($class:) {
+	bless [], $class;
 }
 
-###############################################################################
-# constant/subs
+method add (Games::Neverhood::Drawable $item) {
+	$self->remove($item);
+	push @$self, $item;
+}
 
-use constant {
-	vars                => {},
-	sprites_list        => [],
-	fps                 => 24,
-	cursor_type         => 'click',
-	music               => undef,
-	rect                => undef,
-};
+method add_at_bottom (Games::Neverhood::Drawable $item) {
+	$self->remove($item);
+	unshift @$self, $item;
+}
 
-###############################################################################
-# handler subs
+method add_below (Games::Neverhood::Drawable $item, Games::Neverhood::Drawable $target_item) {
+	$self->_add_at($item, $target_item, 0);
+}
 
-sub event {
-	my ($self, $e) = @_;
-	if($e->type == SDL_MOUSEMOTION) {
-		$self->cursor->pos([$e->motion_x, $e->motion_y]);
-	}
-	elsif($e->type == SDL_MOUSEBUTTONDOWN and $e->button_button & (SDL_BUTTON_LEFT | SDL_BUTTON_MIDDLE | SDL_BUTTON_RIGHT)) {
-		my $pos = [$e->button_x, $e->button_y];
-		$self->cursor->pos($pos);
-		if($self->cursor->sequence eq 'click') {
-			$self->cursor->clicked($pos);
-		}
-		elsif($self->cursor_type eq 'out') {
-			$self->cursor->clicked(undef);
-			$self->on_out;
-		}
-		else {
-			my $method = "on_" . $self->cursor->sequence;
-			$self->$method;
-		}
-	}
-	elsif($e->type == SDL_KEYDOWN) {
-		return if $e->key_mod & (KMOD_ALT | KMOD_CTRL | KMOD_SHIFT | KMOD_META);
-		my $name = SDL::Events::get_key_name($e->key_sym);
-		given($name) {
-			when('escape') {
-				$self->set('Menu');
-			}
-			when('space') {
-				$self->on_space;
-			}
-			when(/^[a-z]$/) {
-				$Cheat .= $name;
-				$Cheat = '!' if length $Cheat > length 'happybirthdayklaymen';
-			}
-			when('return') {
-				if($Cheat eq 'fastforward') {
-					$FastForward = !$FastForward;
-					$self->app->dt(1 / ($self->fps * 3));
-				}
-				elsif($Cheat eq 'screensnapshot') {
-					my $file = File::Spec->catfile('', 'NevShot.bmp'); # TODO: this is wrong on stuff other than windows...
-					SDL::Video::save_BMP($self->app, $file) and warn "Error saving screenshot to $file: ", SDL::get_error;
-				}
-				elsif($Cheat eq 'happybirthdayklaymen' and $self eq 'Scene::Nursery::One') {
-					$self->set('Scene::Nursery::Two');
-				}
-				elsif($Cheat eq 'letmeoutofhere' and $self eq 'Scene::Nursery::Two') {
-					$self->set('Scene::Outsidesomewhere...');
-				}
-				elsif($Cheat eq 'please') {
-					$self->GG->{something} = 'something else';
-					$self->set('Scene::Shack');
-				}
-				$Cheat = '';
-			}
+method add_above (Games::Neverhood::Drawable $item, Games::Neverhood::Drawable $target_item) {
+	$self->_add_at($item, $target_item, 1);
+}
+
+method remove (Games::Neverhood::Drawable $item) {
+	my $item_index = $self->_index_of($item);
+	return splice @$self, $item_index, 1 if defined $item_index;
+	return;
+}
+
+method replace (Games::Neverhood::Drawable $item, Maybe[Games::Neverhood::Drawable] $target_item) {
+	my $target_index;
+	$target_index = $self->_index_of($target_item) if defined $target_item;
+	return splice @$self, $target_index, 1, $item if defined $target_index;
+	return;
+}
+
+method _index_of (Games::Neverhood::Drawable $item) {
+	my $item_index;
+	while (my ($i, $value) = each @$self) {
+		if ($value == $item) {
+			$item_index = $i;
 		}
 	}
-	elsif($e->type == SDL_ACTIVEEVENT) {
-		if($e->active_state & SDL_APPMOUSEFOCUS) {
-			$self->cursor->hide(!$e->active_gain);
-		}
-	}
-}
-sub on_space   {}
-sub on_out     {}
-sub on_left    {}
-sub on_right   {}
-sub on_forward {}
-sub on_up      {}
-sub on_down    {}
-
-sub move {
-	my ($self, $step) = @_;
-	return unless $step;
-	$Remainder += $step;
-	if($Remainder >= 1) {
-		$Remainder--;
-
-		$self->on_click if $self->cursor->clicked;
-
-		# on_move is called within the frame method
-		$self->frame($self->frame + 1);
-		$self->cursor->frame($self->cursor->frame + 1);
-	}
-}
-sub on_click {
-	my ($self) = @_;
-	$self->cursor->clicked(undef);
-}
-sub on_move {
-	my ($self) = @_;
-	for my $sprite (@{$self->sprites}) {
-		# on_move is called within the frame method
-		$sprite->frame($sprite->frame + 1);
-	}
+	return $item_index;
 }
 
-sub show {
-	my ($self, $time) = @_;
-	$self->on_show($time);
-	$self->cursor->show;
+method _add_at (Games::Neverhood::Drawable $item, Games::Neverhood::Drawable $target_item, Int $offset) {
+	$self->remove($item);
+	my $target_index = $self->_index_of($target_item);
+	Carp::confess("Drawable to move to isn't in scene") unless defined $target_index;
+	splice @$self, $target_index + $offset, 0, $item;
 }
-sub on_show {
-	my ($self) = @_;
-	for my $sprite (reverse @{$self->sprites}) {
-		$sprite->show;
-	}
-}
-
-###############################################################################
-# other
-
-BEGIN { *in_rect = \&Games::Neverhood::Sprite::in_rect }
 
 1;

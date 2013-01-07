@@ -34,19 +34,22 @@ use Games::Neverhood::Moose;
 
 use Games::Neverhood::Options;
 use Games::Neverhood::Drawable;
+use Games::Neverhood::Ticker;
 use Games::Neverhood::ResourceMan;
-use Games::Neverhood::MoviePlayer;
+use Games::Neverhood::Scene;
 use Games::Neverhood::Sprite;
+use Games::Neverhood::MoviePlayer;
+
+use Games::Neverhood::Scene::Test;
 
 class Games::Neverhood {
-	use SDL::Constants ':SDL::Events', ':SDL::Audio';
+	use SDL::Constants ':SDL::Events';
 
-	my ($player, $sprite, $sprite_on_top, $sequence);
-
-	has scene    => private_set 'Games::Neverhood::Scene';
-	has app      => private_set Maybe(Surface);
-	has _options => ro 'Games::Neverhood::Options', init_arg => 'options', required => 1;
-	has resource_man => private_set 'Games::Neverhood::ResourceMan';
+	pvt_arg options => 'Games::Neverhood::Options', required;
+	
+	rpvt scene        => 'Games::Neverhood::Scene';
+	rpvt app          => Maybe(Surface);
+	rpvt resource_man => 'Games::Neverhood::ResourceMan';
 
 	method BUILD (@_) { $; = $self }
 
@@ -55,45 +58,22 @@ class Games::Neverhood {
 		 Data dir: %s
 		Share dir: %s
 		HELLO
-		
+
 		say '=' x 69 if debug();
 
 		# app stop is used to hold the scene name to be set
 		$self->init_app();
 		$self->app->stop($scene);
-		
-		$self->resource_man(Games::Neverhood::ResourceMan->new());
 
-		$player = Games::Neverhood::MoviePlayer->new(file => '40800711');
-		# $player = Games::Neverhood::MoviePlayer->new(file => '210C2009');
-		debug("Playing video %s\nframe rate: %f; frame count: %d; is double size: %s",
-				$player->file, $player->frame_rate, $player->frame_count, ($player->is_double_size ? 'yes' : 'no'));
-				
-		my $palette = $self->resource_man->get_palette('92CA2C9B');
-
-		$sprite        = Games::Neverhood::Sprite->new(file => '4086520E');
-		$sprite_on_top = Games::Neverhood::Sprite->new(file => '809861A6');
-		Games::Neverhood::SurfaceUtil::set_palette($sprite_on_top->_surface, $sprite->_surface->format->palette);
-		# Games::Neverhood::SurfaceUtil::set_palette($sprite_on_top->_surface, $palette);
-		Games::Neverhood::SurfaceUtil::set_color_keying($sprite_on_top->_surface, 1);
-		
-		$sequence = $self->resource_man->get_sequence('022C90D4');
+		$self->_set_resource_man(Games::Neverhood::ResourceMan->new());
 
 		Games::Neverhood::SoundResource::init();
 		Games::Neverhood::MusicResource::init();
-		
+
 		if ($self->_options->mute) {
 			SDL::Mixer::Music::volume_music(0);
 			SDL::Mixer::Channels::volume(-1, 0);
 		}
-		
-		my $music = $self->resource_man->get_music('00103144');
-		$music->play(0);
-		$music->fade_out(30_000);
-		
-		# my $sound = $self->resource_man->get_sound('ED403E03'); # compressed
-		my $sound = $self->resource_man->get_sound('CD4F8411'); # uncompressed
-		my $id = $sound->play(0);
 
 		while($self->app->stopped ne 1) {
 			Games::Neverhood::Drawable->invalidate_all();
@@ -104,24 +84,64 @@ class Games::Neverhood {
 			$self->load_new_scene($self->app->stopped, $prev_scene);
 			$self->app->run();
 		}
-		
+
 		say '=' x 69 if debug();
 
-		$self->app(undef);
+		$self->_set_app(undef);
 		undef $self;
 		undef $;;
 	}
 
 	# called outside of the run loop to load a new scene
-	method load_new_scene (SceneName $scene, SceneName $prev_scene) {
-		debug("Scene: %s; Previous scene: %s", $scene, $prev_scene);
+	method load_new_scene (SceneName $scene_name, SceneName $prev_scene_name) {
+		debug("Scene: %s; Previous scene: %s", $scene_name, $prev_scene_name);
+		
+		$scene_name = "Games::Neverhood::Scene::$scene_name";
+		unless (is_class_loaded $scene_name) {
+			error("$scene_name is not loaded");
+		}
+		my $scene = $scene_name->new;
+		my $prev_scene = $self->scene;
+		
+		if ($prev_scene) {
+			my $scene_music = $scene->music;
+			my $prev_scene_music = $prev_scene->music;
+			my $bad;
+			if ($scene_music) {
+				if ($prev_scene_music) {
+					if ($scene_music != $prev_scene_music) {
+						$bad = 1;
+						$prev_scene_music->fade_out(0);
+						$scene_music->fade_in(0);
+					}
+				}
+				else {
+					$scene_music->fade_in(2_000);
+				}
+			}
+			elsif ($prev_scene_music) {
+				$prev_scene_music->fade_out(2_000);
+				$scene->set_prev_music($prev_scene_music);
+			}
+			
+			if (!$scene->prev_music and $prev_scene->prev_music and !$bad
+					and !$scene->isa('Games::Neverhood::CutScene') and !$prev_scene->isa('Games::Neverhood::CutScene')) {
+				$scene->set_prev_music($prev_scene->prev_music);
+			}
+		}
+		
+		$self->_set_scene($scene);
+		
+		if ($scene->isa('Games::Neverhood::MenuScene')) {
+			$scene->setup($prev_scene);
+		}
+		else {
+			$scene->setup($prev_scene_name);
+		}
 	}
 
 	method init_app () {
 		return if $self->app;
-		
-		SDLx::App->init(['video']);
-		Games::Neverhood::SurfaceUtil::set_icon(share_file('icon.bmp'), SDL::Color->new(255, 0, 255));
 
 		my ($event_window_pause, $event_pause); # recursive subs
 		$event_window_pause = sub {
@@ -161,7 +181,7 @@ class Games::Neverhood {
 			return;
 		};
 
-		$self->app(SDLx::App->new(
+		$self->_set_app(SDLx::App->new(
 			title      => 'The Neverhood',
 			width      => 640,
 			height     => 480,
@@ -184,8 +204,8 @@ class Games::Neverhood {
 	#		async_blit => 1,
 	#		hw_palette => 1,
 
-			# icon => share_file('icon.bmp'),
-			# icon_alpha_key => SDL::Color->new(255, 0, 255),
+			icon => share_file('icon.bmp'),
+			icon_alpha_key => SDL::Color->new(255, 0, 255),
 
 			event_handlers => [
 				$event_window_pause,
@@ -197,25 +217,15 @@ class Games::Neverhood {
 
 				# move
 
-				$player->advance_in_time($time);
-				$player->invalidate_all() if $player->is_invalidated;
+				$;->scene->handle_time($time);
 
 				# show
 
-				$app->draw_rect([0, 0, $app->w, $app->h], [255, 255, 255, 255]) if debug();
-
-				# $sprite->draw();
-				
-				$player->draw() if $player->is_invalidated;
-				
-				my $frame = $sequence->get_frame_surface(2);
-				Games::Neverhood::SurfaceUtil::set_color_keying($frame, 1);
-				SDL::Video::blit_surface($frame, undef, $;->app, SDL::Rect->new(380, 109, 0, 0));
-				
-				$sprite_on_top->draw();
+				$;->scene->draw();
 
 				Games::Neverhood::Drawable->update_screen();
 			},
+			move_handler => undef,
 			stop_handler => sub {
 				my ($e, $app) = @_;
 					$app->stop()

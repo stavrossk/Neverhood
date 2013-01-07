@@ -12,29 +12,30 @@ class Games::Neverhood::Options {
 	use Digest::SHA ();
 	use SDL::Constants ':SDL::CDROM';
 
-	has data_dir            => init_private_set Str;
-	has fullscreen          => init_private_set Bool, default => 0;
-	has no_frame            => init_private_set Bool, default => 0;
-	has fps_limit           => init_private_set Int, default => 60;
-	has grab_input          => init_private_set Maybe(Bool);
+	rpvt_arg data_dir            => Str;
+	rpvt_arg fullscreen          => Bool, default => 0;
+	rpvt_arg no_frame            => Bool, default => 0;
+	rpvt_arg fps_limit           => Int, default => 60;
+	rpvt_arg grab_input          => Maybe(Bool);
 
-	has debug               => init_private_set Bool, default => 0;
-	has mute                => init_private_set Bool, default => 0;
-	has starting_scene      => init_private_set SceneName, default => 'Nursery::One';
-	has starting_prev_scene => init_private_set Maybe(SceneName);
-	has write_checksums     => init_private_set Bool, default => 0;
-	has share_dir           => private_set Str;
+	rpvt_arg debug               => Bool, default => 0;
+	rpvt_arg mute                => Bool, default => 0;
+	rpvt_arg starting_scene      => SceneName, default => 'Nursery::One';
+	rpvt_arg starting_prev_scene => Maybe(SceneName);
+	rpvt_arg write_checksums     => Bool, default => 0;
+	rpvt     share_dir           => Str;
 
 	method BUILD (@_) {
-		$self->grab_input($self->no_frame || $self->fullscreen) unless defined $self->grab_input;
-		$self->starting_prev_scene($self->starting_scene) unless defined $self->starting_prev_scene;
+		$self->_set_grab_input($self->no_frame || $self->fullscreen) unless defined $self->grab_input;
+		$self->_set_starting_prev_scene($self->starting_scene) unless defined $self->starting_prev_scene;
+		$self->_set_share_dir(File::ShareDir::dist_dir('Games-Neverhood'));
 
 		# for access from XS
 		*Debug = \$self->debug;
 	}
 
 	method new_with_options ($class:) {
-		my (%o, $config, $share_dir, $write_checksums);
+		my (%o, $config, $write_checksums);
 		my @saved_options   = qw/data_dir fullscreen no_frame fps_limit grab_input/;
 		my @unsaved_options = qw/debug mute starting_scene starting_prev_scene/;
 
@@ -56,7 +57,11 @@ class Games::Neverhood::Options {
 			'help|h|?'                => sub { $class->_print_usage() },
 		) or $class->_print_usage(exitval => 1);
 		
-		$share_dir = File::ShareDir::dist_dir('Games-Neverhood');
+		my $options = $class->new(
+			map maybe($_, $o{$_}), @saved_options, @unsaved_options,
+		);
+		
+		my $share_dir = $options->share_dir;
 		my $config_file = cat_file($share_dir, 'config.yaml');
 
 		my $saved_options;
@@ -69,16 +74,16 @@ class Games::Neverhood::Options {
 
 		say '';
 		$config = $config || !$saved_options;
-		if ($config or !defined $o{data_dir}) {
+		my $data_dir = $o{data_dir};
+		if ($config or !defined $data_dir) {
 			say("Gonna config");
-			delete $o{data_dir};
 			say("DATA dirs are where all dem blb files are hidden");
 		}
 		
 		my $valid_data_dir;
 		{
-			if (defined $o{data_dir}) {
-				if ($o{data_dir} eq "") { # check CD drives for data dir
+			if (defined $data_dir) {
+				if ($data_dir eq "") { # check CD drives for data dir
 					SDLx::App->init(['cdrom']);
 					for my $drive (0..SDL::CDROM::num_drives()-1) {
 						my $cd = SDL::CD->new($drive);
@@ -95,11 +100,11 @@ class Games::Neverhood::Options {
 					}
 				}
 				else { # check string for being data dir
-					if ($class->_is_valid_data_dir($o{data_dir}, $share_dir, $write_checksums)) {
-						$valid_data_dir = $o{data_dir};
+					if ($class->_is_valid_data_dir($data_dir, $share_dir, $write_checksums)) {
+						$valid_data_dir = $data_dir;
 					}
 					else {
-						say("Data dir '".$o{data_dir}."' not valid. Data dir must contain the 7 blb files")
+						say("Data dir '".$data_dir."' not valid. Data dir must contain the 7 blb files")
 					}
 				}
 				
@@ -107,22 +112,19 @@ class Games::Neverhood::Options {
 
 			unless (defined $valid_data_dir) {
 				say("Enter the path to DATA dir or an empty line to search inserted CDs");
-				chomp($o{data_dir} = <STDIN> || "");
+				chomp($data_dir = <STDIN> // "");
 				say '';
 				redo;
 			}
 		}
 		
-		my $options = $class->new(
-			map maybe($_, $o{$_}), @saved_options, @unsaved_options,
-		);
-		
+		$options->_set_data_dir($data_dir);
 		# TODO: more config stuff here
 		
 		store($config_file, { map {$_ => $options->$_} @saved_options });
 		
-		$options->data_dir($valid_data_dir);
-		$options->share_dir($share_dir);
+		$options->_set_data_dir($valid_data_dir);
+		$options->_set_share_dir($share_dir);
 
 		return $options;
 	}
@@ -205,8 +207,8 @@ nhc [-?dhps] [long options]
 
 =head1 Options
 
- --data-dir=DIR     Set the data dir (BLB files) (default=./DATA)
- --share-dir=DIR    Set the share dir (save files)
+ --data-dir=DIR     Set the data dir (BLB files)
+ --cd               Search for the data dir on your CDs
  --fullscreen       Run the game fullscreen
  --window           Run the game in a frame-less window (default)
  --normal-window    Run the game in a normal window

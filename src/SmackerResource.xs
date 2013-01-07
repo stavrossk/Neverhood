@@ -92,7 +92,7 @@ typedef struct {
 SmackerResource* SmackerResource_new (ResourceEntry* entry)
 {
 	SmackerResource* this = safemalloc(sizeof(SmackerResource));
-	
+
 	if (entry->type != 0xA)
 		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);
 
@@ -199,16 +199,10 @@ SmackerResource* SmackerResource_new (ResourceEntry* entry)
 	return this;
 }
 
-static void SmackerResource_hookMusic (SmackerAudio* audio)
-{
-	SDL_LockAudio();
-	*(SmackerAudio**)Mix_GetMusicHookData() = audio;
-	SDL_UnlockAudio();
-}
-
 static void SmackerResource_handleAudioTrack (SmackerResource* this, Uint8 track, Uint32 chunk_size, Uint32 unpacked_size);
 static void SmackerResource_unpackPalette (SmackerResource* this);
 static void SmackerResource_player (void* udata, Uint8* buf, int size);
+static void SmackerResource_destroyAudio (SmackerResource* this);
 
 int SmackerResource_nextFrame (SmackerResource* this)
 {
@@ -221,7 +215,7 @@ int SmackerResource_nextFrame (SmackerResource* this)
 	/* curFrame starts at -1 so we can do this */
 	this->curFrame++;
 	if (this->curFrame >= this->frameCount) {
-		SmackerResource_hookMusic(NULL);
+		SmackerResource_destroyAudio(this);
 		return 0;
 	}
 
@@ -347,11 +341,11 @@ int SmackerResource_nextFrame (SmackerResource* this)
 	return 1;
 }
 
-void SmackerResource_firstFrame (SmackerResource* this)
+void SmackerResource_stop (SmackerResource* this)
 {
 	this->curFrame = -1;
 
-	SmackerResource_hookMusic(NULL);
+	SmackerResource_destroyAudio(this);
 
 	/* reset the palette */
 	SDL_Color* palette = this->surface->format->palette->colors;
@@ -359,7 +353,6 @@ void SmackerResource_firstFrame (SmackerResource* this)
 	SDL_SetColors(this->surface, palette, 0, 256);
 
 	SDL_RWseek(this->fileStream, this->frameDataStartPos, SEEK_SET);
-	SmackerResource_nextFrame(this);
 }
 
 static void SmackerResource_unpackCompressedAudio
@@ -412,9 +405,9 @@ static void SmackerResource_handleAudioTrack (SmackerResource* this, Uint8 track
 		}
 		this->audio->latestLink = &link->nextLink;
 
-		SDL_UnlockAudio();
+		*(SmackerAudio**)Mix_GetMusicHookData() = this->audio;
 
-		SmackerResource_hookMusic(this->audio);
+		SDL_UnlockAudio();
 	}
 	else if (chunk_size > 0) {
 		/* Ignore the rest of the audio tracks, if they exist */
@@ -547,17 +540,16 @@ static void SmackerResource_unpackPalette (SmackerResource* this)
 	safefree(chunk);
 }
 
-void SmackerResource_DESTROY (SmackerResource* this)
+static void SmackerResource_destroyAudio (SmackerResource* this)
 {
-	safefree(this->frameSizes);
-	safefree(this->frameTypes);
-	BigTree_destroy(this->MMapTree);
-	BigTree_destroy(this->MClrTree);
-	BigTree_destroy(this->FullTree);
-	BigTree_destroy(this->TypeTree);
 	if (this->audio) {
-		if (*(SmackerAudio**)Mix_GetMusicHookData() == this->audio)
-			SmackerResource_hookMusic(NULL);
+		SDL_LockAudio();
+
+		SmackerAudio** hooked_audio = (SmackerAudio**)Mix_GetMusicHookData();
+		if (*hooked_audio == this->audio)
+			*hooked_audio = NULL;
+
+		SDL_UnlockAudio();
 
 		while (this->audio->earliestLink) {
 			BufferLink* oldLink = this->audio->earliestLink;
@@ -566,8 +558,20 @@ void SmackerResource_DESTROY (SmackerResource* this)
 			safefree(oldLink);
 		}
 		safefree(this->audio);
-		safefree(this->cvt);
+		this->audio = NULL;
 	}
+}
+
+void SmackerResource_DESTROY (SmackerResource* this)
+{
+	safefree(this->frameSizes);
+	safefree(this->frameTypes);
+	BigTree_destroy(this->MMapTree);
+	BigTree_destroy(this->MClrTree);
+	BigTree_destroy(this->FullTree);
+	BigTree_destroy(this->TypeTree);
+	SmackerResource_destroyAudio(this);
+	safefree(this->cvt);
 	safefree(this);
 }
 
@@ -591,10 +595,10 @@ Neverhood_SmackerResource_next_frame (THIS)
 		RETVAL
 
 void
-Neverhood_SmackerResource_first_frame (THIS)
+Neverhood_SmackerResource_stop (THIS)
 		SmackerResource* THIS
 	CODE:
-		SmackerResource_firstFrame(THIS);
+		SmackerResource_stop(THIS);
 
 SDL_Surface*
 Neverhood_SmackerResource_get_surface (THIS)

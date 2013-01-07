@@ -1,45 +1,25 @@
 # Scene::Test
-# Copyright (C) 2012  Blaise Roth
-# See the LICENSE file for the full terms of the license.
+# Copyright (C) 2012 Blaise Roth
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use 5.01;
-use strict;
-use warnings;
-package Games::Neverhood::Scene::Test;
 
-use parent qw/Games::Neverhood::Scene/;
-# use Games::Neverhood::Video;
-use File::Spec;
-
-use constant {
-	fps => 24,
-	cursor_type => 'sides_down',
-};
-sub sprites_list {
-	[
-		'test',
-		# Games::Neverhood::Video->new(file => 73, dir => 'hd'),
-	];
+class Games::Neverhood::Scene::Test extends Games::Neverhood::Scene {
+	method setup (SceneName $prev_scene) {
+		# $self->set_movie('40800711');
+		# $self->set_movie('21080011');
+		
+		my $movie = Mov->new(key => '21080011');
+		$self->set_movie($movie);
+	}
 }
 
-package Games::Neverhood::Scene::Test::test;
-our @ISA = qw/Games::Neverhood::Sprite/;
-
-use constant {
-	file => 505,
-	alpha => 0,
-	pos => [255, 255],
-};
-sub palette { state $foo = Games::Neverhood::Scene::Test::background->new }
-
-package Games::Neverhood::Scene::Test::background;
-	our @ISA = qw/Games::Neverhood::Sprite/;
-	use constant {
-		file => 496,
-	};
-
-sub on_move {
-
+class Mov extends Games::Neverhood::MoviePlayer {
+	after handle_tick () {
+		if ($self->cur_frame == 33) { $self->stop; $;->scene->_order->remove($self); $;->scene->_set_movie(undef) }
+	}
 }
 
 1;

@@ -10,26 +10,27 @@ use 5.01;
 role Games::Neverhood::Drawable {
 	# draw_surfaces needs to draw the surfaces and update w and h
 	# invalidator_checks needs to return a list of method names to check for changes
-	requires 'draw_surfaces', 'invalidator_checks';
+	requires 'draw_surfaces', 'invalidator_checks', 'handle_tick';
 
-	my $_is_all_invalidated; # => private Bool;
-	my @_invalidated_rects;  # => private ArrayRef(Surface);
+	my $_is_all_invalidated; # pvt Bool;
+	my @_invalidated_rects;  # pvt ArrayRef(Surface);
 
 	use constant is_visible => 1;
 
-	has ['x', 'y'] => rw Int, default => 0;
-	has ['w', 'h'] => private_set Int;
+	rw   ['x', 'y'] => Int, default => 0;
+	rpvt ['w', 'h'] => Int;
+	rw   name       => Str;
 
-	has is_invalidated => private_set Bool;
-	has _checked       => private HashRef;
-	has _is_checked    => private Bool;
+	rpvt is_invalidated => Bool;
+	pvt  checked        => HashRef;
+	pvt  is_checked     => Bool;
 
 	method rect (Rect $rect) {
 		if($rect) {
-			$self->x($rect->x);
-			$self->y($rect->y);
-			$self->w($rect->w);
-			$self->h($rect->h);
+			$self-> set_x($rect->x);
+			$self-> set_y($rect->y);
+			$self->_set_w($rect->w);
+			$self->_set_h($rect->h);
 			return $self;
 		}
 		return SDLx::Rect->new($self->x, $self->y, $self->w, $self->h);
@@ -52,7 +53,7 @@ role Games::Neverhood::Drawable {
 	method invalidate () {
 		return if $self->_is_checked;
 
-		unless($_is_all_invalidated) {
+		unless ($_is_all_invalidated) {
 			my $screen_rect = SDL::Rect->new(0, 0, $;->app->w, $;->app->h);
 
 			my ($x, $y, $w, $h) = ($self->x, $self->y, $self->w, $self->h);
@@ -66,13 +67,13 @@ role Games::Neverhood::Drawable {
 			my $checked_h = exists $checked->{h} ? $checked->{h} : $h;
 			$checked_rect->size($checked_w, $checked_h);
 
-			if(exists $checked->{x} or exists $checked->{y}) {
+			if (exists $checked->{x} or exists $checked->{y}) {
 				my $checked_x = exists $checked->{x} ? $checked->{x} : $x;
 				my $checked_y = exists $checked->{y} ? $checked->{y} : $y;
 				$checked_rect->topleft($checked_y, $checked_x);
 				$checked_rect->clip_ip($screen_rect);
 
-				if($rect->colliderect($rect)) {
+				if ($rect->colliderect($rect)) {
 					# if the rects collide, update the bigger rect that fits them both
 					push @_invalidated_rects, $rect->union($checked_rect);
 				}
@@ -89,7 +90,7 @@ role Games::Neverhood::Drawable {
 		}
 
 		$self->_update_checking();
-		$self->is_invalidated(1);
+		$self->_set_is_invalidated(1);
 	}
 
 	# done automatically to invalidate the surface if anything we're checking has changed
@@ -99,7 +100,7 @@ role Games::Neverhood::Drawable {
 		return $self->invalidate() if $_is_all_invalidated;
 
 		my $checked = $self->_checked;
-		while(my ($k, $v) = each %$checked) {
+		while (my ($k, $v) = each %$checked) {
 			if($v !~~ $self->$k) {
 				return $self->invalidate();
 			}
@@ -112,19 +113,19 @@ role Games::Neverhood::Drawable {
 		error("Wanted to update checking twice") if $self->_is_checked;
 
 		my $checked = $self->_checked;
-		for($self->invalidator_checks) {
+		for ($self->invalidator_checks) {
 			$checked->{$_} = $self->$_;
 		}
 
-		$self->_is_checked(1);
+		$self->_set_is_checked(1);
 	}
 
 	# update rects on the app
 	method update_screen ($self:) {
-		if($_is_all_invalidated) {
+		if ($_is_all_invalidated) {
 			SDL::Video::update_rect($;->app, 0, 0, 0, 0);
 		}
-		elsif(@_invalidated_rects) {
+		elsif (@_invalidated_rects) {
 			SDL::Video::update_rects($;->app, @_invalidated_rects);
 		}
 
@@ -134,13 +135,13 @@ role Games::Neverhood::Drawable {
 
 	method draw () {
 		$self->draw_surfaces() if $self->is_visible;
-		$self->_is_checked(0);
-		$self->is_invalidated(0);
+		$self->_set_is_checked(0);
+		$self->_set_is_invalidated(0);
 	}
 	
 	method draw_surface (Surface $surface) {
-		$self->w($surface->w);
-		$self->h($surface->h);
+		$self->_set_w($surface->w);
+		$self->_set_h($surface->h);
 		SDL::Video::blit_surface($surface, undef, $;->app, SDL::Rect->new($self->x, $self->y, 0, 0));
 	}
 }

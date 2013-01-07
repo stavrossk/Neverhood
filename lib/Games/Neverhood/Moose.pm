@@ -7,6 +7,9 @@
 package Games::Neverhood::Moose;
 
 use 5.01;
+use strict;
+use warnings;
+
 use Moose ();
 use Moose::Role ();
 use Moose::Exporter ();
@@ -18,7 +21,7 @@ use Carp ();
 use File::Spec ();
 use Scalar::Util ();
 use List::Util ();
-use YAML::XS;
+use YAML::XS ();
 
 # use all the SDL stuff we need here
 # then you only need to import constants in each class
@@ -51,7 +54,7 @@ BEGIN {
 	XSLoader::load('Games::Neverhood::SoundResource');
 	XSLoader::load('Games::Neverhood::MusicResource');
 	XSLoader::load('Games::Neverhood::SmackerResource');
-	
+
 	# have to modify @ISA here because XSLoader unceremoniously clobbers it
 	push @Games::Neverhood::PaletteResource::ISA, 'SDL::Palette';
 	push @Games::Neverhood::SoundResource::ISA,   'SDL::Mixer::MixChunk';
@@ -61,13 +64,18 @@ sub do_import {
 	my $moose = shift;
 
 	my ($import) = Moose::Exporter->build_import_methods(
+		with_meta => [
+			qw( rw ro pvt rpvt pvt_arg rpvt_arg rwpvt ),
+		],
 		as_is => [
-			\&rw, \&ro, \&private, \&private_set, \&init_private_set,
-			\&Any, \&Item, \&Bool, \&Maybe, \&Undef, \&Defined, \&Value, \&Str, \&Num, \&Int, \&ClassName, \&RoleName, \&Ref, \&ScalarRef, \&ArrayRef, \&HashRef, \&CodeRef, \&RegexpRef, \&GlobRef, \&FileHandle, \&Object, \&Rect, \&Surface, \&SceneName,
-			\&debug, \&error, \&debug_stack,
-			\&cat_file, \&cat_dir, \&data_file, \&data_dir, \&share_file, \&share_dir,
+			qw ( required weak_ref trigger builder ),
+			qw ( Maybe Bool Value Str Num Int ClassName RoleName Ref ScalarRef ArrayRef HashRef CodeRef RegexpRef GlobRef FileHandle Object ),
+			qw ( Rect Surface SceneName Palette ),
+			qw ( debug error debug_stack ),
+			qw ( cat_file cat_dir data_file data_dir share_file share_dir ),
 			\&maybe, \&List::Util::max, \&List::Util::min, \&unindent, \&Scalar::Util::weaken,
-			\&store, \&retrieve,
+			qw ( store retrieve ),
+			qw ( is_class_loaded ),
 		],
 		also => [$moose, 'MooseX::StrictConstructor'],
 	);
@@ -82,66 +90,68 @@ sub do_import {
 	*MooseX::Declare::Syntax::Keyword::Role::import_symbols_from  = sub { 'Games::Neverhood::Moose::Role' };
 }
 
-sub rw          { is => 'rw', maybe(isa => shift), @_ }
-sub ro          { is => 'ro', maybe(isa => shift), @_ }
-sub private     { is => 'rw', maybe(isa => shift), init_arg => undef, @_ }
-sub private_set {
-	is => 'rw',
-	maybe(isa => shift),
-	init_arg => undef,
-	trigger => sub {
-		my $sub_1 = (caller 1)[0];
-		my $sub_2 = (caller 2)[3];
-		return unless defined $sub_2;
-		$sub_2 =~ s/::[^:]+$//;
+# Moose::has stuff
+sub has {
+	my $meta = shift;
+	my $names = shift;
 
-		Carp::confess("This method can only be set privately\n\n'", $sub_1, "' '", $sub_2, "'\n\n", join " ", (caller(1))[0,3],"\n\n", join " ", (caller(2))[0,3], "\n\n" )
+	error("Odd number of args given to has: ".join ', ', @_)
+		if @_ % 2 == 1;
 
-		if defined $sub_2 and $sub_1 ne $sub_2;
-	},
-	@_
+	my $attrs = ref $names eq 'ARRAY' ? $names : [ $names ];
+
+	my %options = ( definition_context => Moose::Util::_caller_info(), @_ );
+	my $reader = $options{reader};
+	my $writer = $options{writer};
+	my $trigger = $options{trigger} if defined $options{trigger} && !ref $options{trigger};
+	my $builder = $options{builder} && !ref $options{builder};
+
+	for my $name (@$attrs) {
+		$options{reader} = $reader.$name;
+		$options{writer} = $writer."set_$name" if defined $options{writer};
+
+		if ($trigger) { $options{trigger} = \&{$trigger."::_${name}_trigger"} }
+		if ($builder) { $options{builder} =               "_${name}_builder" }
+
+		$meta->add_attribute( $name, %options );
+	}
 }
-sub init_private_set {
-	is => 'rw',
-	maybe(isa => shift),
-	trigger => sub {
-		my $sub_1 = (caller 1)[0];
-		my $sub_2 = (caller 2)[3];
-		return unless defined $sub_2;
-		$sub_2 =~ s/::[^:]+$//;
+sub rw       { splice @_, 2, 0, reader => "",  writer => "",                     'isa'; goto &has }
+sub ro       { splice @_, 2, 0, reader => "",                                    'isa'; goto &has }
+sub pvt      { splice @_, 2, 0, reader => "_", writer => "_", init_arg => undef, 'isa'; goto &has }
+sub rpvt     { splice @_, 2, 0, reader => "",  writer => "_", init_arg => undef, 'isa'; goto &has }
+sub pvt_arg  { splice @_, 2, 0, reader => "_", writer => "_",                    'isa'; goto &has }
+sub rpvt_arg { splice @_, 2, 0, reader => "",  writer => "_",                    'isa'; goto &has }
+sub rwpvt    { splice @_, 2, 0, reader => "",  writer => "",  init_arg => undef, 'isa'; goto &has }
 
-		Carp::confess("This method can only be set privately\n\n'", $sub_1, "' '", $sub_2, "'\n\n", join " ", (caller(1))[0,3],"\n\n", join " ", (caller(2))[0,3], "\n\n" )
-
-		if defined $sub_2 and $sub_1 ne $sub_2;
-	},
-	@_
+sub required ()  { required => 1 }
+sub weak_ref ()  { weak_ref => 1 }
+sub trigger (;$) {
+	if (@_) {
+		return trigger => $_[0];
+	}
+	return trigger => scalar caller,
 }
+sub builder () { builder => 1 }
 
-sub Any        () { 'Any' }
-sub Item       () { 'Item' }
-sub Bool       () { 'Bool' }
-sub Maybe         { @_ ? sprintf('Maybe[%s]', shift) : 'Maybe' }
-sub Undef      () { 'Undef' }
-sub Defined    () { 'Defined' }
-sub Value      () { 'Value' }
-sub Str        () { 'Str' }
-sub Num        () { 'Num' }
-sub Int        () { 'Int' }
-sub ClassName  () { 'ClassName' }
-sub RoleName   () { 'RoleName' }
-sub Ref        () { 'Ref' }
-sub ScalarRef     { @_ ? sprintf('ScalarRef[%s]', shift) : 'ScalarRef', @_ }
-sub ArrayRef      { @_ ? sprintf('ArrayRef[%s]',  shift) : 'ArrayRef',  @_, default => sub { [] } }
-sub HashRef       { @_ ? sprintf('HashRef[%s]',   shift) : 'HashRef',   @_, default => sub { {} } }
-sub CodeRef    () { 'CodeRef' }
-sub RegexpRef  () { 'RegexpRef' }
-sub GlobRef    () { 'GlobRef' }
-sub FileHandle () { 'FileHandle' }
-sub Object     () { 'Object' }
-
-sub Rect      () { 'Rect' }
-sub SceneName () { 'SceneName' }
-sub Surface   () { 'Surface' }
+# builtin type constraints
+sub Maybe     (;$) { @_ ? sprintf('Maybe[%s]', shift) : 'Maybe' }
+sub Bool       ()  { 'Bool' }
+sub Value      ()  { 'Value' }
+sub Str        ()  { 'Str' }
+sub Num        ()  { 'Num' }
+sub Int        ()  { 'Int' }
+sub ClassName  ()  { 'ClassName' }
+sub RoleName   ()  { 'RoleName' }
+sub Ref       (;$) { @_ ? sprintf('Ref[%s]',       shift) : 'Ref' }
+sub ScalarRef (;$) { @_ ? sprintf('ScalarRef[%s]', shift) : 'ScalarRef' }
+sub ArrayRef  (;$) { @_ ? sprintf('ArrayRef[%s]',  shift) : 'ArrayRef', default => sub { [] } }
+sub HashRef   (;$) { @_ ? sprintf('HashRef[%s]',   shift) : 'HashRef',  default => sub { {} } }
+sub CodeRef    ()  { 'CodeRef' }
+sub RegexpRef  ()  { 'RegexpRef' }
+sub GlobRef    ()  { 'GlobRef' }
+sub FileHandle ()  { 'FileHandle' }
+sub Object     ()  { 'Object' }
 
 sub debug {
 	return $;->_options->debug unless @_;
@@ -184,10 +194,11 @@ sub share_dir  { File::Spec->catdir ($;->_options->share_dir, @_) }
 sub data_file  { File::Spec->catfile($;->_options->data_dir,  @_) }
 sub share_file { File::Spec->catfile($;->_options->share_dir, @_) }
 
-# return a key-value pair only if the value is defined
+# returns what it was given, but returns an empty list if the value is undefined
 sub maybe {
-	if(@_ == 2) { return @_ if defined $_[1] }
-	else { error("maybe() needs 2 arguments but was called with %s", scalar @_) }
+	if    (@_ == 2) { return @_ if defined $_[1] }
+	elsif (@_ == 1) { return @_ if defined $_[0] }
+	else { error("maybe() needs 1 or 2 arguments but was called with %d", scalar @_) }
 	return;
 }
 
@@ -199,20 +210,17 @@ sub unindent {
 }
 
 # serialization methods
-sub store    { &YAML::XS::DumpFile }
-sub retrieve { &YAML::XS::LoadFile }
+sub store    { goto &YAML::XS::DumpFile }
+sub retrieve { goto &YAML::XS::LoadFile }
 
-subtype Rect =>
-	as Object,
-	where { $_->isa('SDL::Rect') },
-;
-subtype Surface =>
-	as Object,
-	where { $_->isa('SDL::Surface') },
-;
-subtype SceneName =>
+# type constriants
+class_type 'Rect'    => { class => 'SDL::Rect' };    sub Rect    () { 'Rect' }
+class_type 'Surface' => { class => 'SDL::Surface' }; sub Surface () { 'Surface' }
+class_type 'Palette' => { class => 'SDL::Palette' }; sub Palette () { 'Palette' }
+
+subtype 'SceneName' =>
 	as Str,
 	# where { is_class_loaded('Games::Neverhood::Scene::' . $_) },
-;
+; sub SceneName () { 'SceneName' }
 
 1;

@@ -5,23 +5,22 @@
 use 5.01;
 use warnings;
 use strict;
+
 package Games::Neverhood::OrderedHash::TiedHash;
 
 use Games::Neverhood::OrderedHash qw/ORDER HASH/;
-use Carp;
+use Method::Signatures;
 
-sub TIEHASH {
-	bless $_[1], $_[0];
+method TIEHASH ($class: $tie) {
+	bless $tie, $class;
 }
 
-sub FETCH {
-	my ($self, $key) = @_;
+method FETCH ($key) {
 	$self->[HASH]{$key};
 }
-sub STORE {
-	my ($self, $key, $value) = @_;
+method STORE ($key, $value) {
 	# if key is not in Order, push it in
-	unless(
+	unless (
 		exists $self->[HASH]{$key}
 		or exists { map {$_ => undef} @{$self->[ORDER]} }->{$key}
 	) {
@@ -29,33 +28,27 @@ sub STORE {
 	}
 	$self->[HASH]{$key} = $value;
 }
-sub DELETE {
-	my ($self, $key) = @_;
+method DELETE ($key) {
 	delete $self->[HASH]{$key};
 }
-sub CLEAR {
-	my ($self) = @_;
+method CLEAR {
 	%{$self->[HASH]} = ();
 }
-sub EXISTS {
-	my ($self, $key) = @_;
+method EXISTS ($key) {
 	exists $self->[HASH]{$key};
 }
-sub FIRSTKEY {
-	my ($self) = @_;
+method FIRSTKEY {
 	keys %{$self->[HASH]};
-	&NEXTKEY;
+	$self->NEXTKEY;
 }
-sub NEXTKEY {
-	my ($self) = @_;
+method NEXTKEY (@_) {
 	my $key;
-	while((undef, $key) = each @{$self->[ORDER]}) {
+	while ((undef, $key) = each @{$self->[ORDER]}) {
 		exists $self->[HASH]{$key} and return $key
 	}
 	return;
 }
-sub SCALAR {
-	my ($self) = @_;
+method SCALAR {
 	scalar %{$self->[HASH]};
 }
 sub UNTIE {

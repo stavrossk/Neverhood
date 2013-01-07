@@ -27,7 +27,7 @@ typedef struct {
 SpriteResource* SpriteResource_new (ResourceEntry* entry)
 {
 	SpriteResource* this = safemalloc(sizeof(SpriteResource));
-	
+
 	if (entry->type != 2)
 		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);
 
@@ -122,6 +122,14 @@ Neverhood_SpriteResource_get_y (THIS)
 		RETVAL = THIS->y;
 	OUTPUT:
 		RETVAL
+
+SDL_Palette*
+Neverhood_SpriteResource_get_palette (THIS)
+		SpriteResource* THIS
+	CODE:
+		RETVAL = THIS->surface->format->palette;
+	OUTPUT:
+		RETVAL;
 
 void
 Neverhood_SpriteResource_DESTROY (THIS)

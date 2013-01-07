@@ -64,7 +64,7 @@ MusicResource* MusicResource_new (ResourceEntry* entry)
 	return this;
 }
 
-void MusicResource_play (MusicResource* this, int ms)
+void MusicResource_fadeIn (MusicResource* this, int ms)
 {
 	if (ms > 0) {
 		this->fading = MIX_FADING_IN;
@@ -267,11 +267,11 @@ Neverhood_MusicResource_new (CLASS, entry)
 		RETVAL
 
 void
-Neverhood_MusicResource_play (THIS, ms)
+Neverhood_MusicResource_fade_in (THIS, ms)
 		MusicResource* THIS
 		int ms
 	CODE:
-		MusicResource_play (THIS, ms);
+		MusicResource_fadeIn(THIS, ms);
 
 void
 Neverhood_MusicResource_fade_out (THIS, ms)

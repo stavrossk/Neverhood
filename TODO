@@ -2,9 +2,9 @@ TODO and Milestones for Games::Neverhood
 Since 27 Sep 2010
 
 TODO
-    Stuff in Build.PL
+    Get my SDL changes released and update it in build
     Complete config mode
-    Write an icon mask thing for SDL
+    Fix w and h in Drawable
     Make smacker audio resync with video
     Fuck big endian compat
     Split h and c apart in src/ and use so instead of o
@@ -20,11 +20,11 @@ Milestones
             Resource Manager working
     0.3 - Nursery scenes done
         Scene
-        Sprite
+            Sprite
         Sequence
         Audible
         Drawable
-        z-values working, start in order of adding then move by saying "put this in front or behind that"
+            z-values working, start in order of adding then move by saying "put this in front or behind that"
         Cursor implemented
         Klaymen movement worked out
         Game Vars working

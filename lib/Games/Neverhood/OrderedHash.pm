@@ -7,10 +7,10 @@
 use 5.01;
 use warnings;
 use strict;
+
 package Games::Neverhood::OrderedHash;
 
-use Carp;
-use Storable;
+use Method::Signatures;
 
 use constant {
 	TIEDHASH  => 0,
@@ -33,17 +33,13 @@ use overload
 	fallback => 1,
 ;
 
-sub new {
-	my ($class, $order) = (shift, shift);
-	if(ref $order eq 'ARRAY') {
+method new ($class: Maybe[ArrayRef] $order?, @hash) {
+	if ($order) {
 		Carp::confess("Order list must not have dups")
 			if keys %{{map {$_ => undef} @$order}} != @$order;
 	}
-	elsif(!defined $order) {
-		$order = [];
-	}
 	else {
-		Carp::confess('First argument must be arrayref or undef');
+		$order = [];
 	}
 	my $hash = {};
 	$class = ref $class || $class;
@@ -51,33 +47,20 @@ sub new {
 	tie my %tie, 'Games::Neverhood::OrderedHash::TiedHash',  [$order, $hash];
 	tie my @tie, 'Games::Neverhood::OrderedHash::TiedArray', [$order, $hash];
 
-	Carp::cluck('Odd number of elements in ordered hash'), push @_, undef
-		if @_ % 2;
-	for(my $i = 0; $i < @_; $i += 2) {
-		$tie{$_[$i]} = $_[$i+1];
+	if (@hash % 2) {
+		Carp::cluck('Odd number of elements in ordered hash');
+		push @_, undef;
+	}
+	for (my $i = 0; $i < @hash; $i += 2) {
+		$tie{$hash[$i]} = $hash[$i+1];
 	}
 
 	bless [\%tie, \@tie], $class;
 }
-sub DESTROY {
-	my ($self) = @_;
+method DESTROY {
 	no overloading;
 	# delete the tiedhash to break reference loop
 	delete $self->[TIEDHASH];
-}
-
-sub STORABLE_freeze {
-	my ($self, $cloning) = @_;
-	return if $cloning;
-	no overloading;
-	my $ref = tied(%{$self->[TIEDHASH]});
-	Storable::freeze([ $ref->[ORDER], %{$ref->[HASH]} ]);
-}
-sub STORABLE_thaw {
-	my ($self, $cloning, $serial) = @_;
-	return if $cloning;
-	no overloading;
-	@$self = @{ $self->new(@{ Storable::thaw($serial) }) };
 }
 
 1;

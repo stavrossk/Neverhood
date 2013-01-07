@@ -7,8 +7,8 @@
 use 5.01;
 
 class Games::Neverhood::ResourceMan {
-	has _entries   => private HashRef;
-	has _resources => private HashRef;
+	pvt entries   => HashRef;
+	pvt resources => HashRef;
 
 	method BUILD (@_) {
 		chop(my $prefix = data_file("a")); # to get a dir separator at the end we have to put in a filename then chop it off
