@@ -6,33 +6,29 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use 5.01;
 use strict;
 use warnings;
-use Alien::SDL;
 use ExtUtils::CBuilder;
 use File::Spec;
+use File::Basename 'fileparse';
+use File::Glob 'bsd_glob';
 use lib File::Spec->catdir('inc');
 use My::Builder;
+
+eval { require Alien::SDL } or die <<'ERROR';
+Build.PL requires Alien::SDL to be installed. Maybe try:
+perl -MCPAN -e "install Alien::SDL"
+ERROR
 
 my @cflags = ExtUtils::CBuilder->new->split_like_shell( File::Spec->catfile('-I' . Alien::SDL->config('prefix'), 'include') );
 my @lflags = ExtUtils::CBuilder->new->split_like_shell( Alien::SDL->config('libs', '-lSDL_mixer') );
 
-my @xs_files = qw/
-	MusicResource
-	PaletteResource
-	ResourceEntry
-	SequenceResource
-	SmackerResource
-	SoundResource
-	SpriteResource
-	SurfaceUtil
-/;
-
-sub xs_files {
-	my ($name) = @_;
-	$name = "$name.xs";
-	File::Spec->catfile('src', $name) => File::Spec->catfile('lib', 'Games', 'Neverhood', $name);
-}
+my @xs_files = map {
+	my $file = $_;
+	my ($name) = fileparse($file);
+	$file => File::Spec->catfile('lib', 'Games', 'Neverhood', $name);
+} bsd_glob "src/*.xs";
 
 my $build = My::Builder->new(
 	module_name   => 'Games::Neverhood',
@@ -45,13 +41,14 @@ my $build = My::Builder->new(
 		'Moose'                     => 2.06,
 		'MooseX::Declare'           => 0.34,
 		'Method::Signatures'        => 20121201,
+		'MooseX::Types'             => 0.31,
 		'MooseX::StrictConstructor' => 0.19, # remove me at v1.0
 	},
 	configure_requires   => { 'Module::Build' => 0.34 },
 	share_dir            => File::Spec->catdir('share'),
 	extra_compiler_flags => [ @cflags ],
 	extra_linker_flags   => [ @lflags ],
-	xs_files             => { map xs_files($_), @xs_files },
+	xs_files             => { @xs_files },
 	include_dirs         => [ File::Spec->catdir('src') ],
 	c_source             => [ File::Spec->catdir('src') ],
 	typemap_files        => { 'typemap' => File::Spec->catfile('lib', 'Games', 'Neverhood', 'typemap') },

@@ -1,19 +1,11 @@
-# GG
+# Games::Neverhood::GameVars
 # Copyright (C) 2012 Blaise Roth
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+class Games::Neverhood::GameVars {
 
-use 5.01;
-use strict;
-use warnings;
-package Games::Neverhood::GG;
-
-sub new {
-	my ($class) = @_;
-	my $self = bless {}, ref $class || $class;
-	
 		# 2, 1, 4, 5, 3, 11, 8, 6, 7, 9, 10, 17, 16, 18, 19, 20, 15, 14, 13, 12
 		# $nursery_1_window_open -- until jump down in nursery_2
 		# $flytrap_place         -- only while in mail room, also remember if it has grabbed ring
@@ -82,8 +74,8 @@ sub new {
 		# @safety_beakers   -- when either the safety beakers are seen or the safety lab is used
 		# @beakers          -- when either the lake wall beakers are seen or the lab is used
 		# @crystals         -- when the shrinking machine is used, roygbp, empty list when solved
+
+
+
+		# and then here we have a buncha methods that set and get doing stuff
 }
-
-# and then here we have a buncha methods that set and get doing stuff
-
-1;

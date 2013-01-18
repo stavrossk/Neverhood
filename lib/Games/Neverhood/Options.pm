@@ -4,8 +4,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use 5.01;
-
 class Games::Neverhood::Options {
 	use Getopt::Long ();
 	use File::ShareDir ();
@@ -16,12 +14,12 @@ class Games::Neverhood::Options {
 	rpvt_arg fullscreen          => Bool, default => 0;
 	rpvt_arg no_frame            => Bool, default => 0;
 	rpvt_arg fps_limit           => Int, default => 60;
-	rpvt_arg grab_input          => Maybe(Bool);
+	rpvt_arg grab_input          => Maybe[Bool];
 
 	rpvt_arg debug               => Bool, default => 0;
 	rpvt_arg mute                => Bool, default => 0;
 	rpvt_arg starting_scene      => SceneName, default => 'Nursery::One';
-	rpvt_arg starting_prev_scene => Maybe(SceneName);
+	rpvt_arg starting_prev_scene => Maybe[SceneName];
 	rpvt_arg write_checksums     => Bool, default => 0;
 	rpvt     share_dir           => Str;
 
@@ -39,6 +37,7 @@ class Games::Neverhood::Options {
 		my @saved_options   = qw/data_dir fullscreen no_frame fps_limit grab_input/;
 		my @unsaved_options = qw/debug mute starting_scene starting_prev_scene/;
 
+		Getopt::Long::Configure("bundling");
 		Getopt::Long::GetOptions(
 			'data-dir=s'    => \$o{data_dir},
 			'cd'            => sub { $o{data_dir} = "" },
@@ -197,8 +196,6 @@ class Games::Neverhood::Options {
 	}
 }
 
-1;
-
 __END__
 
 =head1 SYNOPSIS
@@ -219,7 +216,7 @@ nhc [-?dhps] [long options]
  --mute             Mute all music and sound
  -s --starting-scene=SCENE
                     Set the starting scene (default=Nursery::One)
- --starting-prev-scene=SCENE
+ -p --starting-prev-scene=SCENE
                     Set the starting prev scene (default=starting-scene)
  -? -h --help       Show this help
 

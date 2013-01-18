@@ -210,7 +210,7 @@ Neverhood_SequenceResource_get_frame_delta_y (THIS, frame)
 		RETVAL
 
 SDL_Rect*
-Neverhood_SequenceResource_get_collision_bounds_offset (THIS, frame)
+Neverhood_SequenceResource_get_frame_collision_bounds_offset (THIS, frame)
 		SequenceResource* THIS
 		int frame
 	INIT:

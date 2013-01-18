@@ -27,17 +27,17 @@ Copyright (C) 2012 Blaise Roth
 
 $Games::Neverhood::VERSION = 0.20;
 
-use 5.01;
 use MooseX::Declare;
 use Method::Signatures::Modifiers;
-use Games::Neverhood::Moose;
+use Games::Neverhood::Exports ();
 
 use Games::Neverhood::Options;
-use Games::Neverhood::Drawable;
-use Games::Neverhood::Ticker;
+use Games::Neverhood::Draw;
+use Games::Neverhood::Tick;
 use Games::Neverhood::ResourceMan;
 use Games::Neverhood::Scene;
 use Games::Neverhood::Sprite;
+use Games::Neverhood::Sequence;
 use Games::Neverhood::MoviePlayer;
 
 use Games::Neverhood::Scene::Test;
@@ -46,9 +46,10 @@ class Games::Neverhood {
 	use SDL::Constants ':SDL::Events';
 
 	pvt_arg options => 'Games::Neverhood::Options', required;
-	
+
 	rpvt scene        => 'Games::Neverhood::Scene';
-	rpvt app          => Maybe(Surface);
+	rpvt prev_scene   => Maybe['Games::Neverhood::Scene'];
+	rpvt app          => Maybe[Surface];
 	rpvt resource_man => 'Games::Neverhood::ResourceMan';
 
 	method BUILD (@_) { $; = $self }
@@ -76,7 +77,7 @@ class Games::Neverhood {
 		}
 
 		while($self->app->stopped ne 1) {
-			Games::Neverhood::Drawable->invalidate_all();
+			Games::Neverhood::Draw->invalidate_all();
 			if($self->scene) {
 				$prev_scene = ref $self->scene;
 				$prev_scene =~ s/^Games::Neverhood:://;
@@ -93,16 +94,21 @@ class Games::Neverhood {
 	}
 
 	# called outside of the run loop to load a new scene
-	method load_new_scene (SceneName $scene_name, SceneName $prev_scene_name) {
+	method load_new_scene (SceneName|Games::Neverhood::Scene $scene_name, SceneName $prev_scene_name) {
 		debug("Scene: %s; Previous scene: %s", $scene_name, $prev_scene_name);
-		
+
+		if (ref $scene_name) {
+			$self->_set_scene($scene_name);
+			return;
+		}
+
 		$scene_name = "Games::Neverhood::Scene::$scene_name";
 		unless (is_class_loaded $scene_name) {
 			error("$scene_name is not loaded");
 		}
 		my $scene = $scene_name->new;
 		my $prev_scene = $self->scene;
-		
+
 		if ($prev_scene) {
 			my $scene_music = $scene->music;
 			my $prev_scene_music = $prev_scene->music;
@@ -123,15 +129,15 @@ class Games::Neverhood {
 				$prev_scene_music->fade_out(2_000);
 				$scene->set_prev_music($prev_scene_music);
 			}
-			
+
 			if (!$scene->prev_music and $prev_scene->prev_music and !$bad
 					and !$scene->isa('Games::Neverhood::CutScene') and !$prev_scene->isa('Games::Neverhood::CutScene')) {
 				$scene->set_prev_music($prev_scene->prev_music);
 			}
 		}
-		
+
 		$self->_set_scene($scene);
-		
+
 		if ($scene->isa('Games::Neverhood::MenuScene')) {
 			$scene->setup($prev_scene);
 		}
@@ -190,7 +196,6 @@ class Games::Neverhood {
 			max_t      => 1 / 10,
 			min_t      => $self->_options->fps_limit &&  1 / $self->_options->fps_limit,
 			delay      => 0,
-			eoq        => 1,
 			init       => ['audio'],
 			no_cursor  => 1,
 			centered   => 1,
@@ -221,9 +226,11 @@ class Games::Neverhood {
 
 				# show
 
+				$app->draw_rect(undef, 0xFF00FFFF) if debug;
+
 				$;->scene->draw();
 
-				Games::Neverhood::Drawable->update_screen();
+				Games::Neverhood::Draw->update_screen();
 			},
 			move_handler => undef,
 			stop_handler => sub {
@@ -250,10 +257,8 @@ class Games::Neverhood {
 			},
 		));
 
-		$self->app->draw_rect([0, 0, $self->app->w, $self->app->h], [0, 0, 0, 255]);
+		$self->app->draw_rect(undef, 0x000000FF);
 		$self->app->update();
 	}
 
 }
-
-1;

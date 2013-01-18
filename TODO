@@ -2,28 +2,25 @@ TODO and Milestones for Games::Neverhood
 Since 27 Sep 2010
 
 TODO
-    Get my SDL changes released and update it in build
+    Get my SDL changes released and update SDL version in Build.PL
     Complete config mode
     Fix w and h in Drawable
     Make smacker audio resync with video
-    Fuck big endian compat
+    Only resume music/sound that you paused
+    Music fading code to fade between volumes
+    Music fading might sound better if non-linear, use some function?
     Split h and c apart in src/ and use so instead of o
-    Do something gimmicky with the 1; at the end of each pm
+    Rename Drawable and Ticker
+    MooseX::Types?
 
 Milestones
         0.2 - Main resources loading from archives and functional
-            Static sprites can show, change palette, mirror
-            Animated sprites can show, change palette, switch colors, mirror
-            Sounds can play, be stopped
-            Music can play, fade, pause
-            Movies can play, loop
-            Resource Manager working
     0.3 - Nursery scenes done
         Scene
             Sprite
         Sequence
         Audible
-        Drawable
+            Drawable
             z-values working, start in order of adding then move by saying "put this in front or behind that"
         Cursor implemented
         Klaymen movement worked out

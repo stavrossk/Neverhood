@@ -61,18 +61,27 @@ void SurfaceUtil_swapColors (SDL_Surface* surface, Uint8 old_index, Uint8 new_in
 void SurfaceUtil_setIcon (const char* filename, SDL_Color* color)
 {
 	SDL_Surface* icon = SDL_LoadBMP(filename);
-	
+
 	/* Who knows why this doesn't work... */
 	/* SDL_SetColorKey(icon, SDL_SRCCOLORKEY, SDL_MapRGB(icon->format, color->r, color->g, color->b)); */
-	
+
 	/* instead we have to set the transparent pixels manually with a mask */
 	Uint8 mask[128] = {
 		0b00000000,0b00111100,0b00000000,0b00000000,
 		0b00000000,0b00111100,0b00000000,0b00000000
 	};
 	memset(mask + 8, 0xFF, 120);
-	
+
 	SDL_WM_SetIcon(icon, mask);
+}
+
+bool SurfaceUtil_rectsEqual (SDL_Rect* rect, SDL_Rect* rect2)
+{
+	return rect->x == rect2->x
+	    && rect->y == rect2->y
+	    && rect->w == rect2->w
+	    && rect->h == rect2->h
+	;
 }
 
 MODULE = Games::Neverhood::SurfaceUtil		PACKAGE = Games::Neverhood::SurfaceUtil		PREFIX = Neverhood_SurfaceUtil_
@@ -111,3 +120,12 @@ Neverhood_SurfaceUtil_set_icon (filename, color)
 		SDL_Color* color
 	CODE:
 		SurfaceUtil_setIcon(filename, color);
+
+bool
+Neverhood_SurfaceUtil_rects_equal (rect, rect2)
+		SDL_Rect* rect
+		SDL_Rect* rect2
+	CODE:
+		RETVAL = SurfaceUtil_rectsEqual(rect, rect2);
+	OUTPUT:
+		RETVAL

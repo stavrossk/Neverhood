@@ -4,17 +4,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use 5.01;
-
-class Games::Neverhood::Scene with Games::Neverhood::Ticker {
+class Games::Neverhood::Scene with Games::Neverhood::Tick {
 	use SDL::Constants ':SDL::Events';
 
-	pvt   order      => 'Games::Neverhood::Order';
-	rpvt  background => 'Games::Neverhood::Drawable';
-	rpvt  movie      => Maybe('Games::Neverhood::MoviePlayer');
-	rpvt  palette    => Maybe(Palette);
-	rpvt  music      => Maybe('Games::Neverhood::MusicResource');
-	rwpvt prev_music => Maybe('Games::Neverhood::MusicResource');
+	pvt   order      => 'Games::Neverhood::Order', handles => [qw( add add_above add_below replace remove )];
+	rpvt  background => 'Games::Neverhood::Draw';
+	rpvt  movie      => Maybe['Games::Neverhood::MoviePlayer'];
+	rpvt  palette    => Maybe[Palette];
+	rpvt  music      => Maybe['Games::Neverhood::MusicResource'];
+	rwpvt prev_music => Maybe['Games::Neverhood::MusicResource'];
 
 	method BUILD (@_) {
 		$self->_set_order(Games::Neverhood::Order->new());
@@ -39,61 +37,73 @@ class Games::Neverhood::Scene with Games::Neverhood::Ticker {
 		}
 	}
 	
-	method add (Maybe[Str]|Maybe[ScalarRef] $name, Games::Neverhood::Drawable $item) {
-		if (defined $name) {
-			if (ref $name) {
-				$$name = $item;
-			}
-			else {
-				$self->$name($item);
-				$item->set_name($name) unless defined $item->name;
-			}
+	method _name_item (Undef|Str|ScalarRef $name, Games::Neverhood::Draw $item) {
+		return unless defined $name;
+		if (ref $name) {
+			$$name = $item;
 		}
+		else {
+			my $setter = "set_$name";
+			$self->$setter($item);
+			$item->set_name($name) unless length $item->name;
+		}
+	}
+	
+	method add_named (Games::Neverhood::Draw $item, Undef|Str|ScalarRef|ArrayRef $name?) {
+		$self->_name_item($name, $item);
 		$self->_order->add($item);
 	}
 	
-	method add_sprite (Maybe[Str]|Maybe[ScalarRef] $name, Str|Games::Neverhood::Sprite $sprite, @args) {
-		unless (ref $sprite) {
-			$sprite = Games::Neverhood::Sprite->new(key => $sprite, @args);
-		}
+	method add_sprite (Str $sprite, Undef|Str|ScalarRef|ArrayRef $name?, @args) {
+		$sprite = Games::Neverhood::Sprite->new(key => $sprite, @args);
 		$sprite->set_palette($self->palette) if !$sprite->palette and $self->palette;
-		$self->add($name, $sprite);
+		$self->add_named($sprite, $name);
 	}
 	
-	method add_sequence (Maybe[Str]|Maybe[ScalarRef] $name, Str|Games::Neverhood::Sequence $sequence, @args) {
-		unless (ref $sequence) {
-			$sequence = Games::Neverhood::Sequence->new(key => $sequence, @args);
-		}
-		$self->add($name, $sequence);
+	method add_sequence (Str $sequence, Undef|Str|ScalarRef $name, @args) {
+		$sequence = Games::Neverhood::Sequence->new(key => $sequence, @args);
+		$self->add_named($sequence, $name);
+	} 
+	
+	method add_above_background (Games::Neverhood::Draw $item) {
+		$self->_order->add_above($item, $self->background);
 	}
 		
 	method set_movie (Str|Games::Neverhood::MoviePlayer $movie, @args) {
 		unless (ref $movie) {
 			$movie = Games::Neverhood::MoviePlayer->new(key => $movie, @args);
 		}
-		$self->_order->replace($movie, $self->movie) or $self->_order->add($movie);
+		if ($self->movie) {
+			$self->movie->stop;
+			$self->_order->replace($movie, $self->movie);
+		}
+		else {
+			$self->_order->add($movie);
+		}
 		$self->_set_movie($movie);
-		$movie->set_name('movie') unless defined $movie->name;
+		$movie->set_name('movie') unless length $movie->name;
 	}
 	
-	method set_background (Str|Games::Neverhood::Drawable $background, @args) {
+	method set_background (Str|Games::Neverhood::Draw $background, @args) {
 		unless (ref $background) {
 			$background = Games::Neverhood::Sprite->new(key => $background, @args);
 		}
 		$self->_order->replace($background, $self->background) or $self->_order->add_at_bottom($background);
 		$self->_set_background($background);
-		$background->set_name('background') unless defined $background->name;
+		$background->set_name('background') unless length $background->name;
 		$self->set_palette($background) unless $self->palette;
 	}
 	
-	method set_palette (Str|Palette|Games::Neverhood::Sprite $palette) {
-		unless (ref $palette) {
-			$palette = $;->resource_man->get_palette($palette);
-		}
-		elsif ($palette->isa('Games::Neverhood::Sprite')) {
-			$palette = $palette->palette;
-		}
-		$self->_set_palette($palette);
+	method get_palette (Str|Palette|Surface|Games::Neverhood::Sprite|Games::Neverhood::Sequence|Games::Neverhood::Scene $palette) {
+		return undef unless defined $palette;
+		return $;->resource_man->get_palette($palette) unless ref $palette;
+		return $palette if $palette->isa(Palette);
+		return $palette->format->palette if $palette->isa(Surface);
+		return $palette->palette;
+	}
+	
+	method set_palette (Undef|Str|Object $palette) {
+		$self->_set_palette($self->get_palette($palette));
 	}
 	
 	method set_music (Str|Games::Neverhood::MusicResource $music) {
@@ -106,46 +116,54 @@ class Games::Neverhood::Scene with Games::Neverhood::Ticker {
 
 package Games::Neverhood::Order;
 
-use warnings;
+use 5.01;
 use strict;
+use warnings;
 use Method::Signatures;
 
 method new ($class:) {
 	bless [], $class;
 }
 
-method add (Games::Neverhood::Drawable $item) {
+method add (Games::Neverhood::Draw $item) {
 	$self->remove($item);
 	push @$self, $item;
+	$item->add();
+	return $item;
 }
 
-method add_at_bottom (Games::Neverhood::Drawable $item) {
+method add_at_bottom (Games::Neverhood::Draw $item) {
 	$self->remove($item);
 	unshift @$self, $item;
+	$item->add();
+	return $item;
 }
 
-method add_below (Games::Neverhood::Drawable $item, Games::Neverhood::Drawable $target_item) {
+method add_below (Games::Neverhood::Draw $item, Games::Neverhood::Draw $target_item) {
 	$self->_add_at($item, $target_item, 0);
 }
 
-method add_above (Games::Neverhood::Drawable $item, Games::Neverhood::Drawable $target_item) {
+method add_above (Games::Neverhood::Draw $item, Games::Neverhood::Draw $target_item) {
 	$self->_add_at($item, $target_item, 1);
 }
 
-method remove (Games::Neverhood::Drawable $item) {
+method remove (Games::Neverhood::Draw $item) {
 	my $item_index = $self->_index_of($item);
 	return splice @$self, $item_index, 1 if defined $item_index;
+	$item->remove();
 	return;
 }
 
-method replace (Games::Neverhood::Drawable $item, Maybe[Games::Neverhood::Drawable] $target_item) {
+method replace (Games::Neverhood::Draw $item, Maybe[Games::Neverhood::Draw] $target_item) {
+	$self->remove($item);
 	my $target_index;
 	$target_index = $self->_index_of($target_item) if defined $target_item;
 	return splice @$self, $target_index, 1, $item if defined $target_index;
+	$item->add();
 	return;
 }
 
-method _index_of (Games::Neverhood::Drawable $item) {
+method _index_of (Games::Neverhood::Draw $item) {
 	my $item_index;
 	while (my ($i, $value) = each @$self) {
 		if ($value == $item) {
@@ -155,11 +173,13 @@ method _index_of (Games::Neverhood::Drawable $item) {
 	return $item_index;
 }
 
-method _add_at (Games::Neverhood::Drawable $item, Games::Neverhood::Drawable $target_item, Int $offset) {
+method _add_at (Games::Neverhood::Draw $item, Games::Neverhood::Draw $target_item, Int $offset) {
 	$self->remove($item);
 	my $target_index = $self->_index_of($target_item);
 	Carp::confess("Drawable to move to isn't in scene") unless defined $target_index;
 	splice @$self, $target_index + $offset, 0, $item;
+	$item->add();
+	return $item;
 }
 
 1;

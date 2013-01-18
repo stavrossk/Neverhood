@@ -4,31 +4,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use 5.01;
-
-class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable with Games::Neverhood::Ticker {
+class Games::Neverhood::MoviePlayer
+	with Games::Neverhood::Draw
+	with Games::Neverhood::Tick
+{
 	use SDL::Constants ':SDL::GFX';
-
-	use constant invalidator_checks => ('x', 'y');
-
-	# public attributes
 
 	ro   key            => Str, required;
 	ro   is_double_size => Bool, default => 1;
+	ro   palette        => Palette;
 	rw   is_loopy       => Bool, default => 1;
-	rw   palette        => Maybe(Palette);
 	rpvt stopped        => Bool, default => 1;
 
-	method cur_frame   { $self->_resource->get_cur_frame   }
+	method cur_frame   { $self->_resource->get_cur_frame }
 	method frame_count { $self->_resource->get_frame_count }
-
-	# private attributes
 
 	pvt resource            => 'Games::Neverhood::SmackerResource';
 	pvt surface             => Surface;
 	pvt double_size_surface => Surface;
-
-	# methods
 
 	method BUILD (@_) {
 		$self->_set_resource($;->resource_man->get_smacker($self->key));
@@ -42,7 +35,7 @@ class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable with Games::
 				$self->_resource->stop();
 				$self->_resource->next_frame();
 			}
-			else {warn 'c';
+			else {
 				$self->_set_stopped(1);
 				return;
 			}
@@ -79,9 +72,8 @@ class Games::Neverhood::MoviePlayer with Games::Neverhood::Drawable with Games::
 		$self->next_frame();
 	}
 
-	method draw_surfaces () {
-		$self->draw_surface($self->is_double_size ? $self->_double_size_surface : $self->_surface);
+	method draw () {
+		my $surface = $self->is_double_size ? $self->_double_size_surface : $self->_surface;
+		$self->draw_surface($surface, $self->x, $self->y);
 	}
 }
-
-1;

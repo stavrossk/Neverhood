@@ -4,9 +4,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use 5.01;
-
-role Games::Neverhood::Ticker {
+role Games::Neverhood::Tick {
 	pvt ticker_tick_time      => Num, trigger method (@_) { $self->_set_ticker_remaining_time(0) };
 	pvt ticker_remaining_time => Num;
 
@@ -38,5 +36,3 @@ role Games::Neverhood::Ticker {
 		$self->_set_ticker_tick_time(1 / $fps);
 	}
 }
-
-1;

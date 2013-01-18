@@ -22,6 +22,7 @@ typedef struct {
 	SDL_Surface* surface;
 	Uint16 x;
 	Uint16 y;
+	bool no_palette;
 } SpriteResource;
 
 SpriteResource* SpriteResource_new (ResourceEntry* entry)
@@ -64,6 +65,7 @@ SpriteResource* SpriteResource_new (ResourceEntry* entry)
 		SDL_Color colors[256];
 		memset(colors, 255, 1024);
 		SDL_SetColors(this->surface, colors, 0, 256);
+		this->no_palette = 1;
 	}
 
 	if (flags & 0x10) {
@@ -126,10 +128,13 @@ Neverhood_SpriteResource_get_y (THIS)
 SDL_Palette*
 Neverhood_SpriteResource_get_palette (THIS)
 		SpriteResource* THIS
+	INIT:
+		const char* CLASS = "SDL::Palette";
 	CODE:
-		RETVAL = THIS->surface->format->palette;
+		if (THIS->no_palette) RETVAL = NULL;
+		else RETVAL = THIS->surface->format->palette;
 	OUTPUT:
-		RETVAL;
+		RETVAL
 
 void
 Neverhood_SpriteResource_DESTROY (THIS)
