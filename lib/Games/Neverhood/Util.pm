@@ -1,4 +1,4 @@
-# Games::Neverhood::Exports - A bunch of exports and sets up MooseX::Declare export them into classes and roles too
+# Games::Neverhood::Util - Common utility functions to export everywhere
 # Copyright (C) 2012 Blaise Roth
 
 # You should have received a copy of the GNU General Public License
@@ -8,7 +8,7 @@ use 5.01;
 use strict;
 use warnings;
 
-package Games::Neverhood::Exports;
+package Games::Neverhood::Util;
 
 use Moose ();
 use Moose::Role ();
@@ -45,20 +45,20 @@ use SDL::CD ();
 use SDL::CDROM ();
 
 # other stuff that this module can export
-use Games::Neverhood::Exports::Moose ();
-use Games::Neverhood::Exports::Declare ();
+use Games::Neverhood::Util::Moose ();
+use Games::Neverhood::Util::Declare ();
 
 # use all my XS stuff here also
-# can't use the perl stuff because that needs to be done after use Games::Neverhood::Exports
+# can't use the perl stuff because that needs to be done after use Games::Neverhood::Util
 BEGIN {
-	XSLoader::load('Games::Neverhood::SurfaceUtil');
-	XSLoader::load('Games::Neverhood::ResourceEntry');
-	XSLoader::load('Games::Neverhood::SpriteResource');
-	XSLoader::load('Games::Neverhood::PaletteResource');
-	XSLoader::load('Games::Neverhood::SequenceResource');
-	XSLoader::load('Games::Neverhood::SoundResource');
-	XSLoader::load('Games::Neverhood::MusicResource');
-	XSLoader::load('Games::Neverhood::SmackerResource');
+	XSLoader::load 'Games::Neverhood::CUtil';
+	XSLoader::load 'Games::Neverhood::ResourceEntry';
+	XSLoader::load 'Games::Neverhood::SpriteResource';
+	XSLoader::load 'Games::Neverhood::PaletteResource';
+	XSLoader::load 'Games::Neverhood::SequenceResource';
+	XSLoader::load 'Games::Neverhood::SoundResource';
+	XSLoader::load 'Games::Neverhood::MusicResource';
+	XSLoader::load 'Games::Neverhood::SmackerResource';
 
 	# have to modify @ISA here because XSLoader unceremoniously clobbers it
 	push @Games::Neverhood::PaletteResource::ISA, 'SDL::Palette';
@@ -77,15 +77,15 @@ my ($import_without_moose, $import_with_moose, $import_with_moose_role) = map {
 			qw( Item Maybe Value Bool Str Num Int ClassName RoleName Ref ScalarRef ArrayRef HashRef CodeRef RegexpRef GlobRef FileHandle Object ),
 			qw( Rect RectX Surface Palette ResourceKey SceneName ),
 		],
-		(grep $moose, also => [$moose, 'Games::Neverhood::Exports::Moose', 'MooseX::StrictConstructor']),
+		(grep $moose, also => [$moose, 'Games::Neverhood::Util::Moose', 'MooseX::StrictConstructor']),
 	))[0];
 } '', 'Moose', 'Moose::Role';
 
 {
 	# redefining subs! hacky but it works!
 	no warnings 'redefine';
-	*MooseX::Declare::Syntax::Keyword::Class::import_symbols_from = sub { 'Games::Neverhood::Exports::MooseClass' };
-	*MooseX::Declare::Syntax::Keyword::Role::import_symbols_from  = sub { 'Games::Neverhood::Exports::MooseRole' };
+	*MooseX::Declare::Syntax::Keyword::Class::import_symbols_from = sub { 'Games::Neverhood::Util::MooseClass' };
+	*MooseX::Declare::Syntax::Keyword::Role::import_symbols_from  = sub { 'Games::Neverhood::Util::MooseRole' };
 }
 
 sub import {
@@ -96,16 +96,16 @@ sub import {
 	$import->($self => {into => $caller});
 
 	feature->import(':5.10');
-	Games::Neverhood::Exports::Declare->import_to($caller);
+	Games::Neverhood::Util::Declare->import_to($caller);
 };
 
 sub import_with_moose {
-	@_ = ('Games::Neverhood::Exports', $import_with_moose);
+	@_ = ('Games::Neverhood::Util', $import_with_moose);
 	goto($_[0]->can('import'));
 }
 
 sub import_with_moose_role {
-	@_ = ('Games::Neverhood::Exports', $import_with_moose_role);
+	@_ = ('Games::Neverhood::Util', $import_with_moose_role);
 	goto($_[0]->can('import'));
 }
 

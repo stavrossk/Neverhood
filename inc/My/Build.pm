@@ -1,5 +1,5 @@
 use 5.01;
-package My::Builder;
+package My::Build;
 use strict;
 use warnings;
 use base 'Module::Build';

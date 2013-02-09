@@ -3,8 +3,8 @@
 // bitstream and huffman trees for the smacker resource
 */
 
-#ifndef __SMACKER_H__
-#define __SMACKER_H__
+#ifndef __SMACKER__
+#define __SMACKER__
 
 #include <helper.h>
 #include <SDL/SDL.h>

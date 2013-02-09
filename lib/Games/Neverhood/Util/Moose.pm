@@ -1,4 +1,4 @@
-# Games::Neverhood::Exports::Moose
+# Games::Neverhood::Util::Moose
 # Copyright (C) 2012 Blaise Roth
 
 # You should have received a copy of the GNU General Public License
@@ -8,7 +8,7 @@ use 5.01;
 use strict;
 use warnings;
 
-package Games::Neverhood::Exports::Moose;
+package Games::Neverhood::Util::Moose;
 use Moose ();
 use Moose::Role ();
 use Moose::Exporter ();

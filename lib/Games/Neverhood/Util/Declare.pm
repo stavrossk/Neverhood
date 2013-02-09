@@ -1,4 +1,4 @@
-# Games::Neverhood::Exports::Declare
+# Games::Neverhood::Util::Declare
 # Copyright (C) 2012 Blaise Roth
 
 # You should have received a copy of the GNU General Public License
@@ -8,7 +8,7 @@ use 5.01;
 use strict;
 use warnings;
 
-package Games::Neverhood::Exports::Declare;
+package Games::Neverhood::Util::Declare;
 use base 'Devel::Declare::Context::Simple';
 use Carp 'croak';
 our @CARP_NOT = qw( Devel::Declare );

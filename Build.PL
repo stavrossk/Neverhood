@@ -13,8 +13,9 @@ use ExtUtils::CBuilder;
 use File::Spec;
 use File::Basename 'fileparse';
 use File::Glob 'bsd_glob';
+
 use lib File::Spec->catdir('inc');
-use My::Builder;
+use My::Build;
 
 eval { require Alien::SDL } or die <<'ERROR';
 Build.PL requires Alien::SDL to be installed. Maybe try:
@@ -23,6 +24,7 @@ ERROR
 
 my @cflags = ExtUtils::CBuilder->new->split_like_shell( File::Spec->catfile('-I' . Alien::SDL->config('prefix'), 'include') );
 my @lflags = ExtUtils::CBuilder->new->split_like_shell( Alien::SDL->config('libs', '-lSDL_mixer') );
+my @c_dirs = ( File::Spec->catdir('src') );
 
 my @xs_files = map {
 	my $file = $_;
@@ -30,9 +32,14 @@ my @xs_files = map {
 	$file => File::Spec->catfile('lib', 'Games', 'Neverhood', $name);
 } bsd_glob "src/*.xs";
 
-my $build = My::Builder->new(
+my $build = My::Build->new(
 	module_name   => 'Games::Neverhood',
 	license       => 'gpl',
+	configure_requires   => {
+		'perl'          => 5.01,
+		'Module::Build' => 0.4,
+		'Alien::SDL'    => 1.43,
+	},
 	requires => {
 		'perl'                      => 5.01,
 		'SDL'                       => 2.541, # raise me
@@ -41,16 +48,14 @@ my $build = My::Builder->new(
 		'Moose'                     => 2.06,
 		'MooseX::Declare'           => 0.34,
 		'Method::Signatures'        => 20121201,
-		'MooseX::Types'             => 0.31,
 		'MooseX::StrictConstructor' => 0.19, # remove me at v1.0
 	},
-	configure_requires   => { 'Module::Build' => 0.34 },
 	share_dir            => File::Spec->catdir('share'),
 	extra_compiler_flags => [ @cflags ],
 	extra_linker_flags   => [ @lflags ],
 	xs_files             => { @xs_files },
-	include_dirs         => [ File::Spec->catdir('src') ],
-	c_source             => [ File::Spec->catdir('src') ],
+	include_dirs         => [ @c_dirs ],
+	c_source             => [ @c_dirs ],
 	typemap_files        => { 'typemap' => File::Spec->catfile('lib', 'Games', 'Neverhood', 'typemap') },
 	dynamic_config       => 1,
 	add_to_cleanup => [
@@ -59,6 +64,7 @@ my $build = My::Builder->new(
 		File::Spec->catfile('META.yml'),
 		File::Spec->catfile('META.json'),
 		File::Spec->catfile('lib', 'Games', 'Neverhood', 'typemap'),
+		File::Spec->catfile('compilet_def.old'),
 	],
 	meta_merge => {
 		resources => {

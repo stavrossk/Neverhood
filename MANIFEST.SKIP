@@ -20,3 +20,6 @@
 ^lib/Games/Neverhood/typemap$
 ^nhc.pl$
 ^checksums.yaml$
+\.old$
+~$
+
