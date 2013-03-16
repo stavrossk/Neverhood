@@ -25,6 +25,7 @@ is( $;->app, $;->app, "Getting the same app object every time" );
 undef $;;
 pass( "Game object destroyed" );
 
-diag( "Testing Games::Neverhood $Games::Neverhood::VERSION, Perl $], $^X" );
+diag( "Testing Games::Neverhood $Games::Neverhood::VERSION, $^X $]" );
 
 done_testing;
+

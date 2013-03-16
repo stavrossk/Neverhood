@@ -30,13 +30,6 @@ Neverhood_CUtil_swap_colors (surface, old_index, new_index)
 	CODE:
 		CUtil_swapColors(surface, old_index, new_index);
 
-void
-Neverhood_CUtil_set_icon (filename, color)
-		const char* filename
-		SDL_Color* color
-	CODE:
-		CUtil_setIcon(filename, color);
-
 bool
 Neverhood_CUtil_rects_equal (rect, rect2)
 		SDL_Rect* rect

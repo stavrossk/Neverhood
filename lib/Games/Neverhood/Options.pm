@@ -24,8 +24,8 @@ class Games::Neverhood::Options {
 	rpvt     share_dir           => Str;
 
 	method BUILD (@_) {
-		$self->_set_grab_input($self->no_frame || $self->fullscreen) unless defined $self->grab_input;
-		$self->_set_starting_prev_scene($self->starting_scene) unless defined $self->starting_prev_scene;
+		$self->_set_grab_input($self->no_frame || $self->fullscreen) if !defined $self->grab_input;
+		$self->_set_starting_prev_scene($self->starting_scene) if !defined $self->starting_prev_scene;
 		$self->_set_share_dir(File::ShareDir::dist_dir('Games-Neverhood'));
 
 		# for access from XS
@@ -94,7 +94,7 @@ class Games::Neverhood::Options {
 							}
 						}
 					}
-					unless (defined $valid_data_dir) {
+					if (!defined $valid_data_dir) {
 						say("No valid CD could be found. You may just need to enter the full path to the CDs DATA dir");
 					}
 				}
@@ -109,7 +109,7 @@ class Games::Neverhood::Options {
 				
 			}
 
-			unless (defined $valid_data_dir) {
+			if (!defined $valid_data_dir) {
 				say("Enter the path to DATA dir or an empty line to search inserted CDs");
 				chomp($data_dir = <STDIN> // "");
 				say '';
@@ -153,27 +153,30 @@ class Games::Neverhood::Options {
 		
 		my $checksums_passed = 1;
 		my $checksums = eval { retrieve(cat_file($share_dir, 'checksums.yaml')) };
-		unless (defined $checksums) {
+		if (!defined $checksums) {
 			$write_checksums = 1;
 			$checksums = {};
 		}
 		
 		for (@files) {
-			my $file = cat_file($data_dir, "$_.blb");
-			unless (open FILE, "<", $file) {
-				say STDERR "Couldn't open $file for testing checksum: $!";
+			my $filename = cat_file($data_dir, "$_.blb");
+			my $file;
+			if (!open $file, "<", $filename) {
+				say STDERR "Couldn't open $filename for testing checksum: $!";
 				$checksums_passed = 0;
 				next;
 			}
 			
 			my $data;
-			binmode FILE;
+			binmode $file;
 			# Generating these checksums takes too long, so we're only checking the start of each file
-			unless (defined read FILE, $data, 4096) {
+			if (!defined read $file, $data, 4096) {
 				say STDERR "Couldn't read from $file for testing checksum: $!";
 				$checksums_passed = 0;
+				close $file;
 				next;
 			}
+			close $file;
 			
 			my $digest = Digest::SHA::sha256_base64($data);
 			if ($write_checksums) {
@@ -184,7 +187,7 @@ class Games::Neverhood::Options {
 				$checksums_passed = 0;
 			}
 		}
-		unless ($checksums_passed) {
+		if (!$checksums_passed) {
 			say STDERR "Checksums failed. Gonna continue anyway, but it doesn't look good";
 		}
 		

@@ -128,7 +128,7 @@ void ResourceEntry_loadArchives (const char* prefix, HV* hash)
 	ResourceEntry_loadArchive( t_filename, prefix,  "t.blb", hash);
 }
 
-void ResourceEntry_DESTROY (ResourceEntry* this)
+void ResourceEntry_destroy (ResourceEntry* this)
 {
 	safefree(this);
 }

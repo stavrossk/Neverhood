@@ -30,7 +30,7 @@ class Games::Neverhood::MoviePlayer
 	}
 
 	method next_frame () {
-		unless ($self->_resource->next_frame()) {
+		if (!$self->_resource->next_frame()) {
 			if ($self->is_loopy) {
 				$self->_resource->stop();
 				$self->_resource->next_frame();
@@ -70,6 +70,16 @@ class Games::Neverhood::MoviePlayer
 	
 	method handle_tick () {
 		$self->next_frame();
+	}
+	
+	method resync () {
+		my $bytes_per_second = $self->_resource->audio_bytes_per_second;
+		my $max_bytes_consumed = $self->_resource->max_audio_bytes_consumed;
+		my $min_bytes_consumed = $max_bytes_consumed - $self->_resource->audio_bytes_buffer_size;
+		
+		my $seconds = $self->cur_frame * $self->_ticker_tick_time + $self->_ticker_time_remaining;
+		my $bytes = $seconds * $bytes_per_second;
+		
 	}
 
 	method draw () {

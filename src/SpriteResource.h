@@ -29,7 +29,7 @@ typedef struct {
 
 SpriteResource* SpriteResource_new (ResourceEntry* entry);
 void SpriteResource_destroy (SpriteResource* this);
-void SpriteResource_unpackSpriteRLE (Uint8* buffer, SDL_Surface* surface);
+void unpackSpriteRLE (Uint8* buffer, SDL_Surface* surface);
 
 SpriteResource* SpriteResource_new (ResourceEntry* entry)
 {
@@ -76,7 +76,7 @@ SpriteResource* SpriteResource_new (ResourceEntry* entry)
 
 	if (flags & 0x10) {
 		if (flags & 1)
-			SpriteResource_unpackSpriteRLE(buf, this->surface);
+			unpackSpriteRLE(buf, this->surface);
 		else {
 			Uint8* dest = this->surface->pixels;
 			int source_pitch = (width + 3) & 0xFFFC;
@@ -100,7 +100,7 @@ void SpriteResource_destroy (SpriteResource* this)
 	safefree(this);
 }
 
-void SpriteResource_unpackSpriteRLE (Uint8* buffer, SDL_Surface* surface)
+void unpackSpriteRLE (Uint8* buffer, SDL_Surface* surface)
 {
 	Uint16 rows   = *(Uint16*)buffer;
 	Uint16 chunks = *(Uint16*)(buffer+2);

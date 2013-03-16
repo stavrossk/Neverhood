@@ -52,7 +52,7 @@ class Games::Neverhood::ResourceMan {
 	
 	method clean_destroyed_resources () {
 		while (my ($key, $value) = each %{$self->_resources}) {
-			delete $self->_resources->{$key} unless defined $value;
+			delete $self->_resources->{$key} if !defined $value;
 		}
 	}
 	

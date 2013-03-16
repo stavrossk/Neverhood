@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # bin/nhc - script that should be run to play Neverhood.
 # sets it up with options from the command line

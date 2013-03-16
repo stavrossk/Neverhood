@@ -27,7 +27,7 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 	method handle_tick () {
 		for my $item (@{$self->_order}) {
 			$item->handle_tick()
-				unless $item->does('Games::Neverhood::Ticker');
+				if !$item->does('Games::Neverhood::Tick');
 		}
 	}
 	
@@ -38,14 +38,14 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 	}
 	
 	method _name_item (Undef|Str|ScalarRef $name, Games::Neverhood::Draw $item) {
-		return unless defined $name;
+		return if !defined $name;
 		if (ref $name) {
 			$$name = $item;
 		}
 		else {
 			my $setter = "set_$name";
 			$self->$setter($item);
-			$item->set_name($name) unless length $item->name;
+			$item->set_name($name) if !length $item->name;
 		}
 	}
 	
@@ -70,7 +70,7 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 	}
 		
 	method set_movie (Str|Games::Neverhood::MoviePlayer $movie, @args) {
-		unless (ref $movie) {
+		if (!ref $movie) {
 			$movie = Games::Neverhood::MoviePlayer->new(key => $movie, @args);
 		}
 		if ($self->movie) {
@@ -81,22 +81,22 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 			$self->_order->add($movie);
 		}
 		$self->_set_movie($movie);
-		$movie->set_name('movie') unless length $movie->name;
+		$movie->set_name('movie') if !length $movie->name;
 	}
 	
 	method set_background (Str|Games::Neverhood::Draw $background, @args) {
-		unless (ref $background) {
+		if (!ref $background) {
 			$background = Games::Neverhood::Sprite->new(key => $background, @args);
 		}
 		$self->_order->replace($background, $self->background) or $self->_order->add_at_bottom($background);
 		$self->_set_background($background);
-		$background->set_name('background') unless length $background->name;
-		$self->set_palette($background) unless $self->palette;
+		$background->set_name('background') if !length $background->name;
+		$self->set_palette($background) if !$self->palette;
 	}
 	
 	method get_palette (Str|Palette|Surface|Games::Neverhood::Sprite|Games::Neverhood::Sequence|Games::Neverhood::Scene $palette) {
-		return undef unless defined $palette;
-		return $;->resource_man->get_palette($palette) unless ref $palette;
+		return undef if !defined $palette;
+		return $;->resource_man->get_palette($palette) if !ref $palette;
 		return $palette if $palette->isa(Palette);
 		return $palette->format->palette if $palette->isa(Surface);
 		return $palette->palette;
@@ -107,7 +107,7 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 	}
 	
 	method set_music (Str|Games::Neverhood::MusicResource $music) {
-		unless (ref $music) {
+		if (!ref $music) {
 			$music = $;->resource_man->get_music($music);
 		}
 		$self->_set_music($music);
@@ -176,7 +176,7 @@ method _index_of (Games::Neverhood::Draw $item) {
 method _add_at (Games::Neverhood::Draw $item, Games::Neverhood::Draw $target_item, Int $offset) {
 	$self->remove($item);
 	my $target_index = $self->_index_of($target_item);
-	Carp::confess("Drawable to move to isn't in scene") unless defined $target_index;
+	Carp::confess("Drawable to move to isn't in scene") if !defined $target_index;
 	splice @$self, $target_index + $offset, 0, $item;
 	$item->add();
 	return $item;

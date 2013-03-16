@@ -1,4 +1,4 @@
-# Drawable - role that standardises drawing
+# Draw - role that standardises drawing
 # Also handles "invalidating" of rects on the screen to call $app->update() minimally.
 # Copyright (C) 2012 Blaise Roth
 

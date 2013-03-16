@@ -110,8 +110,8 @@ sub import_with_moose_role {
 }
 
 sub debug {
-	return $;->_options->debug unless @_;
-	return unless $;->_options->debug;
+	return $;->_options->debug if !@_;
+	return if !$;->_options->debug;
 
 	my ($sub, $filename, $line) = _get_sub_filename_line();
 
@@ -120,8 +120,8 @@ sub debug {
 	return;
 }
 sub debug_stack {
-	return $;->_options->debug unless @_;
-	return unless $;->_options->debug;
+	return $;->_options->debug if !@_;
+	return if !$;->_options->debug;
 	say STDERR sprintf "-----";
 	Carp::cluck(sprintf shift, @_);
 }
@@ -138,7 +138,7 @@ sub _get_sub_filename_line {
 
 	# might replace the full lib name from the filename with lib
 	my $i = -1;
-	1 until(++$i > $#INC or $filename =~ s/^\Q$INC[$i]\E/lib/);
+	1 until ++$i > $#INC or $filename =~ s/^\Q$INC[$i]\E/lib/;
 
 	return($sub, $filename, $line);
 }

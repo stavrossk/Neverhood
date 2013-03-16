@@ -1,5 +1,4 @@
-#!/usr/bin/perl
-
+#!/usr/bin/env perl
 # Build.PL - creates a build script to install Games::Neverhood
 # Copyright (C) 2012 Blaise Roth
 
@@ -17,13 +16,13 @@ use File::Glob 'bsd_glob';
 use lib File::Spec->catdir('inc');
 use My::Build;
 
-eval { require Alien::SDL } or die <<'ERROR';
+eval { require Alien::SDL; 1 } or die <<'ERROR';
 Build.PL requires Alien::SDL to be installed. Maybe try:
 perl -MCPAN -e "install Alien::SDL"
 ERROR
 
-my @cflags = ExtUtils::CBuilder->new->split_like_shell( File::Spec->catfile('-I' . Alien::SDL->config('prefix'), 'include') );
-my @lflags = ExtUtils::CBuilder->new->split_like_shell( Alien::SDL->config('libs', '-lSDL_mixer') );
+my @cflags = ( ExtUtils::CBuilder->new->split_like_shell(File::Spec->catfile('-I' . Alien::SDL->config('prefix'), 'include')) );
+my @lflags = ( ExtUtils::CBuilder->new->split_like_shell(Alien::SDL->config('libs', '-lSDL_mixer')) );
 my @c_dirs = ( File::Spec->catdir('src') );
 
 my @xs_files = map {
@@ -37,8 +36,8 @@ my $build = My::Build->new(
 	license       => 'gpl',
 	configure_requires   => {
 		'perl'          => 5.01,
-		'Module::Build' => 0.4,
-		'Alien::SDL'    => 1.43,
+		'Module::Build' => 0.34,
+		'Alien::SDL'    => 1.438,
 	},
 	requires => {
 		'perl'                      => 5.01,
@@ -75,5 +74,4 @@ my $build = My::Build->new(
 );
 
 $build->add_build_element('typemap');
-# $build->fix_shebang_line(File::Spec->catfile('bin', 'nhc')); # enable this when building dist only
 $build->create_build_script;

@@ -76,9 +76,9 @@ class Games::Neverhood {
 			SDL::Mixer::Channels::volume(-1, 0);
 		}
 
-		while($self->app->stopped ne 1) {
+		while ($self->app->stopped ne 1) {
 			Games::Neverhood::Draw->invalidate_all();
-			if($self->scene) {
+			if ($self->scene) {
 				$prev_scene = ref $self->scene;
 				$prev_scene =~ s/^Games::Neverhood:://;
 			}
@@ -103,7 +103,7 @@ class Games::Neverhood {
 		}
 
 		$scene_name = "Games::Neverhood::Scene::$scene_name";
-		unless (is_class_loaded $scene_name) {
+		if (!is_class_loaded $scene_name) {
 			error("$scene_name is not loaded");
 		}
 		my $scene = $scene_name->new;
@@ -153,8 +153,8 @@ class Games::Neverhood {
 		$event_window_pause = sub {
 			# pause when the app loses focus
 			my ($e, $app) = @_;
-			if($e->type == SDL_ACTIVEEVENT) {
-				if($e->active_state & SDL_APPINPUTFOCUS) {
+			if ($e->type == SDL_ACTIVEEVENT) {
+				if ($e->active_state & SDL_APPINPUTFOCUS) {
 					return 1 if $e->active_gain;
 					$app->pause($event_window_pause);
 				}
@@ -167,11 +167,11 @@ class Games::Neverhood {
 			my ($e, $app) = @_;
 			state $lalt;
 			state $ralt;
-			if($e->type == SDL_KEYDOWN) {
-				if($e->key_sym == SDLK_LALT) {
+			if ($e->type == SDL_KEYDOWN) {
+				if ($e->key_sym == SDLK_LALT) {
 					$lalt = 1;
 				}
-				elsif($e->key_sym == SDLK_RALT) {
+				elsif ($e->key_sym == SDLK_RALT) {
 					$ralt = 1;
 				}
 				else {
@@ -179,7 +179,7 @@ class Games::Neverhood {
 					undef $ralt;
 				}
 			}
-			elsif($e->type == SDL_KEYUP and $e->key_sym == SDLK_LALT && $lalt || $e->key_sym == SDLK_RALT && $ralt) {
+			elsif ($e->type == SDL_KEYUP and $e->key_sym == SDLK_LALT && $lalt || $e->key_sym == SDLK_RALT && $ralt) {
 				undef($e->key_sym == SDLK_LALT ? $lalt : $ralt);
 				return 1 if $app->paused;
 				$app->pause($event_pause);
@@ -250,7 +250,7 @@ class Games::Neverhood {
 			},
 			after_pause => sub {
 				my ($app) = @_;
-				unless(defined $app->stopped and $app->stopped eq 1) {
+				unless (defined $app->stopped and $app->stopped eq 1) {
 					SDL::Mixer::Channels::resume(-1);
 					SDL::Mixer::Music::resume_music();
 				}

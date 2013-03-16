@@ -14,10 +14,10 @@ class Games::Neverhood::Sprite with Games::Neverhood::Draw {
 	method BUILD (@_) {
 		$self->_set_resource($;->resource_man->get_sprite($self->key));
 		$self->_set_surface($self->_resource->get_surface);
-		$self->set_palette($self->_resource->get_palette) unless $self->palette;
+		$self->set_palette($self->_resource->get_palette) if !$self->palette;
 
-		$self->set_x($self->_resource->get_x) unless defined $self->x;
-		$self->set_y($self->_resource->get_y) unless defined $self->y;
+		$self->set_x($self->_resource->get_x) if !defined $self->x;
+		$self->set_y($self->_resource->get_y) if !defined $self->y;
 	}
 
 	method handle_tick () {
@@ -29,7 +29,7 @@ class Games::Neverhood::Sprite with Games::Neverhood::Draw {
 	}
 
 	method _mirror_trigger (Bool $mirror, Bool $old_mirror?) {
-		if($mirror xor $old_mirror) { # inequivalent
+		if ($mirror xor $old_mirror) { # inequivalent
 			Games::Neverhood::SurfaceUtil::mirror_surface($self->_surface);
 		}
 	}

@@ -29,7 +29,7 @@ class Games::Neverhood::Sequence
 		$self->_set_resource($;->resource_man->get_sequence($self->key));
 		
 		$self->_frame_count($self->_resource->get_frame_count);
-		unless (defined $self->cur_frame_index) {
+		if (!defined $self->cur_frame_index) {
 			$self->_set_cur_frame_index($self->play_backwards ? $self->frame_count : -1);
 		}
 	}
@@ -46,8 +46,8 @@ class Games::Neverhood::Sequence
 		$self->_set_surface($self->_resource->get_frame_surface());
 		$self->set_palette($self->_resource->get_palette);
 		
-		$self->set_x($self->_resource->get_x) unless defined $self->x;
-		$self->set_y($self->_resource->get_y) unless defined $self->y;
+		$self->set_x($self->_resource->get_x) if !defined $self->x;
+		$self->set_y($self->_resource->get_y) if !defined $self->y;
 	}
 	
 	method handle_tick () {
@@ -59,7 +59,7 @@ class Games::Neverhood::Sequence
 	}
 	
 	method _mirror_trigger (Bool $mirror, Bool $old_mirror) {
-		if($mirror xor $old_mirror) { # inequivalent
+		if ($mirror xor $old_mirror) { # inequivalent
 			Games::Neverhood::SurfaceUtil::mirror_surface($self->_surface);
 		}
 	}

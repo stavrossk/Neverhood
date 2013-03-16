@@ -3,15 +3,16 @@ Since 27 Sep 2010
 
 TODO
     Get my SDL changes released and update SDL version in Build.PL
+    Use a proper prompter for config mode
+    Text::Wrap config mode to console size with Term::ReadKey
     Complete config mode
-    Fix w and h in Drawable
+    Make sure the disk keeps spinning
     Make smacker audio resync with video
+    Make music always play silence when it runs out of data
     Only resume music/sound that you paused
     Music fading code to fade between volumes
     Music fading might sound better if non-linear, use some function?
     Split h and c apart in src/ and use so instead of o
-    Rename Drawable and Ticker
-    MooseX::Types?
 
 Milestones
         0.2 - Main resources loading from archives and functional
@@ -19,9 +20,9 @@ Milestones
         Scene
             Sprite
         Sequence
-        Audible
-            Drawable
-            z-values working, start in order of adding then move by saying "put this in front or behind that"
+        SoundVerb
+            Draw
+        z-values and Order
         Cursor implemented
         Klaymen movement worked out
         Game Vars working
@@ -72,3 +73,4 @@ Milestones
         easter eggs
         other extra things
         polish
+

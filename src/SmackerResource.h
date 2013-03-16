@@ -387,8 +387,12 @@ static void SmackerResource_handleAudioTrack (SmackerResource* this, Uint8 track
 
 		if (!this->cvt) {
 			this->cvt = safemalloc(sizeof(SDL_AudioCVT));
-			Uint16 format = (this->header.audioInfo[0].is16Bits ? AUDIO_S16LSB : AUDIO_S8);
-			SDL_BuildSpecAudioCVT(this->cvt, format, 1, this->header.audioInfo[0].sampleRate);
+			Uint16 format = this->header.audioInfo[0].is16Bits ? AUDIO_S16LSB : AUDIO_S8;
+			int samplesPerSecond = this->header.audioInfo[0].sampleRate;
+			SDL_BuildSpecAudioCVT(this->cvt, format, 1, samplesPerSecond);
+			
+			//int bytesPerSample = this->header.audioInfo[0].is16Bits ? 2 : 1;
+			//this->bytesPerSecond = bytesPerSample * samplesPerSecond;
 		}
 
 		Uint8* unpacked_buffer = (Uint8*)safemalloc(unpacked_size * this->cvt->len_mult);
@@ -504,7 +508,10 @@ static void SmackerResource_unpackCompressedAudio
 
 void SmackerResource_player (SmackerAudio* this, Uint8* buf, int size)
 {
-	if (!this->curLink) return;
+	if (!this->curLink) {
+		memset(buf, 0, size); /* empty out the rest of the buffer */
+		return;
+	}
 
 	int size_taken = this->remainingSize < size ? this->remainingSize : size;
 	memcpy(buf, this->curPos, size_taken);
@@ -585,24 +592,24 @@ static void SmackerResource_unpackPalette (SmackerResource* this)
 
 static void SmackerResource_destroyAudio (SmackerResource* this)
 {
-	if (this->audio) {
-		SDL_LockAudio();
+	if (!this->audio) return;
+		
+	SDL_LockAudio();
 
-		SmackerAudio** hooked_audio = (SmackerAudio**)Mix_GetMusicHookData();
-		if (*hooked_audio == this->audio)
-			*hooked_audio = NULL;
+	SmackerAudio** hooked_audio = (SmackerAudio**)Mix_GetMusicHookData();
+	if (*hooked_audio == this->audio)
+		*hooked_audio = NULL;
 
-		SDL_UnlockAudio();
+	SDL_UnlockAudio();
 
-		while (this->audio->earliestLink) {
-			BufferLink* oldLink = this->audio->earliestLink;
-			this->audio->earliestLink = oldLink->nextLink;
-			safefree(oldLink->buf);
-			safefree(oldLink);
-		}
-		safefree(this->audio);
-		this->audio = NULL;
+	while (this->audio->earliestLink) {
+		BufferLink* old_link = this->audio->earliestLink;
+		this->audio->earliestLink = old_link->nextLink;
+		safefree(old_link->buf);
+		safefree(old_link);
 	}
+	safefree(this->audio);
+	this->audio = NULL;
 }
 
 void SmackerResource_destroy (SmackerResource* this)

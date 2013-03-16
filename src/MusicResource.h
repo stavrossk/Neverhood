@@ -149,7 +149,8 @@ static void MusicResource_player_recurse (MusicResource* this, Sint16* buf, int 
 
 static void MusicResource_player (void* udata, Uint8* buf, int size)
 {
-	if(Mix_PausedMusic())
+	memset(buf, 0, size); /* does this help? */
+	if (Mix_PausedMusic())
 		return;
 
 	if (music_playing && !Mix_PausedMusic()) {
@@ -189,10 +190,9 @@ static void MusicResource_player (void* udata, Uint8* buf, int size)
 		SDL_MixAudio(buf, cvt.buf, cvt.len, volume);
 	}
 
-	if(smacker_audio_playing && !Mix_PausedMusic()) {
+	if (smacker_audio_playing && !Mix_PausedMusic()) {
 		SmackerResource_player(smacker_audio_playing, smacker_audio_buf, size);
 		SDL_MixAudio(buf, smacker_audio_buf, size, Mix_VolumeMusic(-1));
-		memset(smacker_audio_buf, 0, size);
 	}
 }
 
@@ -213,11 +213,14 @@ void MusicResource_init ()
 		return;
 
 	int size = -1;
+	int unlocked_size;
 	Mix_HookMusic(MusicResource_initializer, &size);
-	while (1) {
+	do {
 		SDL_Delay(1); /* Wait one tick */
-		if (size >= 0) break;
-	}
+		SDL_LockAudio();
+		unlocked_size = size;
+		SDL_UnlockAudio();
+	} while (unlocked_size < 0);
 	Mix_HookMusic(NULL, NULL);
 
 	int dst_rate, dst_channels;
@@ -241,3 +244,4 @@ void MusicResource_destroy (MusicResource* this)
 }
 
 #endif
+

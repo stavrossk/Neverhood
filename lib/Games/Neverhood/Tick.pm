@@ -1,4 +1,4 @@
-# Ticker - role that provides handle_time and requires handle_tick
+# Tick - role that provides handle_time and requires handle_tick
 # Copyright (C) 2012 Blaise Roth
 
 # You should have received a copy of the GNU General Public License
@@ -22,8 +22,11 @@ role Games::Neverhood::Tick {
 		}
 		else {
 			$self->_set_ticker_remaining_time($time);
+			$self->resync();
 		}
 	}
+	
+	method resync {}
 	
 	method ticker_stop () {
 		$self->_set_ticker_remaining_time(0);

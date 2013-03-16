@@ -1,3 +1,6 @@
+!.gitignore
+!.gitattributes
+.*
 blib*
 Build
 Build.bat
@@ -9,17 +12,11 @@ META.yml
 META.json
 MYMETA.yml
 MYMETA.json
-img*
-blb*
-blbconv*
-UNDATA*
 *.txt
-unshare*
 *.o
 lib/Games/Neverhood/*.c
 lib/Games/Neverhood/*.xs
 lib/Games/Neverhood/typemap
-nhc.pl
 checksums.yaml
 *.old
 *~
