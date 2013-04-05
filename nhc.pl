@@ -17,10 +17,11 @@ use File::Spec ();
 use Capture::Tiny ':all';
 
 sub quote {
-	state $q = $^O eq 'MSWin32' ? '"' : "'";
+	state $q = $^O eq 'MSWin32' ? '"' : '';
 	my ($str) = @_;
 	$str =~ s/\\/\\\\/g;
 	$str =~ s/$q/\\$q/g if $q;
+	$str =~ s/ /\\ /g unless $q;
 	return $q.$str.$q;
 }
 

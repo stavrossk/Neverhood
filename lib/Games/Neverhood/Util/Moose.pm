@@ -32,8 +32,9 @@ sub has {
 
 	my $attrs = ref $names eq 'ARRAY' ? $names : [ $names ];
 
-	# this is undocumented, so could change in the future. Uh oh
-	my %options = ( definition_context => Moose::Util::_caller_info(), @_ );
+	# this is undocumented, and has recently changed. Uh oh
+	my %context = Moose::Util::_caller_info();
+	my %options = ( definition_context => \%context, @_ );
 
 	my $reader  = $options{reader};
 	my $writer  = $options{writer};

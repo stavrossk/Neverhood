@@ -11,7 +11,6 @@ use warnings;
 use ExtUtils::CBuilder;
 use File::Spec;
 use File::Basename 'fileparse';
-use File::Glob 'bsd_glob';
 
 use lib File::Spec->catdir('inc');
 use My::Build;
@@ -29,7 +28,7 @@ my @xs_files = map {
 	my $file = $_;
 	my ($name) = fileparse($file);
 	$file => File::Spec->catfile('lib', 'Games', 'Neverhood', $name);
-} bsd_glob "src/*.xs";
+} glob "src/*.xs";
 
 my $build = My::Build->new(
 	module_name   => 'Games::Neverhood',
@@ -44,7 +43,7 @@ my $build = My::Build->new(
 		'SDL'                       => 2.541, # raise me
 		'File::ShareDir'            => 1.03,
 		'YAML::XS'                  => 0.37,
-		'Moose'                     => 2.06,
+		'Moose'                     => 2.0604,
 		'MooseX::Declare'           => 0.34,
 		'Method::Signatures'        => 20121201,
 		'MooseX::StrictConstructor' => 0.19, # remove me at v1.0

@@ -24,7 +24,7 @@ typedef struct {
 
 BitStream* BitStream_new (Uint8* buf, Uint32 size)
 {
-	BitStream* this = safemalloc(sizeof(BitStream));
+	BitStream* this = (BitStream*)safemalloc(sizeof(BitStream));
 	this->buf = buf;
 	this->end = buf + size;
 	this->bitCount = 8;
@@ -53,8 +53,8 @@ Uint8 BitStream_get8 (BitStream* this)
 {
 	assert(this->buf < this->end);
 
-	Uint8 v = (*this->buf << this->bitCount) | this->curByte;
-	this->curByte = *this->buf++ >> (8 - this->bitCount);
+	Uint8 v = this->curByte | *this->buf << this->bitCount;
+	this->curByte = *this->buf++ >> 8 - this->bitCount;
 
 	return v;
 }
@@ -65,7 +65,7 @@ Uint8 BitStream_peek8 (BitStream* this)
 		return this->curByte;
 
 	assert(this->buf < this->end);
-	return (*this->buf << this->bitCount) | this->curByte;
+	return this->curByte | *this->buf << this->bitCount;
 }
 
 void BitStream_skip (BitStream* this, int n)
@@ -73,12 +73,12 @@ void BitStream_skip (BitStream* this, int n)
 	assert(n <= 8);
 	this->curByte >>= n;
 
-	if (this->bitCount >= n) {
+	if (this->bitCount >= n)
 		this->bitCount -= n;
-	} else {
+	else {
 		assert(this->buf < this->end);
 		this->bitCount = this->bitCount + 8 - n;
-		this->curByte = *this->buf++ >> (8 - this->bitCount);
+		this->curByte = *this->buf++ >> 8 - this->bitCount;
 	}
 }
 
@@ -101,15 +101,14 @@ static Uint16 SmallTree_decodeTree (SmallTree* this, BitStream* bs, Uint32 prefi
 
 SmallTree* SmallTree_new (BitStream* bs)
 {
-	SmallTree* this = safemalloc(sizeof(SmallTree));
+	SmallTree* this = (SmallTree*)safemalloc(sizeof(SmallTree));
 	this->treeSize = 0;
 
 	bool bit = BitStream_getBit(bs);
 	assert(bit);
 
-	int i;
-	for (i = 0; i < 256; i++)
-		this->prefixTree[i] = this->prefixSize[i] = 0;
+	memset(this->prefixTree, 0, 256 * 2);
+	memset(this->prefixSize, 0, 256);
 
 	SmallTree_decodeTree(this, bs, 0, 0);
 
@@ -122,11 +121,11 @@ SmallTree* SmallTree_new (BitStream* bs)
 static Uint16 SmallTree_decodeTree (SmallTree* this, BitStream* bs, Uint32 prefix, int size)
 {
 	if (!BitStream_getBit(bs)) { // Leaf
-		this->tree[this->treeSize] = BitStream_get8(bs);	
+		this->tree[this->treeSize] = BitStream_get8(bs);
 
 		if (size <= 8) {
 			int i;
-			for (i = 0; i < 256; i += (1 << size)) {
+			for (i = 0; i < 256; i += 1 << size) {
 				this->prefixTree[prefix | i] = this->treeSize;
 				this->prefixSize[prefix | i] = size;
 			}
@@ -147,7 +146,7 @@ static Uint16 SmallTree_decodeTree (SmallTree* this, BitStream* bs, Uint32 prefi
 
 	this->tree[t] = SMK_SMALL_NODE | r1;
 
-	Uint16 r2 = SmallTree_decodeTree(this, bs, prefix | (1 << size), size + 1);
+	Uint16 r2 = SmallTree_decodeTree(this, bs, prefix | 1 << size, size + 1);
 
 	return r1 + r2 + 1;
 }
@@ -192,36 +191,36 @@ static Uint32 BigTree_decodeTree (BigTree* this, BitStream* bs, Uint32 prefix, i
 
 BigTree* BigTree_new (BitStream* bs, int allocSize)
 {
-	BigTree* this = safemalloc(sizeof(BigTree));
+	BigTree* this = (BigTree*)safemalloc(sizeof(BigTree));
 
 	if (!BitStream_getBit(bs)) {
-		this->tree = safemalloc(sizeof(Uint32));
+		this->tree = (Uint32*)safemalloc(4);
 		this->tree[0] = 0;
 		this->last[0] = this->last[1] = this->last[2] = 0;
 		return this;
 	}
 
-	int i;
-	for (i = 0; i < 256; i++)
-		this->prefixTree[i] = this->prefixSize[i] = 0;
+	memset(this->prefixTree, 0, 256 * 4);
+	memset(this->prefixSize, 0, 256);
 
 	this->loBytes = SmallTree_new(bs);
 	this->hiBytes = SmallTree_new(bs);
 
-	this->markers[0] = BitStream_get8(bs) | (BitStream_get8(bs) << 8);
-	this->markers[1] = BitStream_get8(bs) | (BitStream_get8(bs) << 8);
-	this->markers[2] = BitStream_get8(bs) | (BitStream_get8(bs) << 8);
+	this->markers[0] = BitStream_get8(bs) | BitStream_get8(bs) << 8;
+	this->markers[1] = BitStream_get8(bs) | BitStream_get8(bs) << 8;
+	this->markers[2] = BitStream_get8(bs) | BitStream_get8(bs) << 8;
 
 	this->last[0] = this->last[1] = this->last[2] = 0xffffffff;
 
 	this->treeSize = 0;
-	this->tree = safemalloc(sizeof(Uint32) * (allocSize / 4));
+	this->tree = (Uint32*)safemalloc(allocSize);
 
 	BigTree_decodeTree(this, bs, 0, 0);
 
 	bool bit = BitStream_getBit(bs);
 	assert(!bit);
 
+	int i;
 	for (i = 0; i < 3; i++) {
 		if (this->last[i] == 0xffffffff) {
 			this->last[i] = this->treeSize;
@@ -251,13 +250,13 @@ static Uint32 BigTree_decodeTree (BigTree* this, BitStream* bs, Uint32 prefix, i
 		Uint32 lo = SmallTree_getCode(this->loBytes, bs);
 		Uint32 hi = SmallTree_getCode(this->hiBytes, bs);
 
-		Uint32 v = (hi << 8) | lo;
+		Uint32 v = lo | hi << 8;
 
 		this->tree[this->treeSize] = v;
 
 		int i;
 		if (size <= 8) {
-			for (i = 0; i < 256; i += (1 << size)) {
+			for (i = 0; i < 256; i += 1 << size) {
 				this->prefixTree[prefix | i] = this->treeSize;
 				this->prefixSize[prefix | i] = size;
 			}
@@ -285,7 +284,7 @@ static Uint32 BigTree_decodeTree (BigTree* this, BitStream* bs, Uint32 prefix, i
 
 	this->tree[t] = SMK_BIG_NODE | r1;
 
-	Uint32 r2 = BigTree_decodeTree(this, bs, prefix | (1 << size), size + 1);
+	Uint32 r2 = BigTree_decodeTree(this, bs, prefix | 1 << size, size + 1);
 
 	return r1 + r2 + 1;
 }
