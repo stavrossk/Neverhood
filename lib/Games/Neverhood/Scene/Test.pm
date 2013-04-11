@@ -8,7 +8,7 @@ class Games::Neverhood::Scene::Test extends Games::Neverhood::Scene {
 	rwpvt button => 'Games::Neverhood::Sprite';
 
 	method setup (SceneName $prev_scene) {
-		# $self->set_background(x*4086520E);
+		$self->set_background(x*4086520E);
 		
 		# #lever
 		# $self->add_sprite(x*809861A6);

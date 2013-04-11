@@ -5,7 +5,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 class Games::Neverhood::Sprite with Games::Neverhood::Draw {
-	ro key       => Str, required;
+	ro key       => ResourceKey, required;
 	rw palette   => Maybe[Palette], trigger, check;
 	rw mirror    => Bool, trigger, check;
 	pvt surface  => Surface;

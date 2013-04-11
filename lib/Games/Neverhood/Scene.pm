@@ -54,13 +54,13 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 		$self->_order->add($item);
 	}
 	
-	method add_sprite (Str $sprite, Undef|Str|ScalarRef|ArrayRef $name?, @args) {
+	method add_sprite (ResourceKey $sprite, Undef|Str|ScalarRef|ArrayRef $name?, @args) {
 		$sprite = Games::Neverhood::Sprite->new(key => $sprite, @args);
 		$sprite->set_palette($self->palette) if !$sprite->palette and $self->palette;
 		$self->add_named($sprite, $name);
 	}
 	
-	method add_sequence (Str $sequence, Undef|Str|ScalarRef $name, @args) {
+	method add_sequence (ResourceKey $sequence, Undef|Str|ScalarRef $name, @args) {
 		$sequence = Games::Neverhood::Sequence->new(key => $sequence, @args);
 		$self->add_named($sequence, $name);
 	} 
@@ -69,8 +69,8 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 		$self->_order->add_above($item, $self->background);
 	}
 		
-	method set_movie (Str|Games::Neverhood::MoviePlayer $movie, @args) {
-		if (!ref $movie) {
+	method set_movie (ResourceKey|Games::Neverhood::MoviePlayer $movie, @args) {
+		if ($movie->isa(ResourceKey)) {
 			$movie = Games::Neverhood::MoviePlayer->new(key => $movie, @args);
 		}
 		if ($self->movie) {
@@ -84,8 +84,8 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 		$movie->set_name('movie') if !length $movie->name;
 	}
 	
-	method set_background (Str|Games::Neverhood::Draw $background, @args) {
-		if (!ref $background) {
+	method set_background (ResourceKey|Games::Neverhood::Draw $background, @args) {
+		if ($background->isa(ResourceKey)) {
 			$background = Games::Neverhood::Sprite->new(key => $background, @args);
 		}
 		$self->_order->replace($background, $self->background) or $self->_order->add_at_bottom($background);
@@ -94,20 +94,20 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 		$self->set_palette($background) if !$self->palette;
 	}
 	
-	method get_palette (Str|Palette|Surface|Games::Neverhood::Sprite|Games::Neverhood::Sequence|Games::Neverhood::Scene $palette) {
+	method get_palette (ResourceKey|Palette|Surface|Games::Neverhood::Sprite|Games::Neverhood::Sequence|Games::Neverhood::Scene $palette) {
 		return undef if !defined $palette;
-		return $;->resource_man->get_palette($palette) if !ref $palette;
+		return $;->resource_man->get_palette($palette) if $palette->isa(ResourceKey);
 		return $palette if $palette->isa(Palette);
 		return $palette->format->palette if $palette->isa(Surface);
 		return $palette->palette;
 	}
 	
-	method set_palette (Undef|Str|Object $palette) {
+	method set_palette (Undef|ResourceKey|Object $palette) {
 		$self->_set_palette($self->get_palette($palette));
 	}
 	
-	method set_music (Str|Games::Neverhood::MusicResource $music) {
-		if (!ref $music) {
+	method set_music (ResourceKey|Games::Neverhood::MusicResource $music) {
+		if ($music->isa(ResourceKey)) {
 			$music = $;->resource_man->get_music($music);
 		}
 		$self->_set_music($music);

@@ -32,6 +32,7 @@ use Method::Signatures::Modifiers;
 use Games::Neverhood::Util ();
 
 use Games::Neverhood::Options;
+use Games::Neverhood::ResourceKey;
 use Games::Neverhood::Draw;
 use Games::Neverhood::Tick;
 use Games::Neverhood::ResourceMan;
