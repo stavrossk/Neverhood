@@ -10,19 +10,16 @@ use warnings;
 
 package Games::Neverhood::Util;
 
-use Moose ();
-use Moose::Role ();
-use Moose::Exporter ();
-use MooseX::StrictConstructor ();
+use Mouse ();
+use Mouse::Role ();
+use Mouse::Exporter ();
+use Mouse::Util::TypeConstraints;
 use XSLoader ();
 use Carp ();
 use File::Spec ();
 use Scalar::Util ();
 use List::Util ();
 use YAML::XS ();
-use Moose::Util::TypeConstraints;
-use Class::Load 'is_class_loaded';
-use MooseX::Types::Moose ':all';
 
 # use all the SDL stuff we need here
 # then you only need to import constants in each class
@@ -67,7 +64,7 @@ BEGIN {
 
 my ($import_without_moose, $import_with_moose, $import_with_moose_role) = map {
 	my $moose = $_;
-	(Moose::Exporter->build_import_methods(
+	(Mouse::Exporter->build_import_methods(
 		as_is => [
 			qw( debug error debug_stack ),
 			qw( cat_file cat_dir data_file data_dir share_file share_dir ),
@@ -77,16 +74,9 @@ my ($import_without_moose, $import_with_moose, $import_with_moose_role) = map {
 			qw( Item Maybe Value Bool Str Num Int ClassName RoleName Ref ScalarRef ArrayRef HashRef CodeRef RegexpRef GlobRef FileHandle Object ),
 			qw( Rect RectX Surface Palette ResourceKey SceneName ),
 		],
-		(grep $moose, also => [$moose, 'Games::Neverhood::Util::Moose', 'MooseX::StrictConstructor']),
+		(grep $moose, also => [$moose, 'Games::Neverhood::Util::Moose']),
 	))[0];
 } '', 'Moose', 'Moose::Role';
-
-{
-	# redefining subs! hacky but it works!
-	no warnings 'redefine';
-	*MooseX::Declare::Syntax::Keyword::Class::import_symbols_from = sub { 'Games::Neverhood::Util::MooseClass' };
-	*MooseX::Declare::Syntax::Keyword::Role::import_symbols_from  = sub { 'Games::Neverhood::Util::MooseRole' };
-}
 
 sub import {
 	my ($self, $import) = @_;

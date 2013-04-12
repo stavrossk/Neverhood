@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =cut
 
-$Games::Neverhood::VERSION = 0.20;
+$Games::Neverhood::VERSION = 0.21;
 
 use MooseX::Declare;
 use Method::Signatures::Modifiers;

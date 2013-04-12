@@ -41,12 +41,10 @@ my $build = My::Build->new(
 	requires => {
 		'perl'                      => 5.01,
 		'SDL'                       => 2.541, # raise me
+		'Mouse'                     => 1.02,
+		'Method::Signatures'        => 20121201,
 		'File::ShareDir'            => 1.03,
 		'YAML::XS'                  => 0.37,
-		'Moose'                     => 2.0604,
-		'MooseX::Declare'           => 0.34,
-		'Method::Signatures'        => 20121201,
-		'MooseX::StrictConstructor' => 0.19, # remove me at v1.0
 	},
 	share_dir            => File::Spec->catdir('share'),
 	extra_compiler_flags => [ @cflags ],

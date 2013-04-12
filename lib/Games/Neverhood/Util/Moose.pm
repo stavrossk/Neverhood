@@ -24,25 +24,20 @@ Moose::Exporter->setup_import_methods(
 
 # attribute declaration customised
 sub has {
-	my $meta = shift;
-	my $names = shift;
+	my $meta = Mouse::Meta::Class->initialize(scalar caller);
+	my $name = shift;
 
-	error("Odd number of args given to has: ".join ', ', @_)
-		if @_ % 2 == 1;
+	$meta->throw_error(q{Usage: has 'name' => ( key => value, ... )})
+		if @_ % 2; # odd number of arguments
 
-	my $attrs = ref $names eq 'ARRAY' ? $names : [ $names ];
-
-	# this is undocumented, and has recently changed. Uh oh
-	my %context = Moose::Util::_caller_info();
-	my %options = ( definition_context => \%context, @_ );
-
+	my %options = @_;
 	my $reader  = $options{reader};
 	my $writer  = $options{writer};
 	my $trigger = $options{trigger} if defined $options{trigger} && !ref $options{trigger};
 	my $builder = $options{builder} && !ref $options{builder};
 	my $check   = delete $options{_check};
 
-	for my $name (@$attrs) {
+	for my $name (ref $name ? @$name : $name) {
 		$options{reader} = $reader.$name;
 		$options{writer} = $writer."set_$name" if defined $options{writer};
 
@@ -63,6 +58,8 @@ sub has {
 
 		$meta->add_attribute( $name, %options );
 	}
+
+	return;
 }
 
 sub rw       { splice @_, 2, 0, reader => "",  writer => "",                     'isa'; goto &has }
