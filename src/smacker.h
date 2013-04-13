@@ -1,6 +1,5 @@
 /*
-// smacker.h
-// bitstream and huffman trees for the smacker resource
+// smacker - bitstream and huffman trees for the smacker resource
 */
 
 #ifndef __SMACKER__

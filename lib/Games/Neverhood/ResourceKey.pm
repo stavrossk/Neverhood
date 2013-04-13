@@ -1,8 +1,12 @@
-# Games::Neverhood::ResourceKey - Just a class holding a string. See Games::Neverhood::Exports::Declare
-# Copyright (C) 2012 Blaise Roth
+=head1 NAME
 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Games::Neverhood::ResourceKey - Just a class holding a string
+
+=head1 SEE ALSO
+
+L<Games::Neverhood::Base::Declare>
+
+=cut
 
 use 5.01;
 use strict;

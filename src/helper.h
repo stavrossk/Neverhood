@@ -1,6 +1,5 @@
 /*
-// helper.h
-// general purpose functions
+// helper - general purpose functions
 */
 
 #ifndef __HELPER__

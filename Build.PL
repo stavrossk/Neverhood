@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 # Build.PL - creates a build script to install Games::Neverhood
+# Copyright (c) 2013 Blaise Roth
+
+# This is free software; you can redistribute it and/or modify it under
+# the same terms as the Perl 5 programming language system itself.
 
 use 5.01;
 use strict;

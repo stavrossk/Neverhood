@@ -1,9 +1,12 @@
-# Draw - role that standardises drawing
-# Also handles "invalidating" of rects on the screen to call $app->update() minimally.
-# Copyright (C) 2012 Blaise Roth
+=head1 NAME
 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Games::Neverhood::Draw - role that standardises drawing
+
+=head1 DESCRIPTION
+
+Also handles "invalidating" of rects on the screen to call $app->update() minimally.
+
+=cut
 
 role Games::Neverhood::Draw {
 	requires 'draw';
@@ -80,7 +83,7 @@ role Games::Neverhood::Draw {
 			$self->_add_update_rect($old_update_rect);
 		}
 	}
-	
+
 	method _add_update_rect (Maybe[Rect] $old_update_rect?) {
 		my $update_rect = $self->_update_rect;
 		my $screen_rect = SDL::Rect->new(0, 0, 640, 480);

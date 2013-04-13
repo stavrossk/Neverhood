@@ -1,8 +1,8 @@
-Games::Neverhood - The Neverhood remade in SDL Perl
-Copyright (C) 2012 Blaise Roth
+Games::Neverhood - An engine for The Neverhood in SDL Perl
+Copyright (c) 2013 Blaise Roth
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
 
 To install the game:
  perl Build.PL

@@ -1,8 +1,8 @@
-# Sprite - drawable single image sprites
-# Copyright (C) 2012 Blaise Roth
+=head1 NAME
 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Games::Neverhood::Sprite - drawable single image sprites
+
+=cut
 
 class Games::Neverhood::Sprite with Games::Neverhood::Draw {
 	ro key       => ResourceKey, required;

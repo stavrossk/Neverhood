@@ -1,10 +1,6 @@
 /*
 // BlbArchive - opens Blb archives and makes resources from them
 // Based on the ScummVM Neverhood Engine's BLB archive code
-// Copyright (C) 2012 Blaise Roth
-
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __RESOURCE_ENTRY__

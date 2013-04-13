@@ -1,8 +1,8 @@
-# Scene - the base class for all scenes
-# Copyright (C) 2012 Blaise Roth
+=head1 NAME
 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Games::Neverhood::Scene - the base class for all scenes
+
+=cut
 
 class Games::Neverhood::Scene with Games::Neverhood::Tick {
 	use SDL::Constants ':SDL::Events';
@@ -19,24 +19,24 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 		$self->set_fps(24);
 	}
 	method setup (SceneName $prev_scene) {}
-	
+
 	method handle_time (Num $time) {
 		$self->movie->handle_time($time) if $self->movie;
 	}
-	
+
 	method handle_tick () {
 		for my $item (@{$self->_order}) {
 			$item->handle_tick()
 				if !$item->does('Games::Neverhood::Tick');
 		}
 	}
-	
+
 	method draw () {
 		for my $item (@{$self->_order}) {
 			$item->draw();
 		}
 	}
-	
+
 	method _name_item (Undef|Str|ScalarRef $name, Games::Neverhood::Draw $item) {
 		return if !defined $name;
 		if (ref $name) {
@@ -48,27 +48,27 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 			$item->set_name($name) if !length $item->name;
 		}
 	}
-	
+
 	method add_named (Games::Neverhood::Draw $item, Undef|Str|ScalarRef|ArrayRef $name?) {
 		$self->_name_item($name, $item);
 		$self->_order->add($item);
 	}
-	
+
 	method add_sprite (ResourceKey $sprite, Undef|Str|ScalarRef|ArrayRef $name?, @args) {
 		$sprite = Games::Neverhood::Sprite->new(key => $sprite, @args);
 		$sprite->set_palette($self->palette) if !$sprite->palette and $self->palette;
 		$self->add_named($sprite, $name);
 	}
-	
+
 	method add_sequence (ResourceKey $sequence, Undef|Str|ScalarRef $name, @args) {
 		$sequence = Games::Neverhood::Sequence->new(key => $sequence, @args);
 		$self->add_named($sequence, $name);
-	} 
-	
+	}
+
 	method add_above_background (Games::Neverhood::Draw $item) {
 		$self->_order->add_above($item, $self->background);
 	}
-		
+
 	method set_movie (ResourceKey|Games::Neverhood::MoviePlayer $movie, @args) {
 		if ($movie->isa(ResourceKey)) {
 			$movie = Games::Neverhood::MoviePlayer->new(key => $movie, @args);
@@ -83,7 +83,7 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 		$self->_set_movie($movie);
 		$movie->set_name('movie') if !length $movie->name;
 	}
-	
+
 	method set_background (ResourceKey|Games::Neverhood::Draw $background, @args) {
 		if ($background->isa(ResourceKey)) {
 			$background = Games::Neverhood::Sprite->new(key => $background, @args);
@@ -93,7 +93,7 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 		$background->set_name('background') if !length $background->name;
 		$self->set_palette($background) if !$self->palette;
 	}
-	
+
 	method get_palette (ResourceKey|Palette|Surface|Games::Neverhood::Sprite|Games::Neverhood::Sequence|Games::Neverhood::Scene $palette) {
 		return undef if !defined $palette;
 		return $;->resource_man->get_palette($palette) if $palette->isa(ResourceKey);
@@ -101,11 +101,11 @@ class Games::Neverhood::Scene with Games::Neverhood::Tick {
 		return $palette->format->palette if $palette->isa(Surface);
 		return $palette->palette;
 	}
-	
+
 	method set_palette (Undef|ResourceKey|Object $palette) {
 		$self->_set_palette($self->get_palette($palette));
 	}
-	
+
 	method set_music (ResourceKey|Games::Neverhood::MusicResource $music) {
 		if ($music->isa(ResourceKey)) {
 			$music = $;->resource_man->get_music($music);

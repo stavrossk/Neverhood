@@ -1,8 +1,8 @@
-# MoviePlayer - drawable object to play movies (smacker resources)
-# Copyright (C) 2012 Blaise Roth
+=head1 NAME
 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Games::Neverhood::MoviePlayer - drawable object to play movies (smacker resources)
+
+=cut
 
 class Games::Neverhood::MoviePlayer
 	with Games::Neverhood::Draw
@@ -67,19 +67,19 @@ class Games::Neverhood::MoviePlayer
 			$self->next_frame();
 		}
 	}
-	
+
 	method handle_tick () {
 		$self->next_frame();
 	}
-	
+
 	method resync () {
 		my $bytes_per_second = $self->_resource->audio_bytes_per_second;
 		my $max_bytes_consumed = $self->_resource->max_audio_bytes_consumed;
 		my $min_bytes_consumed = $max_bytes_consumed - $self->_resource->audio_bytes_buffer_size;
-		
+
 		my $seconds = $self->cur_frame * $self->_ticker_tick_time + $self->_ticker_time_remaining;
 		my $bytes = $seconds * $bytes_per_second;
-		
+
 	}
 
 	method draw () {

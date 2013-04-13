@@ -1,9 +1,3 @@
-# Games::Neverhood::GameVars
-# Copyright (C) 2012 Blaise Roth
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 class Games::Neverhood::GameVars {
 
 		# 2, 1, 4, 5, 3, 11, 8, 6, 7, 9, 10, 17, 16, 18, 19, 20, 15, 14, 13, 12

@@ -1,10 +1,6 @@
 /*
 // MusicResource - decodes BLBSFX music and streams it as Mixer music
 // Based on http://wiki.multimedia.cx/index.php?title=BLB
-// Copyright (C) 2012 Blaise Roth
-
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __MUSIC_RESOURCE__
@@ -53,7 +49,7 @@ static int ms_per_step;
 MusicResource* MusicResource_new (ResourceEntry* entry)
 {
 	MusicResource* this = safemalloc(sizeof(MusicResource));
-	
+
 	if (entry->type != 8)
 		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);
 

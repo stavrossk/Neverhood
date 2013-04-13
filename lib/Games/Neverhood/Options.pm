@@ -1,8 +1,8 @@
-# Options - options object to get options
-# Copyright (C) 2012 Blaise Roth
+=head1 NAME
 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Games::Neverhood::Options - options object to get and pass options
+
+=cut
 
 class Games::Neverhood::Options {
 	use Getopt::Long ();
@@ -55,11 +55,11 @@ class Games::Neverhood::Options {
 			'write-checksums'         => \$write_checksums,
 			'help|h|?'                => sub { $class->_print_usage() },
 		) or $class->_print_usage(exitval => 1);
-		
+
 		my $options = $class->new(
 			map maybe($_, $o{$_}), @saved_options, @unsaved_options,
 		);
-		
+
 		my $share_dir = $options->share_dir;
 		my $config_file = cat_file($share_dir, 'config.yaml');
 
@@ -78,7 +78,7 @@ class Games::Neverhood::Options {
 			say("Gonna config");
 			say("DATA dirs are where all dem blb files are hidden");
 		}
-		
+
 		my $valid_data_dir;
 		{
 			if (defined $data_dir) {
@@ -106,7 +106,7 @@ class Games::Neverhood::Options {
 						say("Data dir '".$data_dir."' not valid. Data dir must contain the 7 blb files")
 					}
 				}
-				
+
 			}
 
 			if (!defined $valid_data_dir) {
@@ -116,12 +116,12 @@ class Games::Neverhood::Options {
 				redo;
 			}
 		}
-		
+
 		$options->_set_data_dir($data_dir);
 		# TODO: more config stuff here
-		
+
 		store($config_file, { map {$_ => $options->$_} @saved_options });
-		
+
 		$options->_set_data_dir($valid_data_dir);
 		$options->_set_share_dir($share_dir);
 
@@ -137,10 +137,10 @@ class Games::Neverhood::Options {
 			-exitval => $exitval,
 		);
 	}
-	
+
 	method _is_valid_data_dir ($self: Str $data_dir, Str $share_dir, Bool $write_checksums) {
 		-d $data_dir or return 0;
-		
+
 		my $valid = 1;
 		my @files =  qw/a c hd i m s t/;
 		for (@files) {
@@ -150,14 +150,14 @@ class Games::Neverhood::Options {
 				last;
 			}
 		}
-		
+
 		my $checksums_passed = 1;
 		my $checksums = eval { retrieve(cat_file($share_dir, 'checksums.yaml')) };
 		if (!defined $checksums) {
 			$write_checksums = 1;
 			$checksums = {};
 		}
-		
+
 		for (@files) {
 			my $filename = cat_file($data_dir, "$_.blb");
 			my $file;
@@ -166,7 +166,7 @@ class Games::Neverhood::Options {
 				$checksums_passed = 0;
 				next;
 			}
-			
+
 			my $data;
 			binmode $file;
 			# Generating these checksums takes too long, so we're only checking the start of each file
@@ -177,7 +177,7 @@ class Games::Neverhood::Options {
 				next;
 			}
 			close $file;
-			
+
 			my $digest = Digest::SHA::sha256_base64($data);
 			if ($write_checksums) {
 				$checksums->{$_} = $digest;
@@ -190,11 +190,11 @@ class Games::Neverhood::Options {
 		if (!$checksums_passed) {
 			say STDERR "Checksums failed. Gonna continue anyway, but it doesn't look good";
 		}
-		
+
 		if ($write_checksums) {
 			eval { store("checksums.yaml", $checksums); 1 } and say "Checksums saved to current directory";
 		}
-		
+
 		return $valid;
 	}
 }

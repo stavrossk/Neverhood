@@ -1,7 +1,3 @@
-# Scene::Nursery::One
-# Copyright (C) 2012  Blaise Roth
-# See the LICENSE file for the full terms of the license.
-
 use 5.01;
 use strict;
 use warnings;
@@ -89,7 +85,7 @@ package Games::Neverhood::Scene::Nursery::One::hammer_cover;
 		alpha => 0,
 	};
 	sub palette { $;->sprites->{background} }
-	
+
 package Games::Neverhood::Scene::Nursery::One::hammer;
 	use constant {
 		file => 89,
@@ -174,7 +170,7 @@ package Games::Neverhood::Scene::Nursery::One::window_cover;
 		$background->show_at([317, 338], [317, 338, 66, 2]);
 		$background->show_at([381, 211], [381, 211, 2, 127]);
 	}
-	
+
 package Games::Neverhood::Scene::Nursery::One::window;
 	use constant {
 		file => 261,
@@ -206,7 +202,7 @@ package Games::Neverhood::Scene::Nursery::One::lever_cover;
 		alpha => 0,
 	};
 	sub palette { $;->sprites->{background} }
-	
+
 package Games::Neverhood::Scene::Nursery::One::lever;
 	use constant {
 		file => 37,

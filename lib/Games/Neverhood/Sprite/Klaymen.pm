@@ -1,7 +1,3 @@
-# Sprite::Klaymen
-# Copyright (C) 2012  Blaise Roth
-# See the LICENSE file for the full terms of the license.
-
 use 5.01;
 use strict;
 use warnings;

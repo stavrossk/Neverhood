@@ -1,26 +1,20 @@
-# Scene::Test
-# Copyright (C) 2012 Blaise Roth
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 class Games::Neverhood::Scene::Test extends Games::Neverhood::Scene {
 	rwpvt button => 'Games::Neverhood::Sprite';
 
 	method setup (SceneName $prev_scene) {
 		$self->set_background(x*4086520E);
-		
+
 		# #lever
 		# $self->add_sprite(x*809861A6);
-		
+
 		# #hammer
 		# $self->add_sprite(x*89C03848);
-		
+
 		# #window
 		# $self->add_sprite(x*8C066150);
-		
+
 		# $self->add_sprite('button', x*15288120);
-		
+
 		# $self->add_sprite(x*2080A3A8);
 	}
 }

@@ -8,13 +8,12 @@ use base 'Module::Build';
 
 =item license
 
-[version 0.02] (Blaise Roth)
+[version 0.1] (Blaise Roth)
 
-This action will generate a copy of this distribution's license - The
-GNU General Public License version 3. This requires Software::License to
-be installed. It will write it into a file called LICENSE in the current
-directory. BEWARE: it will overwrite the file if it already exists (if
-it can).
+This action will generate a copy of this distribution's license. This requires
+Software::License to be installed. It will write it into a file called LICENSE
+in the current directory. BEWARE: it will overwrite the file if it already
+exists (if it can). It will also print out the notice and URL for the license.
 
 =back
 

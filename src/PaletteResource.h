@@ -1,9 +1,5 @@
 /*
 // PaletteResource - loads palette files into SDL Palettes
-// Copyright (C) 2012 Blaise Roth
-
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __PALETTE_RESOURCE__
@@ -38,7 +34,7 @@ PaletteResource* PaletteResource_new (ResourceEntry* entry)
 
 	this->colors = (SDL_Color*)ResourceEntry_getBuffer(entry);
 	this->ncolors = 256;
-	
+
 	return this;
 }
 

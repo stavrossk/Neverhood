@@ -1,12 +1,7 @@
 #!/usr/bin/env perl
-
 # nhc.pl - shortcut script to build, install and run Neverhood
 # It is more for testing purposes. --debug is specified by default
 # specify --no-debug to turn debug off
-# Copyright (C) 2012 Blaise Roth
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use 5.01;
 use strict;

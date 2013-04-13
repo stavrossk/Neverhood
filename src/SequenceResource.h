@@ -1,10 +1,6 @@
 /*
 // SequenceResource - decodes Neverhood sequence files and loads them as a sequence of surfaces
 // Based on the ScummVM Neverhood Engine's animation resource code
-// Copyright (C) 2012 Blaise Roth
-
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __SEQUENCE_RESOURCE__
@@ -43,7 +39,7 @@ void SequenceResource_destroy (SequenceResource* this);
 SequenceResource* SequenceResource_new (ResourceEntry* entry)
 {
 	SequenceResource* this = safemalloc(sizeof(SequenceResource));
-	
+
 	if (entry->type != 4)
 		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);
 

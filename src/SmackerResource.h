@@ -3,10 +3,6 @@
 // Based heavily on the ScummVM v1.3.1 Smacker decoder (video/smkdecoder).
 // https://github.com/scummvm/scummvm/tree/42ab839dd6c8a1570b232101eb97f4e54de57935/video
 // However it removes any code that the Neverhood smacker files don't need
-// Copyright (C) 2012 Blaise Roth
-
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __SMACKER_RESOURCE__
@@ -390,7 +386,7 @@ static void SmackerResource_handleAudioTrack (SmackerResource* this, Uint8 track
 			Uint16 format = this->header.audioInfo[0].is16Bits ? AUDIO_S16LSB : AUDIO_S8;
 			int samplesPerSecond = this->header.audioInfo[0].sampleRate;
 			SDL_BuildSpecAudioCVT(this->cvt, format, 1, samplesPerSecond);
-			
+
 			//int bytesPerSample = this->header.audioInfo[0].is16Bits ? 2 : 1;
 			//this->bytesPerSecond = bytesPerSample * samplesPerSecond;
 		}
@@ -593,7 +589,7 @@ static void SmackerResource_unpackPalette (SmackerResource* this)
 static void SmackerResource_destroyAudio (SmackerResource* this)
 {
 	if (!this->audio) return;
-		
+
 	SDL_LockAudio();
 
 	SmackerAudio** hooked_audio = (SmackerAudio**)Mix_GetMusicHookData();
