@@ -14,9 +14,9 @@ MYMETA.yml
 MYMETA.json
 *.txt
 *.o
-lib/Games/Neverhood/*.c
-lib/Games/Neverhood/*.xs
-lib/Games/Neverhood/typemap
+lib/Neverhood/*.c
+lib/Neverhood/*.xs
+lib/Neverhood/typemap
 checksums.yaml
 *.old
 *~

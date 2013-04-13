@@ -26,7 +26,7 @@ class Neverhood::Options {
 	method BUILD (@_) {
 		$self->_set_grab_input($self->no_frame || $self->fullscreen) if !defined $self->grab_input;
 		$self->_set_starting_prev_scene($self->starting_scene) if !defined $self->starting_prev_scene;
-		$self->_set_share_dir(File::ShareDir::dist_dir('Games-Neverhood'));
+		$self->_set_share_dir(File::ShareDir::dist_dir('Neverhood'));
 
 		# for access from XS
 		*Debug = \$self->debug;

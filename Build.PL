@@ -27,7 +27,7 @@ my @c_dirs = ( File::Spec->catdir('src') );
 my @xs_files = map {
 	my $file = $_;
 	my ($name) = fileparse($file);
-	$file => File::Spec->catfile('lib', 'Games', 'Neverhood', $name);
+	$file => File::Spec->catfile('lib', 'Neverhood', $name);
 } glob "src/*.xs";
 
 my $build = My::Build->new(
@@ -53,14 +53,14 @@ my $build = My::Build->new(
 	xs_files             => { @xs_files },
 	include_dirs         => [ @c_dirs ],
 	c_source             => [ @c_dirs ],
-	typemap_files        => { 'typemap' => File::Spec->catfile('lib', 'Games', 'Neverhood', 'typemap') },
+	typemap_files        => { 'typemap' => File::Spec->catfile('lib', 'Neverhood', 'typemap') },
 	dynamic_config       => 1,
 	add_to_cleanup => [
 		File::Spec->catfile('MANIFEST'),
 		File::Spec->catfile('MANIFEST.bak'),
 		File::Spec->catfile('META.yml'),
 		File::Spec->catfile('META.json'),
-		File::Spec->catfile('lib', 'Games', 'Neverhood', 'typemap'),
+		File::Spec->catfile('lib', 'Neverhood', 'typemap'),
 		File::Spec->catfile('compilet_def.old'),
 	],
 	meta_merge => {

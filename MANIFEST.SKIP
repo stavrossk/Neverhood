@@ -11,8 +11,8 @@
 ^nhc.pl$
 \.txt$
 \.o$
-^lib/Games/Neverhood/.*\.(c|xs)$
-^lib/Games/Neverhood/typemap$
+^lib/Neverhood/.*\.(c|xs)$
+^lib/Neverhood/typemap$
 ^checksums.yaml$
 \.old$
 ~$
