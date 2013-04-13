@@ -17,8 +17,8 @@ use Mouse::Util::TypeConstraints;
 use XSLoader ();
 use Carp ();
 use File::Spec ();
-use Scalar::Util ();
-use List::Util ();
+use Scalar::Util qw/ weaken blessed /;
+use List::Util qw/ max min /;
 use YAML::XS ();
 
 # use all the SDL stuff we need here
@@ -41,10 +41,6 @@ use SDL::GFX::Rotozoom ();
 use SDL::CD ();
 use SDL::CDROM ();
 
-# other stuff that this module can export
-use Games::Neverhood::Util::Moose ();
-use Games::Neverhood::Util::Declare ();
-
 # use all my XS stuff here also
 # can't use the perl stuff because that needs to be done after use Games::Neverhood::Util
 BEGIN {
@@ -58,45 +54,78 @@ BEGIN {
 	XSLoader::load 'Games::Neverhood::SmackerResource';
 
 	# have to modify @ISA here because XSLoader unceremoniously clobbers it
-	push @Games::Neverhood::PaletteResource::ISA, 'SDL::Palette';
-	push @Games::Neverhood::SoundResource::ISA,   'SDL::Mixer::MixChunk';
+	unshift @Games::Neverhood::PaletteResource::ISA, 'SDL::Palette';
+	unshift @Games::Neverhood::SoundResource::ISA,   'SDL::Mixer::MixChunk';
 }
 
-my ($import_without_moose, $import_with_moose, $import_with_moose_role) = map {
-	my $moose = $_;
-	(Mouse::Exporter->build_import_methods(
-		as_is => [
-			qw( debug error debug_stack ),
-			qw( cat_file cat_dir data_file data_dir share_file share_dir ),
-			qw( maybe unindent is_class_loaded ),
-			qw( store retrieve ),
-			\&List::Util::max, \&List::Util::min, \&Scalar::Util::weaken, \&Scalar::Util::blessed,
-			qw( Item Maybe Value Bool Str Num Int ClassName RoleName Ref ScalarRef ArrayRef HashRef CodeRef RegexpRef GlobRef FileHandle Object ),
-			qw( Rect RectX Surface Palette ResourceKey SceneName ),
-		],
-		(grep $moose, also => [$moose, 'Games::Neverhood::Util::Moose']),
-	))[0];
-} '', 'Moose', 'Moose::Role';
+# start building exports
+# Util::Declare is lowest down
+use Games::Neverhood::Util::Declare ();
+
+# then this module: Util
+my ($import, $unimport);
+BEGIN { ($import, $unimport) = Mouse::Exporter->build_import_methods(
+	as_is => [
+		qw( debug error debug_stack ),
+		qw( cat_file cat_dir data_file data_dir share_file share_dir ),
+		qw( maybe unindent is_class_loaded ),
+		qw( store retrieve ),
+		qw( max min weaken blessed ),
+		# qw( Item Maybe Value Bool Str Num Int ClassName RoleName Ref ScalarRef ArrayRef HashRef CodeRef RegexpRef GlobRef FileHandle Object ),
+		# qw( Rect RectX Surface Palette ResourceKey SceneName ),
+	],
+	also => [ 'Games::Neverhood::Util::Declare' ],
+) }
+
+# then Util::Moose
+use Games::Neverhood::Util::Moose ();
+
+# and then these
+use Games::Neverhood::Util::Moose::Class ();
+use Games::Neverhood::Util::Moose::Role ();
+
+my %moose;
 
 sub import {
-	my ($self, $import) = @_;
-	my $caller = caller;
-	$import ||= $import_without_moose;
+	my ($class, $group) = @_;
+	my $caller = caller;warn $caller." is importing ".($group//"util");
 
-	$import->($self => {into => $caller});
+	my $moose;
+	if (defined $group) {
+		if ($group eq ':class') {
+			$moose = "Games::Neverhood::Util::Moose::Class";
+		}
+		elsif ($import eq ':role') {
+			$moose = "Games::Neverhood::Util::Moose::Role";
+		}
+		else {
+			Carp::croak("$class doesn't export '$import'");
+		}
+		$moose->import({into => $caller});
+	}
+	else {
+		$class->$import({into => $caller});
+	}
+	$moose{$caller} = $moose;
 
+	Games::Neverhood::Util::Declare->setup_declarators($caller);
 	feature->import(':5.10');
-	Games::Neverhood::Util::Declare->import_to($caller);
 };
 
-sub import_with_moose {
-	@_ = ('Games::Neverhood::Util', $import_with_moose);
-	goto($_[0]->can('import'));
-}
+sub unimport {
+	my ($class) = @_;
+	my $caller = caller;
 
-sub import_with_moose_role {
-	@_ = ('Games::Neverhood::Util', $import_with_moose_role);
-	goto($_[0]->can('import'));
+	return if !exists $moose{$caller};
+	if (defined(my $moose = $moose{$caller})) {warn "$caller is unimporting $moose";
+		$moose->unimport({into => $caller});
+	}
+	else {
+		$class->$unimport({into => $caller});
+	}
+	delete $moose{$caller};
+
+	Games::Neverhood::Util::Declare->teardown_declarators($caller);
 }
 
 sub debug {
@@ -159,17 +188,17 @@ sub unindent {
 sub store    { goto &YAML::XS::DumpFile }
 sub retrieve { goto &YAML::XS::LoadFile }
 
-# class types
-class_type 'Rect',        { class => 'SDL::Rect' };                     sub Rect        () { 'SDL::Rect' }
-class_type 'RectX',       { class => 'SDLx::Rect' };                    sub RectX       () { 'SDLx::Rect' }
-class_type 'Surface',     { class => 'SDL::Surface' };                  sub Surface     () { 'SDL::Surface' }
-class_type 'Palette',     { class => 'SDL::Palette' };                  sub Palette     () { 'SDL::Palette' }
-class_type 'ResourceKey', { class => 'Games::Neverhood::ResourceKey' }; sub ResourceKey () { 'Games::Neverhood::ResourceKey' }
+# # class types
+# class_type 'Rect',        { class => 'SDL::Rect' };                     sub Rect        () { 'SDL::Rect' }
+# class_type 'RectX',       { class => 'SDLx::Rect' };                    sub RectX       () { 'SDLx::Rect' }
+# class_type 'Surface',     { class => 'SDL::Surface' };                  sub Surface     () { 'SDL::Surface' }
+# class_type 'Palette',     { class => 'SDL::Palette' };                  sub Palette     () { 'SDL::Palette' }
+# class_type 'ResourceKey', { class => 'Games::Neverhood::ResourceKey' }; sub ResourceKey () { 'Games::Neverhood::ResourceKey' }
 
-# subtypes
-subtype 'SceneName',
-	as Str,
-	# where { is_class_loaded('Games::Neverhood::Scene::' . $_) },
-; sub SceneName () { 'SceneName' }
+# # subtypes
+# subtype 'SceneName',
+# 	as Str,
+# 	# where { is_class_loaded('Games::Neverhood::Scene::' . $_) },
+# ; sub SceneName () { 'SceneName' }
 
 1;

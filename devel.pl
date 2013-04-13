@@ -2,11 +2,9 @@ use 5.01;
 use strict;
 use warnings;
 use lib "lib";
-use Method::Signatures;
-use Mouse;
-use Games::Neverhood::Util::Declare;
+use Games::Neverhood::Util;
 
-class Foo {
+class Foo::Bar {
 	method asd (@_) {
 		say 'in ';
 	}
@@ -24,11 +22,13 @@ class Foo {
 		$this->$orig(@_);
 		say join " ", @_;
 	}
-	say Foo->meta->is_immutable // 0;
+	say __PACKAGE__->meta->is_immutable // 0;
 }
-my $self = Foo->new;
+my $self = Foo::Bar->new;
 say $self->meta->is_immutable // 0;
-
 
 $self->asd('AROUND');
 
+while (my ($k,$v) = each %Foo::Bar::) {
+	print "$k ";
+}

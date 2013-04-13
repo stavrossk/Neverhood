@@ -1,25 +1,20 @@
-# Games::Neverhood::Util::Moose
-# Copyright (C) 2012 Blaise Roth
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 use 5.01;
 use strict;
 use warnings;
 
 package Games::Neverhood::Util::Moose;
-use Moose ();
-use Moose::Role ();
-use Moose::Exporter ();
+use Mouse ();
+use Mouse::Role ();
+use Mouse::Exporter ();
 
-Moose::Exporter->setup_import_methods(
-	with_meta => [
-		qw( rw ro pvt rpvt wpvt rwpvt pvt_arg rpvt_arg ropvt ),
-	],
+Mouse::Exporter->setup_import_methods(
+	# with_meta => [
+	# 	qw( rw ro pvt rpvt wpvt rwpvt pvt_arg rpvt_arg ropvt ),
+	# ],
 	as_is => [
 		qw( required weak_ref builder check trigger ),
 	],
+	also => [ 'Games::Neverhood::Util' ],
 );
 
 # attribute declaration customised
