@@ -1,12 +1,12 @@
 =head1 NAME
 
-Games::Neverhood::MoviePlayer - drawable object to play movies (smacker resources)
+Neverhood::MoviePlayer - drawable object to play movies (smacker resources)
 
 =cut
 
-class Games::Neverhood::MoviePlayer
-	with Games::Neverhood::Draw
-	with Games::Neverhood::Tick
+class Neverhood::MoviePlayer
+	with Neverhood::Draw
+	with Neverhood::Tick
 {
 	use SDL::Constants ':SDL::GFX';
 
@@ -19,7 +19,7 @@ class Games::Neverhood::MoviePlayer
 	method cur_frame   { $self->_resource->get_cur_frame }
 	method frame_count { $self->_resource->get_frame_count }
 
-	pvt resource            => 'Games::Neverhood::SmackerResource';
+	pvt resource            => 'Neverhood::SmackerResource';
 	pvt surface             => Surface;
 	pvt double_size_surface => Surface;
 
@@ -46,10 +46,10 @@ class Games::Neverhood::MoviePlayer
 			$self->_set_double_size_surface(SDL::GFX::Rotozoom::surface($surface, 0, 2, SMOOTHING_OFF));
 			$surface = $self->_double_size_surface;
 			# remove the color key from it now because rotozoom makes 0,0,0 transparent for some reason
-			Games::Neverhood::SurfaceUtil::set_color_keying($surface, 0);
+			Neverhood::SurfaceUtil::set_color_keying($surface, 0);
 		}
 		if ($self->palette) {
-			Games::Neverhood::SurfaceUtil::set_palette($surface, $self->palette);
+			Neverhood::SurfaceUtil::set_palette($surface, $self->palette);
 		}
 		$self->_set_stopped(0);
 		$self->invalidate();

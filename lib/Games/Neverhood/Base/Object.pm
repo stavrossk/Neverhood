@@ -1,6 +1,6 @@
 =head1 NAME
 
-Games::Neverhood::Base::Object - Some 'has' sugar
+Neverhood::Base::Object - Some 'has' sugar
 
 =cut
 
@@ -8,7 +8,7 @@ use 5.01;
 use strict;
 use warnings;
 
-package Games::Neverhood::Base::Object;
+package Neverhood::Base::Object;
 use Mouse ();
 use Mouse::Role ();
 use Mouse::Exporter ();
@@ -20,7 +20,7 @@ Mouse::Exporter->setup_import_methods(
 	as_is => [
 		qw( required weak_ref builder check trigger ),
 	],
-	also => [ 'Games::Neverhood::Base::Util' ],
+	also => [ 'Neverhood::Base::Util' ],
 );
 
 # attribute declaration customised

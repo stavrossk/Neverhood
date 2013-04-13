@@ -107,7 +107,7 @@ static void ResourceEntry_loadArchive (char* filename, const char* prefix, const
 			if (valEntry->timeStamp > entry->timeStamp) continue;
 		}
 
-		sv_setref_pv(val, "Games::Neverhood::ResourceEntry", (void*)entry);
+		sv_setref_pv(val, "Neverhood::ResourceEntry", (void*)entry);
 	}
 
 	safefree(keys);

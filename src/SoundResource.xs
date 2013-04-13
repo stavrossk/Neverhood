@@ -1,6 +1,6 @@
 #include <SoundResource.h>
 
-MODULE = Games::Neverhood::SoundResource		PACKAGE = Games::Neverhood::SoundResource		PREFIX = Neverhood_SoundResource_
+MODULE = Neverhood::SoundResource		PACKAGE = Neverhood::SoundResource		PREFIX = Neverhood_SoundResource_
 
 SoundResource*
 Neverhood_SoundResource_new (CLASS, entry)

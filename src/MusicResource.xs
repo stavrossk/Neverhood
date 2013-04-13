@@ -1,6 +1,6 @@
 #include <MusicResource.h>
 
-MODULE = Games::Neverhood::MusicResource		PACKAGE = Games::Neverhood::MusicResource		PREFIX = Neverhood_MusicResource_
+MODULE = Neverhood::MusicResource		PACKAGE = Neverhood::MusicResource		PREFIX = Neverhood_MusicResource_
 
 MusicResource*
 Neverhood_MusicResource_new (CLASS, entry)

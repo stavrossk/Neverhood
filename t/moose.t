@@ -5,9 +5,9 @@ use Test::More;
 
 use MooseX::Declare;
 use Method::Signatures::Modifiers;
-use Games::Neverhood::Moose;
+use Neverhood::Moose;
 
-class Games::Neverhood::HasTest is dirty {
+class Neverhood::HasTest is dirty {
 	rw       read_write       => Int;
 	ro       read_only        => Int;
 	pvt      private          => Int;
@@ -16,7 +16,7 @@ class Games::Neverhood::HasTest is dirty {
 	rpvt_arg read_private_arg => Int;
 }
 
-my $test = Games::Neverhood::HasTest->new(
+my $test = Neverhood::HasTest->new(
 	read_write       => 2,
 	read_only        => 3,
 	private_arg      => 4,
@@ -28,8 +28,8 @@ is $test->read_only,        3, "read_only arg";
 is $test->_private_arg,     4, "private_arg arg";
 is $test->read_private_arg, 5, "read_private_arg arg";
 
-is eval { Games::Neverhood::HasTest->new(private      => 6); 1 }, undef, "private arg illegal";
-is eval { Games::Neverhood::HasTest->new(read_private => 7); 1 }, undef, "read_private arg illegal";
+is eval { Neverhood::HasTest->new(private      => 6); 1 }, undef, "private arg illegal";
+is eval { Neverhood::HasTest->new(read_private => 7); 1 }, undef, "read_private arg illegal";
 
 $test-> set_read_write      (10);
 $test->_set_private         (11);
@@ -59,15 +59,15 @@ is eval { $test->set_read_private    (30); 1 }, undef, "illegal set read_private
 is eval { $test->set_private_arg     (30); 1 }, undef, "illegal set private_arg";
 is eval { $test->set_read_private_arg(30); 1 }, undef, "illegal set read_private_arg";
 
-class Games::Neverhood::RequiredTest {
+class Neverhood::RequiredTest {
 	rw required_rw => Int, required;
 }
 
-$test = Games::Neverhood::RequiredTest->new(required_rw => 40);
+$test = Neverhood::RequiredTest->new(required_rw => 40);
 is $test->required_rw, 40, "required";
-is eval { Games::Neverhood::RequiredTest->new; 1 }, undef, "illegal required";
+is eval { Neverhood::RequiredTest->new; 1 }, undef, "illegal required";
 
-class Games::Neverhood::TriggerTest {
+class Neverhood::TriggerTest {
 	rw single => Int, trigger;
 	rw ['multi1','multi2'] => Int, trigger;
 	rw explicit => Int, trigger method (@_) { $self->set_e(63) };
@@ -79,7 +79,7 @@ class Games::Neverhood::TriggerTest {
 	method _multi2_trigger (@_) { $self->set_n(62) }
 }
 
-$test = Games::Neverhood::TriggerTest->new;
+$test = Neverhood::TriggerTest->new;
 
 is $test->s, undef, "not triggered single";
 is $test->m, undef, "not triggered multi1";
@@ -95,7 +95,7 @@ is $test->n, 62, "triggered multi2";
 $test->set_explicit(1);
 is $test->e, 63, "triggered explicit";
 
-class Games::Neverhood::BuilderTest {
+class Neverhood::BuilderTest {
 	rw single => Int, builder;
 	rw ['multi1','multi2'] => Int, builder;
 	
@@ -104,7 +104,7 @@ class Games::Neverhood::BuilderTest {
 	method _multi2_builder { $self->set_multi2(72) }
 }
 
-$test = Games::Neverhood::BuilderTest->new;
+$test = Neverhood::BuilderTest->new;
 
 is $test->single, 70, "built single";
 is $test->multi1, 71, "built multi1";

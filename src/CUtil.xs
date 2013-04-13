@@ -1,6 +1,6 @@
 #include <CUtil.h>
 
-MODULE = Games::Neverhood::CUtil		PACKAGE = Games::Neverhood::CUtil		PREFIX = Neverhood_CUtil_
+MODULE = Neverhood::CUtil		PACKAGE = Neverhood::CUtil		PREFIX = Neverhood_CUtil_
 
 void
 Neverhood_CUtil_mirror (surface)

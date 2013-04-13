@@ -1,6 +1,6 @@
 #include <PaletteResource.h>
 
-MODULE = Games::Neverhood::PaletteResource		PACKAGE = Games::Neverhood::PaletteResource		PREFIX = Neverhood_PaletteResource_
+MODULE = Neverhood::PaletteResource		PACKAGE = Neverhood::PaletteResource		PREFIX = Neverhood_PaletteResource_
 
 PaletteResource*
 Neverhood_PaletteResource_new (CLASS, entry)

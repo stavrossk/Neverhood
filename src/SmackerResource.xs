@@ -1,6 +1,6 @@
 #include <SmackerResource.h>
 
-MODULE = Games::Neverhood::SmackerResource		PACKAGE = Games::Neverhood::SmackerResource		PREFIX = Neverhood_SmackerResource_
+MODULE = Neverhood::SmackerResource		PACKAGE = Neverhood::SmackerResource		PREFIX = Neverhood_SmackerResource_
 
 SmackerResource*
 Neverhood_SmackerResource_new (CLASS, entry)

@@ -1,6 +1,6 @@
 #include <SequenceResource.h>
 
-MODULE = Games::Neverhood::SequenceResource		PACKAGE = Games::Neverhood::SequenceResource		PREFIX = Neverhood_SequenceResource_
+MODULE = Neverhood::SequenceResource		PACKAGE = Neverhood::SequenceResource		PREFIX = Neverhood_SequenceResource_
 
 SequenceResource*
 Neverhood_SequenceResource_new (CLASS, entry)

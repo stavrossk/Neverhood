@@ -5,18 +5,18 @@ no warnings 'once';
 
 use Test::More;
 
-use_ok('Games::Neverhood');
+use_ok('Neverhood');
 
-my $options = Games::Neverhood::Options->new(
+my $options = Neverhood::Options->new(
 	fullscreen => 0,
 	no_frame => 0,
 );
 
 isnt( $options->share_dir, undef, 'Have a share dir' );
 
-Games::Neverhood->new(options => $options);
+Neverhood->new(options => $options);
 
-isa_ok( $;, 'Games::Neverhood', "Game object created" );
+isa_ok( $;, 'Neverhood', "Game object created" );
 
 $;->init_app();
 isa_ok( $;->app, 'SDL::Surface', "App created" );
@@ -25,7 +25,7 @@ is( $;->app, $;->app, "Getting the same app object every time" );
 undef $;;
 pass( "Game object destroyed" );
 
-diag( "Testing Games::Neverhood $Games::Neverhood::VERSION, $^X $]" );
+diag( "Testing Neverhood $Neverhood::VERSION, $^X $]" );
 
 done_testing;
 

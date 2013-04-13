@@ -1,6 +1,6 @@
 =head1 NAME
 
-Games::Neverhood::Base::Util - Common utility functions to export everywhere
+Neverhood::Base::Util - Common utility functions to export everywhere
 
 =cut
 
@@ -8,7 +8,7 @@ use 5.01;
 use strict;
 use warnings;
 
-package Games::Neverhood::Base::Util;
+package Neverhood::Base::Util;
 
 use Mouse ();
 use Mouse::Role ();
@@ -42,20 +42,20 @@ use SDL::CD ();
 use SDL::CDROM ();
 
 # use all my XS stuff here also
-# can't use the perl stuff because that needs to be done after use Games::Neverhood::Base::Util
+# can't use the perl stuff because that needs to be done after use Neverhood::Base::Util
 BEGIN {
-	XSLoader::load 'Games::Neverhood::CUtil';
-	XSLoader::load 'Games::Neverhood::ResourceEntry';
-	XSLoader::load 'Games::Neverhood::SpriteResource';
-	XSLoader::load 'Games::Neverhood::PaletteResource';
-	XSLoader::load 'Games::Neverhood::SequenceResource';
-	XSLoader::load 'Games::Neverhood::SoundResource';
-	XSLoader::load 'Games::Neverhood::MusicResource';
-	XSLoader::load 'Games::Neverhood::SmackerResource';
+	XSLoader::load 'Neverhood::CUtil';
+	XSLoader::load 'Neverhood::ResourceEntry';
+	XSLoader::load 'Neverhood::SpriteResource';
+	XSLoader::load 'Neverhood::PaletteResource';
+	XSLoader::load 'Neverhood::SequenceResource';
+	XSLoader::load 'Neverhood::SoundResource';
+	XSLoader::load 'Neverhood::MusicResource';
+	XSLoader::load 'Neverhood::SmackerResource';
 
 	# have to modify @ISA here because XSLoader unceremoniously clobbers it
-	unshift @Games::Neverhood::PaletteResource::ISA, 'SDL::Palette';
-	unshift @Games::Neverhood::SoundResource::ISA,   'SDL::Mixer::MixChunk';
+	unshift @Neverhood::PaletteResource::ISA, 'SDL::Palette';
+	unshift @Neverhood::SoundResource::ISA,   'SDL::Mixer::MixChunk';
 }
 
 Mouse::Exporter->setup_import_methods(
@@ -68,7 +68,7 @@ Mouse::Exporter->setup_import_methods(
 		# qw( Item Maybe Value Bool Str Num Int ClassName RoleName Ref ScalarRef ArrayRef HashRef CodeRef RegexpRef GlobRef FileHandle Object ),
 		# qw( Rect RectX Surface Palette ResourceKey SceneName ),
 	],
-	also => [ 'Games::Neverhood::Base::Declare' ],
+	also => [ 'Neverhood::Base::Declare' ],
 );
 
 sub debug {
@@ -138,12 +138,12 @@ BEGIN {
 # class_type 'RectX',       { class => 'SDLx::Rect' };                    sub RectX       () { 'SDLx::Rect' }
 # class_type 'Surface',     { class => 'SDL::Surface' };                  sub Surface     () { 'SDL::Surface' }
 # class_type 'Palette',     { class => 'SDL::Palette' };                  sub Palette     () { 'SDL::Palette' }
-# class_type 'ResourceKey', { class => 'Games::Neverhood::ResourceKey' }; sub ResourceKey () { 'Games::Neverhood::ResourceKey' }
+# class_type 'ResourceKey', { class => 'Neverhood::ResourceKey' }; sub ResourceKey () { 'Neverhood::ResourceKey' }
 
 # # subtypes
 # subtype 'SceneName',
 # 	as Str,
-# 	# where { is_class_loaded('Games::Neverhood::Scene::' . $_) },
+# 	# where { is_class_loaded('Neverhood::Scene::' . $_) },
 # ; sub SceneName () { 'SceneName' }
 
 1;

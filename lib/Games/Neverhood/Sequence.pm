@@ -1,17 +1,17 @@
 =head1 NAME
 
-Games::Neverhood::Sequence - drawable sequence of surfaces
+Neverhood::Sequence - drawable sequence of surfaces
 
 =cut
 
-class Games::Neverhood::Sequence
-	with Games::Neverhood::Draw
+class Neverhood::Sequence
+	with Neverhood::Draw
 {
 	ro key            => Str, required;
 	rw mirror         => Bool, trigger;
 	rw play_backwards => Bool;
 
-	pvt resource    => 'Games::Neverhood::SequenceResource';
+	pvt resource    => 'Neverhood::SequenceResource';
 
 	rpvt frame_index => Int;
 	rpvt frame_count => Int;
@@ -60,7 +60,7 @@ class Games::Neverhood::Sequence
 
 	method _mirror_trigger (Bool $mirror, Bool $old_mirror) {
 		if ($mirror xor $old_mirror) { # inequivalent
-			Games::Neverhood::SurfaceUtil::mirror_surface($self->_surface);
+			Neverhood::SurfaceUtil::mirror_surface($self->_surface);
 		}
 	}
 

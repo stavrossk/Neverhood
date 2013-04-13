@@ -1,5 +1,5 @@
-class Games::Neverhood::Scene::Test extends Games::Neverhood::Scene {
-	rwpvt button => 'Games::Neverhood::Sprite';
+class Neverhood::Scene::Test extends Neverhood::Scene {
+	rwpvt button => 'Neverhood::Sprite';
 
 	method setup (SceneName $prev_scene) {
 		$self->set_background(x*4086520E);

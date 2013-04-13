@@ -1,9 +1,9 @@
 use 5.01;
 use strict;
 use warnings;
-package Games::Neverhood::Scene::Nursery::One;
+package Neverhood::Scene::Nursery::One;
 
-use parent 'Games::Neverhood::Scene';
+use parent 'Neverhood::Scene';
 
 sub on_new {
 	my ($self) = @_;
@@ -67,7 +67,7 @@ sub on_space {
 	$_[0]->sprites->{button}->hide(!$_[0]->sprites->{button}->hide);
 }
 
-package Games::Neverhood::Scene::Nursery::One::door_cover;
+package Neverhood::Scene::Nursery::One::door_cover;
 	use constant {
 		file => 505,
 		pos => [ 572, 200 ],
@@ -78,7 +78,7 @@ package Games::Neverhood::Scene::Nursery::One::door_cover;
 		$;->sprites->{background}->show_at([581, 200], [581, 200, 59, 262]);
 	}
 
-package Games::Neverhood::Scene::Nursery::One::hammer_cover;
+package Neverhood::Scene::Nursery::One::hammer_cover;
 	use constant {
 		file => 501,
 		pos => [541, 188],
@@ -86,7 +86,7 @@ package Games::Neverhood::Scene::Nursery::One::hammer_cover;
 	};
 	sub palette { $;->sprites->{background} }
 
-package Games::Neverhood::Scene::Nursery::One::hammer;
+package Neverhood::Scene::Nursery::One::hammer;
 	use constant {
 		file => 89,
 		dir => 's',
@@ -106,7 +106,7 @@ package Games::Neverhood::Scene::Nursery::One::hammer;
 		}
 	}
 
-package Games::Neverhood::Scene::Nursery::One::door;
+package Neverhood::Scene::Nursery::One::door;
 	use constant {
 		file => 63,
 		dir => 's',
@@ -136,7 +136,7 @@ package Games::Neverhood::Scene::Nursery::One::door;
 		}
 	}
 
-package Games::Neverhood::Scene::Nursery::One::button;
+package Neverhood::Scene::Nursery::One::button;
 	use constant {
 		file => 503,
 		pos => [462, 335],
@@ -158,7 +158,7 @@ package Games::Neverhood::Scene::Nursery::One::button;
 		}
 	}
 
-package Games::Neverhood::Scene::Nursery::One::window_cover;
+package Neverhood::Scene::Nursery::One::window_cover;
 	use constant {
 		file => 504,
 		pos => [317, 211],
@@ -171,7 +171,7 @@ package Games::Neverhood::Scene::Nursery::One::window_cover;
 		$background->show_at([381, 211], [381, 211, 2, 127]);
 	}
 
-package Games::Neverhood::Scene::Nursery::One::window;
+package Neverhood::Scene::Nursery::One::window;
 	use constant {
 		file => 261,
 		dir => 's',
@@ -195,7 +195,7 @@ package Games::Neverhood::Scene::Nursery::One::window;
 		}
 	}
 
-package Games::Neverhood::Scene::Nursery::One::lever_cover;
+package Neverhood::Scene::Nursery::One::lever_cover;
 	use constant {
 		file => 502,
 		pos => [42, 330],
@@ -203,7 +203,7 @@ package Games::Neverhood::Scene::Nursery::One::lever_cover;
 	};
 	sub palette { $;->sprites->{background} }
 
-package Games::Neverhood::Scene::Nursery::One::lever;
+package Neverhood::Scene::Nursery::One::lever;
 	use constant {
 		file => 37,
 		dir => 's',
@@ -225,7 +225,7 @@ package Games::Neverhood::Scene::Nursery::One::lever;
 		}
 	}
 
-package Games::Neverhood::Scene::Nursery::One::background;
+package Neverhood::Scene::Nursery::One::background;
 	use constant {
 		file => 496,
 	};

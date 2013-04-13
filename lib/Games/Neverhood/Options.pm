@@ -1,10 +1,10 @@
 =head1 NAME
 
-Games::Neverhood::Options - options object to get and pass options
+Neverhood::Options - options object to get and pass options
 
 =cut
 
-class Games::Neverhood::Options {
+class Neverhood::Options {
 	use Getopt::Long ();
 	use File::ShareDir ();
 	use Digest::SHA ();

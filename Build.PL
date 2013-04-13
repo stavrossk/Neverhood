@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Build.PL - creates a build script to install Games::Neverhood
+# Build.PL - creates a build script to install Neverhood
 # Copyright (c) 2013 Blaise Roth
 
 # This is free software; you can redistribute it and/or modify it under
@@ -31,7 +31,7 @@ my @xs_files = map {
 } glob "src/*.xs";
 
 my $build = My::Build->new(
-	module_name   => 'Games::Neverhood',
+	module_name   => 'Neverhood',
 	license       => 'perl',
 	configure_requires   => {
 		'perl'          => 5.01,

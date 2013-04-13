@@ -2,7 +2,7 @@ use 5.01;
 use strict;
 use warnings;
 use lib "lib";
-use Games::Neverhood::Base;
+use Neverhood::Base;
 
 role Goo::Par {
 	requires 'asd';

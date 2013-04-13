@@ -2,7 +2,7 @@ use 5.01;
 use strict;
 use warnings;
 
-package Games::Neverhood::Base::Declare;
+package Neverhood::Base::Declare;
 use base 'Devel::Declare::Context::Simple', 'Method::Signatures';
 use Carp qw/croak/;
 our @CARP_NOT = 'Devel::Declare';
@@ -15,7 +15,7 @@ Mouse::Exporter->setup_import_methods(
 	],
 );
 
-sub x ($) { Games::Neverhood::ResourceKey->new(@_) }
+sub x ($) { Neverhood::ResourceKey->new(@_) }
 sub func    (&) {}
 sub method  (&) {}
 sub _around (&) {}
@@ -125,7 +125,7 @@ sub method_modifier_parser {
 	substr($line, $pos++, 1) eq '{' or croak "Illegal $declarator definition";
 
 	my $insert = sprintf "'$method', %s ($proto) { ", $declarator eq "around" ? "_around" : "method";
-	$insert .= "BEGIN { Games::Neverhood::Base::Declare::on_method_modifier_end() } ";
+	$insert .= "BEGIN { Neverhood::Base::Declare::on_method_modifier_end() } ";
 	substr($line, $start_pos, $pos - $start_pos) = $insert;
 	$self->set_linestr($line);
 
@@ -149,10 +149,10 @@ sub class_or_role_parser {
 	# into
 	# class; {
 		# package Foo::Bar;
-		# use Games::Neverhood::Base ':class';
+		# use Neverhood::Base ':class';
 		# {
 			# ...
-			# no Games::Neverhood::Base;
+			# no Neverhood::Base;
 			# __PACKAGE__->meta->make_immutable;
 			# our @_WITH;
 			# Mouse::with(@_WITH) if @_WITH;
@@ -180,9 +180,9 @@ sub class_or_role_parser {
 	$pos = $self->offset;
 	substr($line, $pos++, 1) eq '{' or croak "Illegal $declarator definition";
 
-	my $insert = sprintf "; { package $package; use Games::Neverhood::Base ':%s'; ",
+	my $insert = sprintf "; { package $package; use Neverhood::Base ':%s'; ",
 		$is_role ? "role" : "class";
-	$insert .= "{ BEGIN { Games::Neverhood::Base::Declare::on_class_or_role_end($is_role) } ";
+	$insert .= "{ BEGIN { Neverhood::Base::Declare::on_class_or_role_end($is_role) } ";
 	substr($line, $start_pos, $pos - $start_pos) = $insert;
 	$self->set_linestr($line);
 
@@ -195,7 +195,7 @@ sub on_class_or_role_end {
 		my $line = Devel::Declare::get_linestr;
 		my $pos = Devel::Declare::get_linestr_offset;
 		my $package = Devel::Declare::get_curstash_name;
-		my $insert =  " no Games::Neverhood::Base; ";
+		my $insert =  " no Neverhood::Base; ";
 		$insert .= sprintf 'our @_WITH; %s::with(@_WITH) if @_WITH; undef @_WITH; ',
 			$is_role ? "Mouse::Role" : "Mouse";
 		$insert .= sprintf 'delete $%s::{_WITH}; ', $package;

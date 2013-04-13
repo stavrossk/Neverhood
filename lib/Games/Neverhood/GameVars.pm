@@ -1,4 +1,4 @@
-class Games::Neverhood::GameVars {
+class Neverhood::GameVars {
 
 		# 2, 1, 4, 5, 3, 11, 8, 6, 7, 9, 10, 17, 16, 18, 19, 20, 15, 14, 13, 12
 		# $nursery_1_window_open -- until jump down in nursery_2

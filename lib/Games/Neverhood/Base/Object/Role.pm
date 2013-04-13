@@ -1,4 +1,4 @@
-package Games::Neverhood::Base::Object::Role;
+package Neverhood::Base::Object::Role;
 
 use 5.01;
 my @exports; BEGIN { @exports = qw/ extends has before after around requires / }
@@ -7,7 +7,7 @@ use Mouse::Exporter ();
 
 Mouse::Exporter->setup_import_methods(
 	as_is => [ @exports ],
-	also => [ 'Games::Neverhood::Base::Object' ],
+	also => [ 'Neverhood::Base::Object' ],
 );
 
 BEGIN {

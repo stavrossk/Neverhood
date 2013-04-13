@@ -1,6 +1,6 @@
 #include <SpriteResource.h>
 
-MODULE = Games::Neverhood::SpriteResource		PACKAGE = Games::Neverhood::SpriteResource		PREFIX = Neverhood_SpriteResource_
+MODULE = Neverhood::SpriteResource		PACKAGE = Neverhood::SpriteResource		PREFIX = Neverhood_SpriteResource_
 
 SpriteResource*
 Neverhood_SpriteResource_new (CLASS, entry)

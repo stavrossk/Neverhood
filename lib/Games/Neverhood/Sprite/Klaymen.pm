@@ -1,9 +1,9 @@
 use 5.01;
 use strict;
 use warnings;
-package Games::Neverhood::Sprite::Klaymen;
+package Neverhood::Sprite::Klaymen;
 
-use parent 'Games::Neverhood::Sprite';
+use parent 'Neverhood::Sprite';
 
 use constant {
 	name => 'klaymen',

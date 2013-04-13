@@ -1,6 +1,6 @@
 #include <ResourceEntry.h>
 
-MODULE = Games::Neverhood::ResourceEntry		PACKAGE = Games::Neverhood::ResourceEntry		PREFIX = Neverhood_ResourceEntry_
+MODULE = Neverhood::ResourceEntry		PACKAGE = Neverhood::ResourceEntry		PREFIX = Neverhood_ResourceEntry_
 
 void
 Neverhood_ResourceEntry_load_archives (prefix, hashref)

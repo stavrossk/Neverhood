@@ -18,7 +18,7 @@
 }
 
 #define debug(...) {\
-	if (1||SvTRUE(get_sv("Games::Neverhood::Options::Debug", 0))) {\
+	if (1||SvTRUE(get_sv("Neverhood::Options::Debug", 0))) {\
 		fprintf(stderr, "----- at %s line %d\n", __FILE__, __LINE__);\
 		fprintf(stderr, __VA_ARGS__);\
 		fprintf(stderr, "\n");\

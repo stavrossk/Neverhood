@@ -1,6 +1,6 @@
 =head1 NAME
 
-Games::Neverhood::Draw - role that standardises drawing
+Neverhood::Draw - role that standardises drawing
 
 =head1 DESCRIPTION
 
@@ -8,7 +8,7 @@ Also handles "invalidating" of rects on the screen to call $app->update() minima
 
 =cut
 
-role Games::Neverhood::Draw {
+role Neverhood::Draw {
 	requires 'draw';
 
 	my $_is_all_invalidated; # pvt Bool;
@@ -46,7 +46,7 @@ role Games::Neverhood::Draw {
 				when (Rect) {
 					$v//=SDLx::Rect->new;
 					$o//=SDLx::Rect->new;
-					Games::Neverhood::SurfaceUtil::RectsEqual($v, $o);
+					Neverhood::SurfaceUtil::RectsEqual($v, $o);
 				}
 				default { debug_stack("Invalidator check on unsupported type: $type"); 0 }
 			}
@@ -107,7 +107,7 @@ role Games::Neverhood::Draw {
 			@update_rects = $update_rect;
 		}
 
-		if (grep Games::Neverhood::SurfaceUtil::rects_equal($_, $screen_rect), @update_rects) {
+		if (grep Neverhood::SurfaceUtil::rects_equal($_, $screen_rect), @update_rects) {
 			$self->invalidate_all();
 		}
 		else {

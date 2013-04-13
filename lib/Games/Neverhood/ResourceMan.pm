@@ -1,16 +1,16 @@
 =head1 NAME
 
-Games::Neverhood::ResourceMan - manages loading and unloading of resources from archives
+Neverhood::ResourceMan - manages loading and unloading of resources from archives
 
 =cut
 
-class Games::Neverhood::ResourceMan {
+class Neverhood::ResourceMan {
 	pvt entries   => HashRef;
 	pvt resources => HashRef;
 
 	method BUILD (@_) {
 		chop(my $prefix = data_file("a")); # to get a dir separator at the end we have to put in a filename then chop it off
-		Games::Neverhood::ResourceEntry::load_archives($prefix, $self->_entries);
+		Neverhood::ResourceEntry::load_archives($prefix, $self->_entries);
 	}
 
 	method _get_entry (ResourceKey $key) {
@@ -23,7 +23,7 @@ class Games::Neverhood::ResourceMan {
 		return $entry;
 	}
 
-	method _get_resource (ResourceKey $key, Games::Neverhood::ResourceEntry $entry) {
+	method _get_resource (ResourceKey $key, Neverhood::ResourceEntry $entry) {
 		my $resource;
 		unless ($resource = $self->_resources->{$key}) {
 			my $class = do { given ($entry->get_type) {
@@ -34,7 +34,7 @@ class Games::Neverhood::ResourceMan {
 				when (8)  { 'Music' }
 				when (10) { 'Smacker' }
 			}};
-			$class = "Games::Neverhood::${class}Resource";
+			$class = "Neverhood::${class}Resource";
 			$resource = $class->new($entry);
 
 			weaken($self->_resources->{$key} = $resource);

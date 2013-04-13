@@ -1,6 +1,6 @@
 =head1 NAME
 
-Games::Neverhood - An engine for The Neverhood in SDL Perl
+Neverhood - An engine for The Neverhood in SDL Perl
 
 =head1 AUTHOR
 
@@ -15,31 +15,31 @@ the same terms as the Perl 5 programming language system itself.
 
 =cut
 
-$Games::Neverhood::VERSION = 0.22;
+$Neverhood::VERSION = 0.22;
 
-use Games::Neverhood::Base;
+use Neverhood::Base;
 
-use Games::Neverhood::Options;
-use Games::Neverhood::ResourceKey;
-use Games::Neverhood::Draw;
-use Games::Neverhood::Tick;
-use Games::Neverhood::ResourceMan;
-use Games::Neverhood::Scene;
-use Games::Neverhood::Sprite;
-use Games::Neverhood::Sequence;
-use Games::Neverhood::MoviePlayer;
+use Neverhood::Options;
+use Neverhood::ResourceKey;
+use Neverhood::Draw;
+use Neverhood::Tick;
+use Neverhood::ResourceMan;
+use Neverhood::Scene;
+use Neverhood::Sprite;
+use Neverhood::Sequence;
+use Neverhood::MoviePlayer;
 
-use Games::Neverhood::Scene::Test;
+use Neverhood::Scene::Test;
 
-class Games::Neverhood {
+class Neverhood {
 	use SDL::Constants ':SDL::Events';
 
-	pvt_arg options => 'Games::Neverhood::Options', required;
+	pvt_arg options => 'Neverhood::Options', required;
 
-	rpvt scene        => 'Games::Neverhood::Scene';
-	rpvt prev_scene   => Maybe['Games::Neverhood::Scene'];
+	rpvt scene        => 'Neverhood::Scene';
+	rpvt prev_scene   => Maybe['Neverhood::Scene'];
 	rpvt app          => Maybe[Surface];
-	rpvt resource_man => 'Games::Neverhood::ResourceMan';
+	rpvt resource_man => 'Neverhood::ResourceMan';
 
 	method BUILD (@_) { $; = $self }
 
@@ -55,10 +55,10 @@ class Games::Neverhood {
 		$self->init_app();
 		$self->app->stop($scene);
 
-		$self->_set_resource_man(Games::Neverhood::ResourceMan->new());
+		$self->_set_resource_man(Neverhood::ResourceMan->new());
 
-		Games::Neverhood::SoundResource::init();
-		Games::Neverhood::MusicResource::init();
+		Neverhood::SoundResource::init();
+		Neverhood::MusicResource::init();
 
 		if ($self->_options->mute) {
 			SDL::Mixer::Music::volume_music(0);
@@ -66,10 +66,10 @@ class Games::Neverhood {
 		}
 
 		while ($self->app->stopped ne 1) {
-			Games::Neverhood::Draw->invalidate_all();
+			Neverhood::Draw->invalidate_all();
 			if ($self->scene) {
 				$prev_scene = ref $self->scene;
-				$prev_scene =~ s/^Games::Neverhood:://;
+				$prev_scene =~ s/^Neverhood:://;
 			}
 			$self->load_new_scene($self->app->stopped, $prev_scene);
 			$self->app->run();
@@ -83,7 +83,7 @@ class Games::Neverhood {
 	}
 
 	# called outside of the run loop to load a new scene
-	method load_new_scene (SceneName|Games::Neverhood::Scene $scene_name, SceneName $prev_scene_name) {
+	method load_new_scene (SceneName|Neverhood::Scene $scene_name, SceneName $prev_scene_name) {
 		debug("Scene: %s; Previous scene: %s", $scene_name, $prev_scene_name);
 
 		if (ref $scene_name) {
@@ -91,7 +91,7 @@ class Games::Neverhood {
 			return;
 		}
 
-		$scene_name = "Games::Neverhood::Scene::$scene_name";
+		$scene_name = "Neverhood::Scene::$scene_name";
 		if (!is_class_loaded $scene_name) {
 			error("$scene_name is not loaded");
 		}
@@ -120,14 +120,14 @@ class Games::Neverhood {
 			}
 
 			if (!$scene->prev_music and $prev_scene->prev_music and !$bad
-					and !$scene->isa('Games::Neverhood::CutScene') and !$prev_scene->isa('Games::Neverhood::CutScene')) {
+					and !$scene->isa('Neverhood::CutScene') and !$prev_scene->isa('Neverhood::CutScene')) {
 				$scene->set_prev_music($prev_scene->prev_music);
 			}
 		}
 
 		$self->_set_scene($scene);
 
-		if ($scene->isa('Games::Neverhood::MenuScene')) {
+		if ($scene->isa('Neverhood::MenuScene')) {
 			$scene->setup($prev_scene);
 		}
 		else {
@@ -219,7 +219,7 @@ class Games::Neverhood {
 
 				$;->scene->draw();
 
-				Games::Neverhood::Draw->update_screen();
+				Neverhood::Draw->update_screen();
 			},
 			move_handler => undef,
 			stop_handler => sub {
