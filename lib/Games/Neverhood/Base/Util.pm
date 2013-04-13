@@ -1,14 +1,14 @@
-# Games::Neverhood::Util - Common utility functions to export everywhere
-# Copyright (C) 2012 Blaise Roth
+=head1 NAME
 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Games::Neverhood::Base::Util - Common utility functions to export everywhere
+
+=cut
 
 use 5.01;
 use strict;
 use warnings;
 
-package Games::Neverhood::Util;
+package Games::Neverhood::Base::Util;
 
 use Mouse ();
 use Mouse::Role ();
@@ -42,7 +42,7 @@ use SDL::CD ();
 use SDL::CDROM ();
 
 # use all my XS stuff here also
-# can't use the perl stuff because that needs to be done after use Games::Neverhood::Util
+# can't use the perl stuff because that needs to be done after use Games::Neverhood::Base::Util
 BEGIN {
 	XSLoader::load 'Games::Neverhood::CUtil';
 	XSLoader::load 'Games::Neverhood::ResourceEntry';
@@ -58,13 +58,7 @@ BEGIN {
 	unshift @Games::Neverhood::SoundResource::ISA,   'SDL::Mixer::MixChunk';
 }
 
-# start building exports
-# Util::Declare is lowest down
-use Games::Neverhood::Util::Declare ();
-
-# then this module: Util
-my ($import, $unimport);
-BEGIN { ($import, $unimport) = Mouse::Exporter->build_import_methods(
+Mouse::Exporter->setup_import_methods(
 	as_is => [
 		qw( debug error debug_stack ),
 		qw( cat_file cat_dir data_file data_dir share_file share_dir ),
@@ -74,59 +68,8 @@ BEGIN { ($import, $unimport) = Mouse::Exporter->build_import_methods(
 		# qw( Item Maybe Value Bool Str Num Int ClassName RoleName Ref ScalarRef ArrayRef HashRef CodeRef RegexpRef GlobRef FileHandle Object ),
 		# qw( Rect RectX Surface Palette ResourceKey SceneName ),
 	],
-	also => [ 'Games::Neverhood::Util::Declare' ],
-) }
-
-# then Util::Moose
-use Games::Neverhood::Util::Moose ();
-
-# and then these
-use Games::Neverhood::Util::Moose::Class ();
-use Games::Neverhood::Util::Moose::Role ();
-
-my %moose;
-
-sub import {
-	my ($class, $group) = @_;
-	my $caller = caller;warn $caller." is importing ".($group//"util");
-
-	my $moose;
-	if (defined $group) {
-		if ($group eq ':class') {
-			$moose = "Games::Neverhood::Util::Moose::Class";
-		}
-		elsif ($import eq ':role') {
-			$moose = "Games::Neverhood::Util::Moose::Role";
-		}
-		else {
-			Carp::croak("$class doesn't export '$import'");
-		}
-		$moose->import({into => $caller});
-	}
-	else {
-		$class->$import({into => $caller});
-	}
-	$moose{$caller} = $moose;
-
-	Games::Neverhood::Util::Declare->setup_declarators($caller);
-	feature->import(':5.10');
-};
-
-sub unimport {
-	my ($class) = @_;
-	my $caller = caller;
-
-	return if !exists $moose{$caller};
-	if (defined(my $moose = $moose{$caller})) {warn "$caller is unimporting $moose";
-		$moose->unimport({into => $caller});
-	}
-	else {
-		$class->$unimport({into => $caller});
-	}
-	delete $moose{$caller};
-
-	Games::Neverhood::Util::Declare->teardown_declarators($caller);
-}
+	also => [ 'Games::Neverhood::Base::Declare' ],
+);
 
 sub debug {
 	return $;->_options->debug if !@_;
@@ -185,8 +128,10 @@ sub unindent {
 }
 
 # serialization methods
-sub store    { goto &YAML::XS::DumpFile }
-sub retrieve { goto &YAML::XS::LoadFile }
+BEGIN {
+	*store    = \&YAML::XS::DumpFile;
+	*retrieve = \&YAML::XS::LoadFile;
+}
 
 # # class types
 # class_type 'Rect',        { class => 'SDL::Rect' };                     sub Rect        () { 'SDL::Rect' }

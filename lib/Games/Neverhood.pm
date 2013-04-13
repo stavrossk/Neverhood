@@ -1,6 +1,6 @@
 =head1 NAME
 
-Games::Neverhood - The Neverhood remade in SDL Perl
+Games::Neverhood - An engine for The Neverhood in SDL Perl
 
 =head1 AUTHOR
 
@@ -8,28 +8,16 @@ Blaise Roth <blaizer@cpan.org>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright (C) 2012 Blaise Roth
+Copyright (c) 2013 Blaise Roth
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+This is free software; you can redistribute and/or modify it under
+the same terms as the Perl 5 programming language system itself.
 
 =cut
 
-$Games::Neverhood::VERSION = 0.21;
+$Games::Neverhood::VERSION = 0.22;
 
-use MooseX::Declare;
-use Method::Signatures::Modifiers;
-use Games::Neverhood::Util ();
+use Games::Neverhood::Base;
 
 use Games::Neverhood::Options;
 use Games::Neverhood::ResourceKey;

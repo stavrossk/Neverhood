@@ -1,14 +1,8 @@
-# Games::Neverhood::Util::Declare
-# Copyright (C) 2012 Blaise Roth
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 use 5.01;
 use strict;
 use warnings;
 
-package Games::Neverhood::Util::Declare;
+package Games::Neverhood::Base::Declare;
 use base 'Devel::Declare::Context::Simple', 'Method::Signatures';
 use Carp qw/croak/;
 our @CARP_NOT = 'Devel::Declare';
@@ -131,7 +125,7 @@ sub method_modifier_parser {
 	substr($line, $pos++, 1) eq '{' or croak "Illegal $declarator definition";
 
 	my $insert = sprintf "'$method', %s ($proto) { ", $declarator eq "around" ? "_around" : "method";
-	$insert .= "BEGIN { Games::Neverhood::Util::Declare::on_method_modifier_end() } ";
+	$insert .= "BEGIN { Games::Neverhood::Base::Declare::on_method_modifier_end() } ";
 	substr($line, $start_pos, $pos - $start_pos) = $insert;
 	$self->set_linestr($line);
 
@@ -155,14 +149,13 @@ sub class_or_role_parser {
 	# into
 	# class; {
 		# package Foo::Bar;
-		# use Games::Neverhood::Util ':class';
+		# use Games::Neverhood::Base ':class';
 		# {
 			# ...
-			# no Games::Neverhood::Util ':class';
+			# no Games::Neverhood::Base;
 			# __PACKAGE__->meta->make_immutable;
 			# our @_WITH;
 			# Mouse::with(@_WITH) if @_WITH;
-			# undef @_WITH;
 		# }
 	# }
 	# 1;
@@ -187,9 +180,9 @@ sub class_or_role_parser {
 	$pos = $self->offset;
 	substr($line, $pos++, 1) eq '{' or croak "Illegal $declarator definition";
 
-	my $insert = sprintf "; { package $package; use Games::Neverhood::Util ':%s'; ",
+	my $insert = sprintf "; { package $package; use Games::Neverhood::Base ':%s'; ",
 		$is_role ? "role" : "class";
-	$insert .= "{ BEGIN { Games::Neverhood::Util::Declare::on_class_or_role_end() } ";
+	$insert .= "{ BEGIN { Games::Neverhood::Base::Declare::on_class_or_role_end($is_role) } ";
 	substr($line, $start_pos, $pos - $start_pos) = $insert;
 	$self->set_linestr($line);
 
@@ -197,13 +190,16 @@ sub class_or_role_parser {
 }
 
 sub on_class_or_role_end {
+	my ($is_role) = @_;
 	on_scope_end {
 		my $line = Devel::Declare::get_linestr;
 		my $pos = Devel::Declare::get_linestr_offset;
-		my $insert =  " no Games::Neverhood::Util; ";
-		$insert .=  "__PACKAGE__->meta->make_immutable; ";
-		$insert .= 'our @_WITH; Mouse::with(@_WITH) if @_WITH; undef @_WITH; ';
-		$insert .= 'no strict; delete ${__PACKAGE__."::"}{_WITH} ';
+		my $package = Devel::Declare::get_curstash_name;
+		my $insert =  " no Games::Neverhood::Base; ";
+		$insert .= sprintf 'our @_WITH; %s::with(@_WITH) if @_WITH; undef @_WITH; ',
+			$is_role ? "Mouse::Role" : "Mouse";
+		$insert .= sprintf 'delete $%s::{_WITH}; ', $package;
+		$insert .=  "$package->meta->make_immutable; " if !$is_role;
 		$insert .= "} 1; ";
 		substr($line, $pos, 0) = $insert;
 		Devel::Declare::set_linestr($line);

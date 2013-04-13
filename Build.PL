@@ -1,9 +1,5 @@
 #!/usr/bin/env perl
 # Build.PL - creates a build script to install Games::Neverhood
-# Copyright (C) 2012 Blaise Roth
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use 5.01;
 use strict;
@@ -32,7 +28,7 @@ my @xs_files = map {
 
 my $build = My::Build->new(
 	module_name   => 'Games::Neverhood',
-	license       => 'gpl',
+	license       => 'perl',
 	configure_requires   => {
 		'perl'          => 5.01,
 		'Module::Build' => 0.34,
@@ -65,7 +61,7 @@ my $build = My::Build->new(
 	],
 	meta_merge => {
 		resources => {
-			license    => 'http://www.gnu.org/licenses/gpl-3.0.html',
+			license    => 'http://dev.perl.org/licenses/',
 			repository => 'http://github.com/Blaizer/Neverhood',
 		},
 	},

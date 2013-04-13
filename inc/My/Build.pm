@@ -22,14 +22,15 @@ it can).
 
 sub ACTION_license {
 	require Software::License;
-	require Software::License::GPL_3;
+	require Software::License::Perl_5;
 	require File::Spec;
-	my $license = Software::License::GPL_3->new({
+	my $license = Software::License::Perl_5->new({
 		holder => 'Blaise Roth',
 	});
 	open LICENSE, ">", File::Spec->catfile('LICENSE');
 	print LICENSE $license->fulltext();
-	say "LICENSE file created successfully";
+	say $license->notice();
+	say $license->url();
 }
 
 1;

@@ -2,9 +2,17 @@ use 5.01;
 use strict;
 use warnings;
 use lib "lib";
-use Games::Neverhood::Util;
+use Games::Neverhood::Base;
+
+role Goo::Par {
+	requires 'asd';
+	before asd (@_) {
+		say 'ROEL BEFOER';
+	}
+}
 
 class Foo::Bar {
+	our @_WITH = 'Goo::Par';
 	method asd (@_) {
 		say 'in ';
 	}
@@ -24,11 +32,10 @@ class Foo::Bar {
 	}
 	say __PACKAGE__->meta->is_immutable // 0;
 }
+
 my $self = Foo::Bar->new;
 say $self->meta->is_immutable // 0;
 
 $self->asd('AROUND');
 
-while (my ($k,$v) = each %Foo::Bar::) {
-	print "$k ";
-}
+say join " ", keys %Foo::Bar::;
