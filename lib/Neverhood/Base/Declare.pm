@@ -141,6 +141,41 @@ sub on_method_modifier_end {
 	}
 }
 
+sub trigger_or_builder_parser {
+	# parses
+	# trigger foo { ... }
+	# into
+	# trigger _foo_trigger ($new, $old?) { ... }
+
+	my $self = shift;
+	$self->init(@_);
+	my $declarator = $self->declarator;
+
+	$self->skip_declarator;
+	$self->skipspace;
+
+	my $name = $self->strip_name;
+	my $proto = $self->strip_proto // ($declarator eq 'trigger' ? '$new, $old?' : '');
+	
+	my $line = $self->get_linestr;
+	my $pos = $self->offset;
+	
+	if (defined $name) {
+		substr($name, 0, 0) = "_" if substr($name, 0, 1) ne "_";
+		$name .= "_$declarator";
+		substr($line, $pos, 0) = $name;
+		$pos += length $name;
+	}
+	substr($line, $pos, 0) = "($proto)";
+
+	$self->set_linestr($line);
+	
+	chomp $line;
+	say $line;
+
+	return;
+}
+
 sub class_or_role_parser {
 	# parses
 	# class Foo::Bar {
