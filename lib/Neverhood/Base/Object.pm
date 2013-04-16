@@ -15,12 +15,10 @@ use Mouse::Exporter ();
 
 Mouse::Exporter->setup_import_methods(
 	as_is => [
-		qw( ro ro_ rw rw_ ),
-		qw( check trigger ),
+		qw( ro rw rw_ pvt ),
+		qw( check ),
 		# qw( required ),
-		# qw( builder )
-		# qw( weak_ref lazy ),
-		qw( with ),
+		# qw( weak_ref lazy_build ),
 	],
 	also => [ 'Neverhood::Base::Util' ],
 );
@@ -34,74 +32,69 @@ sub has {
 		if @_ % 2; # odd number of arguments
 
 	my %options = @_;
+	my $reader  = $options{reader};
 	my $writer  = $options{writer};
-	my $trigger = $options{trigger} if defined $options{trigger} && !ref $options{trigger};
-	my $builder = $options{builder} && !ref $options{builder};
+	my $builder = $options{builder};
 	my $check   = delete $options{_check};
-	my $isa;
+	my $trigger = delete $options{_trigger};
+	my ($trigger_name, $trigger_coderef);
+	if ($trigger) {
+		ref $trigger ? $trigger_coderef : $trigger_name = $trigger;
+		$trigger = '';
+	}
 
+	if ($trigger_coderef) {
+		$trigger = '$self->$trigger_coderef(@_); ';
+	}
 	if ($check) {
-		$isa = $options{isa};
-		$isa =~ s/Maybe\[(.+)]/$1/g;
+		my $isa = $options{isa};
+		1 while $isa =~ s/^Maybe\[(.+)]/$1/;
 		$isa =~ s/\[.+]//;
-		if (!$options{trigger}) {
-			$options{trigger} = sub { shift->_check($isa, @_) };
-		}
-		elsif (!$trigger) {
-			$options{trigger} = sub { &{$options{trigger}}; shift->_check($isa, @_) };
+		$check = "\$self->_check('$isa', \@_); ";
+		if (!$trigger_name) {
+			$trigger .= $check;
 		}
 	}
 
-	for my $real_name (ref $name ? @$name : $name) {
-		my $name = $real_name;
-		$options{reader} = $real_name;
+	for my $name (ref $name ? @$name : $name) {
+		$options{reader} = $reader.$name;
+		$options{writer} = $writer."set_$name" if defined $writer;
 
-		if (substr($name, 0, 1) eq "_") {
-			substr($name, 0, 1) = "";
-			$options{writer} = "_set_$name" if $writer;
-		}
-		else {
-			$options{writer} = "set_$name" if $writer;
-		}
+		if ($builder) { $options{builder} = "_build_$name" }
 
-		if ($builder) { $options{builder} = "_${name}_builder" }
-		if ($trigger) {
-			my $trigger = \&{"${trigger}::_${name}_trigger"};
-			if ($check) {
-				$options{trigger} = sub { &$trigger; shift->_check($isa, @_) };
-			}
-			else {
-				$options{trigger} = $trigger;
-			}
-		}
+		$meta->add_attribute( $name, \%options );
 
-		$meta->add_attribute( $real_name, %options );
+		if ($trigger_name) {
+			$trigger = "\$self->_changing_$name(\@_); ";
+			$trigger .= $check if defined $check;
+		}
+		if (defined $trigger) {
+			my $code = 'sub { '
+				. 'my $orig = shift; '
+				. 'my $self = shift; '
+				. "my \$old = \$self->$options{reader}; "
+				. '$self->$orig(@_); '
+				. 'push @_, $old; '
+				. $trigger
+				. "}"
+			;
+
+			$code = eval $code || Carp::croak("$@ in code:\n$code");
+			$meta->add_around_method_modifier($options{writer} => $code);
+		}
 	}
 
 	return;
 }
 
-sub ro  { splice @_, 1, 0, required => 1,                    'isa'; goto &has }
-sub ro_ { splice @_, 1, 0, required => 1, init_arg => undef, 'isa'; goto &has }
-sub rw  { splice @_, 1, 0, writer   => 1,                    'isa'; goto &has }
-sub rw_ { splice @_, 1, 0, writer   => 1, init_arg => undef, 'isa'; goto &has }
+sub ro  { splice @_, 1, 0, reader => "",  required => 1,                    'isa'; goto &has }
+sub rw  { splice @_, 1, 0, reader => "",  writer => "",                     'isa'; goto &has }
+sub rw_ { splice @_, 1, 0, reader => "",  writer => "",  init_arg => undef, 'isa'; goto &has }
+sub pvt { splice @_, 1, 0, reader => "_", writer => "_", init_arg => undef, 'isa'; goto &has }
 
+sub check    () { _check   => 1 }
 sub required () { required => 1 }
 sub weak_ref () { weak_ref => 1 }
-sub builder  () { builder  => 1 }
-sub lazy     () { lazy     => 1 }
-sub check    () { _check   => 1 }
-sub trigger (;$) {
-	if (@_) {
-		return trigger => $_[0];
-	}
-	return trigger => scalar caller;
-}
-
-# Delayed with processing
-sub with {
-	no strict;
-	@{caller.'::_WITH'} = @_;
-}
+sub lazy_build () { lazy => 1, builder => 1 }
 
 1;

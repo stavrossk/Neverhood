@@ -19,13 +19,16 @@ class Foo::Bar {
 
 	rw foo => 'Str', default => 'YUP';
 	ro bar => 'Int', default => 2;
-	rw_ _baz => 'Str';
+	pvt baz => 'Str';
+	pvt moo => 'Str', changing, build;
 
 	method asd (@_) {
 		say sprintf "foo => %s, bar => %s", $self->foo, $self->bar;
 		say $self->oh_no if defined $self->oh_no;
 		$self->_set_baz('scary');
 		say $self->_baz;
+		$self->_set_moo("fart");
+		$self->_set_moo("That's Yucky");
 	}
 
 	before asd (@_) {
@@ -41,6 +44,16 @@ class Foo::Bar {
 		$this->$orig(@_);
 		say join " ", @_;
 	}
+	
+	changing moo {
+		say sprintf "%s %s", $new, $old // '';
+	}
+	
+	build moo {
+		say "Woah. I'm about to build moo";
+		'epic building is epic';
+	}
+	
 	say __PACKAGE__->meta->is_immutable // 0;
 }
 
