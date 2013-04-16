@@ -11,17 +11,17 @@
 #include <SDL/SDL_mixer.h>
 
 #define error(...) {\
-	fprintf(stderr, "-----\n");\
 	fprintf(stderr, __VA_ARGS__);\
 	fprintf(stderr, " at %s line %d\n", __FILE__, __LINE__);\
+	fprintf(stderr, "-----\n");\
 	exit(1);\
 }
 
 #define debug(...) {\
 	if (1||SvTRUE(get_sv("Neverhood::Options::Debug", 0))) {\
-		fprintf(stderr, "----- at %s line %d\n", __FILE__, __LINE__);\
 		fprintf(stderr, __VA_ARGS__);\
 		fprintf(stderr, "\n");\
+		fprintf(stderr, "----- at %s line %d\n", __FILE__, __LINE__);\
 	}\
 }
 
@@ -30,15 +30,6 @@ Uint8 SDL_RWreadUint8 (SDL_RWops* stream)
 	Uint8 num;
 	SDL_RWread(stream, &num, 1, 1);
 	return num;
-}
-
-/* convenience function for returning the size of a RWops file */
-int SDL_RWlen (SDL_RWops* stream)
-{
-	int cur = SDL_RWtell(stream);
-	int size = SDL_RWseek(stream, 0, SEEK_END);
-	SDL_RWseek(stream, cur, SEEK_SET);
-	return size;
 }
 
 /* open a RWops file for reading and die on error */

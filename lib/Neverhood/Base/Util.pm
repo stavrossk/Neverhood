@@ -65,8 +65,16 @@ Mouse::Exporter->setup_import_methods(
 		qw( maybe unindent is_class_loaded ),
 		qw( store retrieve ),
 		qw( max min weaken blessed ),
-		# qw( Item Maybe Value Bool Str Num Int ClassName RoleName Ref ScalarRef ArrayRef HashRef CodeRef RegexpRef GlobRef FileHandle Object ),
-		# qw( Rect RectX Surface Palette ResourceKey SceneName ),
+		# qw( Any ),
+		qw( Maybe Bool Str Num Int ),
+		# qw( ClassName RoleName ),
+		# qw( Ref ScalarRef ),
+		qw( ArrayRef HashRef ),
+		# qw( CodeRef ),
+		# qw( RegexpRef ),
+		# qw( GlobRef FileHandle ),
+		qw( Object ),
+		qw( Rect RectX Surface Palette ResourceKey SceneName ),
 	],
 	also => [ 'Neverhood::Base::Declare' ],
 );
@@ -77,19 +85,19 @@ sub debug {
 
 	my ($sub, $filename, $line) = _get_sub_filename_line();
 
-	say STDERR sprintf "----- at %s(), %s line %d:", $sub, $filename, $line;
 	say STDERR sprintf(shift, @_);
+	say STDERR sprintf "----- at %s(), %s line %d:", $sub, $filename, $line;
 	return;
 }
 sub debug_stack {
 	return $;->_options->debug if !@_;
 	return if !$;->_options->debug;
-	say STDERR sprintf "-----";
 	Carp::cluck(sprintf shift, @_);
+	say STDERR sprintf "-----";
 }
 sub error {
-	say STDERR sprintf "-----";
 	Carp::confess(sprintf shift, @_);
+	say STDERR sprintf "-----";
 }
 sub _get_sub_filename_line {
 	my ($package, $filename, $line) = (caller 1);
@@ -133,17 +141,41 @@ BEGIN {
 	*retrieve = \&YAML::XS::LoadFile;
 }
 
-# # class types
-# class_type 'Rect',        { class => 'SDL::Rect' };                     sub Rect        () { 'SDL::Rect' }
-# class_type 'RectX',       { class => 'SDLx::Rect' };                    sub RectX       () { 'SDLx::Rect' }
-# class_type 'Surface',     { class => 'SDL::Surface' };                  sub Surface     () { 'SDL::Surface' }
-# class_type 'Palette',     { class => 'SDL::Palette' };                  sub Palette     () { 'SDL::Palette' }
-# class_type 'ResourceKey', { class => 'Neverhood::ResourceKey' }; sub ResourceKey () { 'Neverhood::ResourceKey' }
+sub Maybe     (;$) { return 'Maybe'     . (@_ ? "[$_[0][0]]" : '') }
+sub ScalarRef (;$) { return 'ScalarRef' . (@_ ? "[$_[0][0]]" : '') }
+sub ArrayRef  (;$) { return 'ArrayRef'  . (@_ ? "[$_[0][0]]" : '') }
+sub HashRef   (;$) { return 'HashRef'   . (@_ ? "[$_[0][0]]" : '') }
 
-# # subtypes
-# subtype 'SceneName',
-# 	as Str,
-# 	# where { is_class_loaded('Neverhood::Scene::' . $_) },
-# ; sub SceneName () { 'SceneName' }
+use constant {
+	Any        => 'Any',
+	Item       => 'Item',
+	Defined    => 'Defined',
+	Value      => 'Value',
+	Bool       => 'Bool',
+	Str        => 'Str',
+	Num        => 'Num',
+	Int        => 'Int',
+	Ref        => 'Ref',
+	CodeRef    => 'CodeRef',
+	RegexpRef  => 'RegexpRef',
+	GlobRef    => 'GlobRef',
+	FileHandle => 'FileHandle',
+	Object     => 'Object',
+	ClassName  => 'ClassName',
+	RoleName   => 'RoleName',
+};
+
+# class types
+class_type 'Rect',        { class => 'SDL::Rect' };              sub Rect        () { 'SDL::Rect' }
+class_type 'RectX',       { class => 'SDLx::Rect' };             sub RectX       () { 'SDLx::Rect' }
+class_type 'Surface',     { class => 'SDL::Surface' };           sub Surface     () { 'SDL::Surface' }
+class_type 'Palette',     { class => 'SDL::Palette' };           sub Palette     () { 'SDL::Palette' }
+class_type 'ResourceKey', { class => 'Neverhood::ResourceKey' }; sub ResourceKey () { 'Neverhood::ResourceKey' }
+
+# subtypes
+subtype 'SceneName',
+	as Str,
+	# where { is_class_loaded('Neverhood::Scene::' . $_) },
+; sub SceneName () { 'SceneName' }
 
 1;

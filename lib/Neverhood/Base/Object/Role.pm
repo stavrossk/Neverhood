@@ -1,7 +1,7 @@
 package Neverhood::Base::Object::Role;
 
 use 5.01;
-my @exports; BEGIN { @exports = qw/ extends has before after around requires / }
+my @exports; BEGIN { @exports = qw/ requires before after around / }
 use Mouse::Role @exports;
 use Mouse::Exporter ();
 
