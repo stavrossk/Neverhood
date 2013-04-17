@@ -11,7 +11,7 @@ use Mouse::Exporter ();
 
 Mouse::Exporter->setup_import_methods(
 	as_is => [
-		qw/ x func method _around changing build class role with /,
+		qw/ x func method _around trigger build class role with /,
 	],
 );
 
@@ -19,8 +19,8 @@ sub x ($) { Neverhood::ResourceKey->new(@_) }
 sub func    (&) {}
 sub method  (&) {}
 sub _around (&) {}
-sub changing (;$) { _trigger => @_ ? $_[0] : scalar caller }
-sub build    (;$) { builder => 1 }
+sub trigger (;$) { _trigger => @_ ? $_[0] : scalar caller }
+sub build   (;$) { builder => 1 }
 sub class () {}
 sub role  () {}
 
@@ -53,8 +53,8 @@ sub setup_declarators {
 			after  => { const => sub { $ctx->method_modifier_parser(@_) } },
 			around => { const => sub { $ctx->method_modifier_parser(@_) } },
 			
-			changing => { const => sub { $ctx->trigger_or_builder_parser(@_) } },
-			build    => { const => sub { $ctx->trigger_or_builder_parser(@_) } },
+			trigger => { const => sub { $ctx->trigger_or_builder_parser(@_) } },
+			build   => { const => sub { $ctx->trigger_or_builder_parser(@_) } },
 
 			class => { const => sub { $ctx->class_or_role_parser(@_) } },
 			role  => { const => sub { $ctx->class_or_role_parser(@_) } },
@@ -123,7 +123,7 @@ sub method_modifier_parser {
 
 	$self->inc_offset($len);
 	$self->skipspace;
-	my $proto = $self->strip_proto // '';
+	my $proto = $self->strip_proto // '@_';
 	$self->skipspace;
 	$line = $self->get_linestr;
 	$pos = $self->offset;
@@ -148,24 +148,24 @@ sub on_method_modifier_end {
 
 sub trigger_or_builder_parser {
 	# parses
-	# changing foo { ... }
+	# trigger foo { ... }
 	# into
-	# changing method _foo_changing ($new, $old?) { ... }
+	# trigger method _foo_trigger ($new, $old?) { ... }
 
 	# or
-	# rw foo => Int, changing { ... };
+	# rw foo => Int, trigger { ... };
 	# into
-	# rw foo => Int, changing method ($new, $old?) { ... };
+	# rw foo => Int, trigger method ($new, $old?) { ... };
 
 	# or
-	# rw foo => Int, changing;
+	# rw foo => Int, trigger;
 	# into
-	# rw foo => Int, changing;
+	# rw foo => Int, trigger;
 
 	my $self = shift;
 	$self->init(@_);
 	my $declarator = $self->declarator;
-	my $is_changing = $declarator eq 'changing';
+	my $is_trigger = $declarator eq 'trigger';
 
 	$self->skip_declarator;
 	$self->skipspace;
@@ -176,7 +176,7 @@ sub trigger_or_builder_parser {
 	my $pos = $self->offset;
 	
 	return if !defined $name and substr($line, $pos, 1) ne "{";
-	$proto //= '$new, $old' if $is_changing;
+	$proto //= '$new, $old' if $is_trigger;
 	
 	my $insert = "method ";
 	if (defined $name) {
@@ -186,9 +186,6 @@ sub trigger_or_builder_parser {
 	
 	substr($line, $pos, 0) = $insert;
 	$self->set_linestr($line);
-
-	chomp $line;
-	say $line;
 
 	return;
 }

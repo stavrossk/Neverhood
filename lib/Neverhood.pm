@@ -15,35 +15,56 @@ the same terms as the Perl 5 programming language system itself.
 
 =cut
 
-$Neverhood::VERSION = 0.22;
+$Neverhood::VERSION = 0.23;
 
 use Neverhood::Base;
 
 use Neverhood::Options;
-use Neverhood::ResourceKey;
-use Neverhood::Draw;
-use Neverhood::Tick;
-use Neverhood::ResourceMan;
-use Neverhood::Scene;
-use Neverhood::Sprite;
-use Neverhood::Sequence;
-use Neverhood::MoviePlayer;
+# use Neverhood::ResourceKey;
+# use Neverhood::Draw;
+# use Neverhood::Tick;
+# use Neverhood::ResourceMan;
+# use Neverhood::Scene;
+# use Neverhood::Sprite;
+# use Neverhood::Sequence;
+# use Neverhood::MoviePlayer;
 
-use Neverhood::Scene::Test;
+# use Neverhood::Scene::Test;
 
 class Neverhood {
 	use SDL::Constants ':SDL::Events';
 
-	pvt_arg options => 'Neverhood::Options', required;
+	ro app       => Surface;
+	rw debug     => Int, trigger { our $Debug = $new };
+	ro data_dir  => Str;
+	ro share_dir => Str;
+	rw mute      => Bool;
 
-	rpvt scene        => 'Neverhood::Scene';
-	rpvt prev_scene   => Maybe['Neverhood::Scene'];
-	rpvt app          => Maybe[Surface];
-	rpvt resource_man => 'Neverhood::ResourceMan';
+	rw_ scene        => 'Neverhood::Scene';
+	rw_ prev_scene   => Maybe['Neverhood::Scene'];
+	rw_ resource_man => 'Neverhood::ResourceMan';
 
-	method BUILD (@_) { $; = $self }
+	method BUILDARGS (Neverhood::Options $options) {
+		my $app = _init_app(
+			fullscreen => $options->fullscreen // 0,
+			no_frame   => $options->no_frame   // 0,
+			grab_input => $options->grab_input // 0,
+			fps_limit  => $options->fps_limit  // 60,
+		);
 
-	method run (SceneName $scene, SceneName $prev_scene) {
+		app       => $app,
+		debug     => $options->debug // 0,
+		data_dir  => $options->data_dir,
+		share_dir => $options->share_dir,
+		mute      => $options->mute // 0,
+	}
+
+	method BUILD (@_) {
+		# So we don't have to pass around the current scene object everywhere
+		$; = $self;
+	}
+
+	method run (Maybe[SceneName] $starting_scene?, Maybe[Str] $starting_which?) {
 		printf unindent(<<'		HELLO'), data_dir(), share_dir();
 		 Data dir: %s
 		Share dir: %s
@@ -52,26 +73,21 @@ class Neverhood {
 		say '=' x 69 if debug();
 
 		# app stop is used to hold the scene name to be set
-		$self->init_app();
-		$self->app->stop($scene);
+		$self->app->stop([$starting_scene, $starting_which]);
 
 		$self->_set_resource_man(Neverhood::ResourceMan->new());
 
 		Neverhood::SoundResource::init();
 		Neverhood::MusicResource::init();
 
-		if ($self->_options->mute) {
+		if ($self->mute) {
 			SDL::Mixer::Music::volume_music(0);
 			SDL::Mixer::Channels::volume(-1, 0);
 		}
 
 		while ($self->app->stopped ne 1) {
 			Neverhood::Draw->invalidate_all();
-			if ($self->scene) {
-				$prev_scene = ref $self->scene;
-				$prev_scene =~ s/^Neverhood:://;
-			}
-			$self->load_new_scene($self->app->stopped, $prev_scene);
+			$self->load_new_scene(@{$self->app->stopped});
 			$self->app->run();
 		}
 
@@ -83,8 +99,11 @@ class Neverhood {
 	}
 
 	# called outside of the run loop to load a new scene
-	method load_new_scene (SceneName|Neverhood::Scene $scene_name, SceneName $prev_scene_name) {
-		debug("Scene: %s; Previous scene: %s", $scene_name, $prev_scene_name);
+	method load_new_scene (SceneName|Neverhood::Scene|Undef $scene_name, Maybe[Str] $scene_which?) {
+		$scene_name  //= 'Nursery::One';
+		$scene_which //= '';
+	
+		debug("Scene: %s; which: %s", $scene_name, $scene_which);
 
 		if (ref $scene_name) {
 			$self->_set_scene($scene_name);
@@ -131,13 +150,11 @@ class Neverhood {
 			$scene->setup($prev_scene);
 		}
 		else {
-			$scene->setup($prev_scene_name);
+			$scene->setup($scene_which);
 		}
 	}
 
-	method init_app () {
-		return if $self->app;
-
+	func _init_app (:$fullscreen, :$fps_limit, :$no_frame, :$grab_input) {
 		my ($event_window_pause, $event_pause); # recursive subs
 		$event_window_pause = sub {
 			# pause when the app loses focus
@@ -149,7 +166,7 @@ class Neverhood {
 				}
 			}
 			# if we're fullscreen we should unpause no matter what event we get
-			$self->_options->fullscreen;
+			$fullscreen;
 		};
 		$event_pause = sub {
 			# toggle pause when either alt is pressed
@@ -176,21 +193,21 @@ class Neverhood {
 			return;
 		};
 
-		$self->_set_app(SDLx::App->new(
+		my $app = SDLx::App->new(
 			title      => 'The Neverhood',
 			width      => 640,
 			height     => 480,
 			depth      => 16,
 			dt         => 1 / 10,
 			max_t      => 1 / 10,
-			min_t      => $self->_options->fps_limit &&  1 / $self->_options->fps_limit,
+			min_t      => $fps_limit &&  1 / $fps_limit,
 			delay      => 0,
 			init       => ['audio'],
 			no_cursor  => 1,
 			centered   => 1,
-			fullscreen => $self->_options->fullscreen,
-			no_frame   => $self->_options->no_frame,
-			grab_input => $self->_options->grab_input,
+			fullscreen => $fullscreen,
+			no_frame   => $no_frame,
+			grab_input => $grab_input,
 			hw_surface => 1,
 	#		double_buf => 1,
 	#		sw_surface => 1,
@@ -244,10 +261,10 @@ class Neverhood {
 					SDL::Mixer::Music::resume_music();
 				}
 			},
-		));
+		);
 
-		$self->app->draw_rect(undef, 0x000000FF);
-		$self->app->update();
+		$app->draw_rect(undef, 0x000000FF);
+		$app->update();
+		return $app;
 	}
-
 }

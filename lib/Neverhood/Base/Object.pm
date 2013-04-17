@@ -65,7 +65,7 @@ sub has {
 		$meta->add_attribute( $name, \%options );
 
 		if ($trigger_name) {
-			$trigger = "\$self->_changing_$name(\@_); ";
+			$trigger = "\$self->_trigger_$name(\@_); ";
 			$trigger .= $check if defined $check;
 		}
 		if (defined $trigger) {

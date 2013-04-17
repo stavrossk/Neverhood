@@ -5,6 +5,7 @@ Neverhood::Base - Exports Base modules and cleans them up
 =cut
 
 use 5.01;
+use feature ();
 use warnings;
 use strict;
 
@@ -52,7 +53,8 @@ sub import {
 	$imported{$caller} = $imported;
 
 	Neverhood::Base::Declare->setup_declarators($caller);
-	feature->import(':5.10');
+	@_ = qw/feature :5.10/;
+	goto(feature->can('import'));
 };
 
 sub unimport {

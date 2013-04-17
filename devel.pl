@@ -20,7 +20,7 @@ class Foo::Bar {
 	rw foo => 'Str', default => 'YUP';
 	ro bar => 'Int', default => 2;
 	pvt baz => 'Str';
-	pvt moo => 'Str', changing, build;
+	pvt moo => 'Str', trigger, build;
 
 	method asd (@_) {
 		say sprintf "foo => %s, bar => %s", $self->foo, $self->bar;
@@ -31,11 +31,11 @@ class Foo::Bar {
 		$self->_set_moo("That's Yucky");
 	}
 
-	before asd (@_) {
+	before asd {
 		say 'before ';
 	}
 
-	after asd (@_) {
+	after asd {
 		say 'after ';
 	}
 
@@ -45,13 +45,13 @@ class Foo::Bar {
 		say join " ", @_;
 	}
 	
-	changing moo {
+	trigger moo {
 		say sprintf "%s %s", $new, $old // '';
 	}
 	
 	build moo {
 		say "Woah. I'm about to build moo";
-		'epic building is epic';
+		'building is epic';
 	}
 	
 	say __PACKAGE__->meta->is_immutable // 0;
