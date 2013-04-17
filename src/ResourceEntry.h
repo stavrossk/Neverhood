@@ -59,7 +59,7 @@ static char*  t_filename;
 
 static void ResourceEntry_loadArchive (char* filename, const char* prefix, const char* name, HV* hash)
 {
-	filename = safemalloc(strlen(prefix) + strlen(name) + 1);
+	filename = (char*)safemalloc(strlen(prefix) + strlen(name) + 1);
 	sprintf(filename, "%s%s", prefix, name);
 
 	SDL_RWops* stream = SDL_RWopen(filename);
@@ -70,7 +70,7 @@ static void ResourceEntry_loadArchive (char* filename, const char* prefix, const
 	header.extDataSize = SDL_ReadLE16(stream);
 	header.fileSize    = SDL_ReadLE32(stream);
 	header.fileCount   = SDL_ReadLE32(stream);
-	
+
 	int cur = SDL_RWseek(stream, 0, SEEK_CUR);
 	int size = SDL_RWseek(stream, 0, SEEK_END);
 	SDL_RWseek(stream, cur, SEEK_SET);
@@ -78,7 +78,7 @@ static void ResourceEntry_loadArchive (char* filename, const char* prefix, const
 	if (header.id1 != 0x2004940 || header.id2 != 7 || header.fileSize != size)
 		error("Archive %s seems to be corrupt", filename);
 
-	Uint32* keys = safemalloc(header.fileCount * 4);
+	Uint32* keys = (Uint32*)safemalloc(header.fileCount * 4);
 	int i;
 	for (i = 0; i < header.fileCount; i++) {
 		keys[i] = SDL_ReadLE32(stream);
@@ -89,7 +89,7 @@ static void ResourceEntry_loadArchive (char* filename, const char* prefix, const
 
 	/* file records */
 	for (i = 0; i < header.fileCount; i++) {
-		ResourceEntry* entry   = safemalloc(sizeof(ResourceEntry));
+		ResourceEntry* entry   = (ResourceEntry*)safemalloc(sizeof(ResourceEntry));
 		entry->filename        = filename;
 		entry->key             = keys[i];
 		entry->type            = SDL_RWreadUint8(stream);
@@ -152,7 +152,7 @@ static int ResourceEntry_outfun (void* how, unsigned char* buf, unsigned size)
 
 Uint8* ResourceEntry_getBuffer (ResourceEntry* this)
 {
-	Uint8* input_buf = safemalloc(this->diskSize);
+	Uint8* input_buf = (Uint8*)safemalloc(this->diskSize);
 	SDL_RWops* stream = SDL_RWopen(this->filename);
 	SDL_RWseek(stream, this->offset, SEEK_SET);
 	SDL_RWread(stream, input_buf, this->diskSize, 1);
@@ -167,7 +167,7 @@ Uint8* ResourceEntry_getBuffer (ResourceEntry* this)
 			in.buf = input_buf;
 			in.size = this->diskSize;
 
-			Uint8* out = safemalloc(this->size);
+			Uint8* out = (Uint8*)safemalloc(this->size);
 			Uint8* out_buf = out;
 
 			int err = blast(ResourceEntry_infun, &in, ResourceEntry_outfun, &out_buf);

@@ -48,7 +48,7 @@ static int ms_per_step;
 
 MusicResource* MusicResource_new (ResourceEntry* entry)
 {
-	MusicResource* this = safemalloc(sizeof(MusicResource));
+	MusicResource* this = (MusicResource*)safemalloc(sizeof(MusicResource));
 
 	if (entry->type != 8)
 		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);
@@ -224,8 +224,8 @@ void MusicResource_init ()
 	Mix_QuerySpec(&dst_rate, &dst_format, &dst_channels);
 	SDL_BuildAudioCVT(&cvt, AUDIO_S16LSB, 1, 22050, dst_format, dst_channels, dst_rate);
 
-	music_buf = safemalloc(size * cvt.len_mult);
-	smacker_audio_buf = safemalloc(size);
+	music_buf = (Uint8*)safemalloc(size * cvt.len_mult);
+	smacker_audio_buf = (Uint8*)safemalloc(size);
 
 	ms_per_step = (int)(((double)size * 1000.0 / 2) / dst_rate);
 

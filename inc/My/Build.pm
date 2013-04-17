@@ -32,33 +32,8 @@ sub ACTION_license {
 	say $license->url();
 }
 
-=item libclean
-
-[version 0.01] (Blaise Roth)
-
-This action will clean the generated .c, .o, .xs, and typemap files from the
-lib/Neverhood directory. Any files that can't be removed will be silently
-skipped.
-
-=cut
-
-sub ACTION_libclean {
-	my $files = join " ", map {
-		File::Spec->catfile('lib', 'Neverhood', $_);
-	} (
-		# '*.c',
-		# '*.o',
-		'*.xs',
-		'typemap',
-	);
-	
-	while(glob $files) {
-		unlink;
-	}
-}
-
-1;
-
 =back
 
 =cut
+
+1;

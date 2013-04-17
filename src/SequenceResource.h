@@ -38,7 +38,7 @@ void SequenceResource_destroy (SequenceResource* this);
 
 SequenceResource* SequenceResource_new (ResourceEntry* entry)
 {
-	SequenceResource* this = safemalloc(sizeof(SequenceResource));
+	SequenceResource* this = (SequenceResource*)safemalloc(sizeof(SequenceResource));
 
 	if (entry->type != 4)
 		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);
@@ -61,7 +61,7 @@ SequenceResource* SequenceResource_new (ResourceEntry* entry)
 
 	Uint8* sprite_data = resource_data + sprite_data_ofs;
 
-	this->palette.colors = safemalloc(1024);
+	this->palette.colors = (SDL_Color*)safemalloc(1024);
 	if (palette_data_ofs > 0)
 		memcpy(this->palette.colors, resource_data + palette_data_ofs, 1024);
 	else
@@ -71,7 +71,7 @@ SequenceResource* SequenceResource_new (ResourceEntry* entry)
 	this->frameCount            = *(Uint16*)(data + 4);
 	Uint16 frame_list_start_ofs = *(Uint16*)(data + 6);
 
-	this->frames = safemalloc(sizeof(SequenceFrame) * this->frameCount);
+	this->frames = (SequenceFrame*)safemalloc(sizeof(SequenceFrame) * this->frameCount);
 
 	data = resource_data + anim_info_start_ofs + frame_list_start_ofs;
 

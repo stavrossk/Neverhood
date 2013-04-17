@@ -29,7 +29,7 @@ void unpackSpriteRLE (Uint8* buffer, SDL_Surface* surface);
 
 SpriteResource* SpriteResource_new (ResourceEntry* entry)
 {
-	SpriteResource* this = safemalloc(sizeof(SpriteResource));
+	SpriteResource* this = (SpriteResource*)safemalloc(sizeof(SpriteResource));
 
 	if (entry->type != 2)
 		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);

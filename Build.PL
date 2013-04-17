@@ -41,11 +41,10 @@ my $build = My::Build->new(
 	requires => {
 		'perl'                      => 5.01,
 		'SDL'                       => 2.541, # raise me
-		'Mouse'                     => 1.02,
-		'File::ShareDir'            => 1.03,
+		'Mouse'                     => 1.00,
+		'File::ShareDir'            => 1.00,
 		'YAML::XS'                  => 0.37,
 		'Method::Signatures'        => 20121201,
-		'B::Hooks::EndOfScope'      => 0.11,
 	},
 	share_dir            => File::Spec->catdir('share'),
 	extra_compiler_flags => [ @cflags, '-Wall', '-Wno-comment' ],

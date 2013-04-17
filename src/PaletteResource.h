@@ -24,7 +24,7 @@ void PaletteResource_destroy (PaletteResource* this);
 
 PaletteResource* PaletteResource_new (ResourceEntry* entry)
 {
-	PaletteResource* this = safemalloc(sizeof(PaletteResource));
+	PaletteResource* this = (PaletteResource*)safemalloc(sizeof(PaletteResource));
 
 	if (entry->type != 3)
 		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);

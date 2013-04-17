@@ -41,13 +41,13 @@ static Uint32 playing_ids[SOUND_CHANNELS];
 
 SoundResource* SoundResource_new (ResourceEntry* entry)
 {
-	SoundResource* this = safemalloc(sizeof(SoundResource));
+	SoundResource* this = (SoundResource*)safemalloc(sizeof(SoundResource));
 
 	if (entry->type != 7)
 		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);
 
 	if (!cvt) {
-		cvt = safemalloc(sizeof(SDL_AudioCVT));
+		cvt = (SDL_AudioCVT*)safemalloc(sizeof(SDL_AudioCVT));
 		SDL_BuildSpecAudioCVT(cvt, AUDIO_S16LSB, 1, 22050);
 		if (cvt->len_mult != 1 || cvt->len_ratio != 1)
 			error("Obtained audio did not meet minimum requirements");
@@ -68,7 +68,7 @@ SoundResource* SoundResource_new (ResourceEntry* entry)
 	}
 	else { /* DW ADPCM compressed */
 		this->alen = input_size * 2;
-		this->abuf = safemalloc(this->alen);
+		this->abuf = (Uint8*)safemalloc(this->alen);
 
 		Sint8* input_buf = (Sint8*)input;
 		Sint8* input_end = input_buf + input_size;

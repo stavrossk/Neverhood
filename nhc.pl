@@ -22,14 +22,15 @@ sub quote {
 
 my $build = quote(File::Spec->catfile($FindBin::Bin, 'Build'));
 
-my ($stderr) = capture_stderr { system $^X, $build and exit 1 };
-if ($stderr) {
+my $build_ret;
+my ($stderr) = capture_stderr { $build_ret = system $^X, $build };
+if (defined $stderr and length $stderr) {
 	say "\n$stderr";
 	exit 1;
 }
+exit 1 if $build_ret;
 
 system $^X, $build, 'install'  and exit 1;
-system $^X, $build, 'libclean' and exit 1;
 
 my $nhc = quote(File::Spec->catfile($FindBin::Bin, 'blib', 'script', 'nhc'));
 

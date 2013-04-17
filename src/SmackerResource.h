@@ -108,7 +108,7 @@ typedef enum {
 
 SmackerResource* SmackerResource_new (ResourceEntry* entry)
 {
-	SmackerResource* this = safemalloc(sizeof(SmackerResource));
+	SmackerResource* this = (SmackerResource*)safemalloc(sizeof(SmackerResource));
 
 	if (entry->type != 0xA)
 		error("Wrong type for resource: %08X, type: %X", entry->key, entry->type);
@@ -184,15 +184,15 @@ SmackerResource* SmackerResource_new (ResourceEntry* entry)
 
 	this->header.dummy = SDL_ReadLE32(stream);
 
-	this->frameSizes = safemalloc(sizeof(Uint32) * this->frameCount);
+	this->frameSizes = (Uint32*)safemalloc(this->frameCount * 4);
 	for (i = 0; i < this->frameCount; i++)
 		this->frameSizes[i] = SDL_ReadLE32(stream);
 
-	this->frameTypes = safemalloc(this->frameCount);
+	this->frameTypes = (Uint8*)safemalloc(this->frameCount);
 	for (i = 0; i < this->frameCount; i++)
 		this->frameTypes[i] = SDL_RWreadUint8(stream);
 
-	Uint8* huffman_trees = safemalloc(this->header.treesSize);
+	Uint8* huffman_trees = (Uint8*)safemalloc(this->header.treesSize);
 	SDL_RWread(stream, huffman_trees, this->header.treesSize, 1);
 
 	BitStream* bs = BitStream_new(huffman_trees, this->header.treesSize);
@@ -245,7 +245,7 @@ int SmackerResource_nextFrame (SmackerResource* this)
 
 	/* Load audio tracks */
 	for (i = 0; i < 7; i++) {
-		if (!(this->frameTypes[this->curFrame] & (2 << i)))
+		if (!(this->frameTypes[this->curFrame] & 2 << i))
 			continue;
 
 		chunk_size = SDL_ReadLE32(this->fileStream);
@@ -268,7 +268,7 @@ int SmackerResource_nextFrame (SmackerResource* this)
 
 	Uint32 frame_data_size = frame_size - (SDL_RWtell(this->fileStream) - start_pos);
 
-	this->frameData = safemalloc(frame_data_size);
+	this->frameData = (Uint8*)safemalloc(frame_data_size);
 	SDL_RWread(this->fileStream, this->frameData, frame_data_size, 1);
 
 	BitStream* bs = BitStream_new(this->frameData, frame_data_size);
@@ -285,7 +285,7 @@ int SmackerResource_nextFrame (SmackerResource* this)
 
 	while (block < blocks) {
 		int type = BigTree_getCode(this->TypeTree, bs);
-		int run = ((type >> 2) & 0x3F) + 1;
+		int run = (type >> 2 & 0x3F) + 1;
 		if (run >= 60) run = 128 << (run - 60);
 		int extra_val = type >> 8;
 		type &= 3;
@@ -378,11 +378,11 @@ static void SmackerResource_handleAudioTrack (SmackerResource* this, Uint8 track
 {
 	if (track == 0 && this->header.audioInfo[0].hasAudio && chunk_size > 0) {
 		/* If it's track 0, play the audio data */
-		Uint8* sound_buffer = safemalloc(chunk_size);
+		Uint8* sound_buffer = (Uint8*)safemalloc(chunk_size);
 		SDL_RWread(this->fileStream, sound_buffer, chunk_size, 1);
 
 		if (!this->cvt) {
-			this->cvt = safemalloc(sizeof(SDL_AudioCVT));
+			this->cvt = (SDL_AudioCVT*)safemalloc(sizeof(SDL_AudioCVT));
 			Uint16 format = this->header.audioInfo[0].is16Bits ? AUDIO_S16LSB : AUDIO_S8;
 			int samplesPerSecond = this->header.audioInfo[0].sampleRate;
 			SDL_BuildSpecAudioCVT(this->cvt, format, 1, samplesPerSecond);
@@ -402,13 +402,13 @@ static void SmackerResource_handleAudioTrack (SmackerResource* this, Uint8 track
 		this->cvt->len = unpacked_size;
 		SDL_ConvertAudio(this->cvt);
 
-		BufferLink* link = safemalloc(sizeof(BufferLink));
+		BufferLink* link = (BufferLink*)safemalloc(sizeof(BufferLink));
 		link->buf = unpacked_buffer;
 		link->size = unpacked_size * this->cvt->len_ratio;
 		link->nextLink = NULL;
 
 		if (!this->audio) {
-			this->audio = safemalloc(sizeof(SmackerAudio));
+			this->audio = (SmackerAudio*)safemalloc(sizeof(SmackerAudio));
 			this->audio->curLink = NULL;
 			this->audio->earliestLink = link;
 		}
@@ -465,7 +465,7 @@ static void SmackerResource_unpackCompressedAudio
 	if (is_16_bits) {
 		Uint8 hi = BitStream_get8(audio_bs);
 		Uint8 lo = BitStream_get8(audio_bs);
-		base = (Sint16)((hi << 8) | lo);
+		base = (Sint16)(hi << 8 | lo);
 
 		*(Uint16*)cur_pointer = base;
 		cur_pointer += 2;
@@ -484,7 +484,7 @@ static void SmackerResource_unpackCompressedAudio
 		if (is_16_bits) {
 			Uint8 lo = SmallTree_getCode(audio_trees[0], audio_bs);
 			Uint8 hi = SmallTree_getCode(audio_trees[1], audio_bs);
-			base += (Sint16)(lo | (hi << 8));
+			base += (Sint16)(hi << 8 | lo);
 
 			*(Uint16*)cur_pointer = base;
 			cur_pointer += 2;
@@ -533,7 +533,7 @@ static void SmackerResource_unpackPalette (SmackerResource* this)
 	int start_pos = SDL_RWtell(this->fileStream);
 	Uint32 size = 4 * SDL_RWreadUint8(this->fileStream);
 
-	Uint8* chunk = safemalloc(size);
+	Uint8* chunk = (Uint8*)safemalloc(size);
 	SDL_RWread(this->fileStream, chunk, size, 1);
 	Uint8* p = chunk;
 
