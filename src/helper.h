@@ -40,7 +40,7 @@ SDL_RWops* SDL_RWopen (const char* filename)
 	return stream;
 }
 
-int SDL_BuildSpecAudioCVT (SDL_AudioCVT *cvt, Uint16 src_format, Uint8 src_channels, int src_rate)
+void SDL_BuildSpecAudioCVT (SDL_AudioCVT *cvt, Uint16 src_format, Uint8 src_channels, int src_rate)
 {
 	int dst_rate, dst_channels;
 	Uint16 dst_format;

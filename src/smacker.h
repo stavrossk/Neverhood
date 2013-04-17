@@ -53,7 +53,7 @@ Uint8 BitStream_get8 (BitStream* this)
 	assert(this->buf < this->end);
 
 	Uint8 v = this->curByte | *this->buf << this->bitCount;
-	this->curByte = *this->buf++ >> 8 - this->bitCount;
+	this->curByte = *this->buf++ >> (8 - this->bitCount);
 
 	return v;
 }
@@ -77,7 +77,7 @@ void BitStream_skip (BitStream* this, int n)
 	else {
 		assert(this->buf < this->end);
 		this->bitCount = this->bitCount + 8 - n;
-		this->curByte = *this->buf++ >> 8 - this->bitCount;
+		this->curByte = *this->buf++ >> (8 - this->bitCount);
 	}
 }
 

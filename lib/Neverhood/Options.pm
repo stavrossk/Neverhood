@@ -224,8 +224,8 @@ nhc [-?dhps] [long options]
  --mute             Mute all music and sound
  -s --starting-scene=SCENE
                     Set the starting scene (default=Nursery::One)
- -p --starting-prev-scene=SCENE
-                    Set the starting prev scene (default=starting-scene)
+ -p --starting-which=WHICH
+                    Set which entrance to use (default="")
  -? -h --help       Show this help
 
 =head1 In-game

@@ -46,6 +46,9 @@ sub import {
 	elsif ($group eq ':role') {
 		$imported = "Neverhood::Base::Object::Role";
 	}
+	elsif ($group eq ':declare') {
+		$imported = "Neverhood::Base::Declare";
+	}
 	else {
 		Carp::croak("$class doesn't export '$group'");
 	}

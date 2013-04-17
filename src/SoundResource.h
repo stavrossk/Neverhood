@@ -70,7 +70,7 @@ SoundResource* SoundResource_new (ResourceEntry* entry)
 		this->alen = input_size * 2;
 		this->abuf = safemalloc(this->alen);
 
-		Sint8* input_buf = input;
+		Sint8* input_buf = (Sint8*)input;
 		Sint8* input_end = input_buf + input_size;
 
 		Sint16 cur_value = 0;
@@ -123,11 +123,10 @@ bool SoundResource_isPlaying (SoundResource* this, Uint32 id)
 	int i;
 	for (i = 0; i < channels; i++) {
 		if (id == playing_ids[i] && this == Mix_GetChunk(i)) {
-			Mix_HaltChannel(i);
-			playing_ids[i] = 0;
-			break;
+			return 1;
 		}
 	}
+	return 0;
 }
 
 void SoundResource_init ()

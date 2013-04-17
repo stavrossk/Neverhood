@@ -17,12 +17,14 @@ the same terms as the Perl 5 programming language system itself.
 
 $Neverhood::VERSION = 0.23;
 
-use Neverhood::Base;
+use Neverhood::Base ':declare';
 
 use Neverhood::Options;
+
+use Neverhood::Role::Draw;
+# use Neverhood::Role::Tick;
+
 # use Neverhood::ResourceKey;
-# use Neverhood::Draw;
-# use Neverhood::Tick;
 # use Neverhood::ResourceMan;
 # use Neverhood::Scene;
 # use Neverhood::Sprite;
@@ -34,7 +36,7 @@ use Neverhood::Options;
 class Neverhood {
 	use SDL::Constants ':SDL::Events';
 
-	ro app       => Surface;
+	rw app       => Maybe[Surface];
 	rw debug     => Int, trigger { our $Debug = $new };
 	ro data_dir  => Str;
 	ro share_dir => Str;
@@ -50,13 +52,16 @@ class Neverhood {
 			no_frame   => $options->no_frame   // 0,
 			grab_input => $options->grab_input // 0,
 			fps_limit  => $options->fps_limit  // 60,
+			share_dir  => $options->share_dir,
 		);
-
-		app       => $app,
-		debug     => $options->debug // 0,
-		data_dir  => $options->data_dir,
-		share_dir => $options->share_dir,
-		mute      => $options->mute // 0,
+		
+		return {
+			app       => $app,
+			debug     => $options->debug // 0,
+			data_dir  => $options->data_dir,
+			share_dir => $options->share_dir,
+			mute      => $options->mute // 0,
+		};
 	}
 
 	method BUILD (@_) {
@@ -75,7 +80,7 @@ class Neverhood {
 		# app stop is used to hold the scene name to be set
 		$self->app->stop([$starting_scene, $starting_which]);
 
-		$self->_set_resource_man(Neverhood::ResourceMan->new());
+		# $self->_set_resource_man(Neverhood::ResourceMan->new());
 
 		Neverhood::SoundResource::init();
 		Neverhood::MusicResource::init();
@@ -86,14 +91,14 @@ class Neverhood {
 		}
 
 		while ($self->app->stopped ne 1) {
-			Neverhood::Draw->invalidate_all();
-			$self->load_new_scene(@{$self->app->stopped});
+			# Neverhood::Draw->invalidate_all();
+			# $self->load_new_scene(@{$self->app->stopped});
 			$self->app->run();
 		}
 
 		say '=' x 69 if debug();
 
-		$self->_set_app(undef);
+		$self->set_app(undef);
 		undef $self;
 		undef $;;
 	}
@@ -154,7 +159,7 @@ class Neverhood {
 		}
 	}
 
-	func _init_app (:$fullscreen, :$fps_limit, :$no_frame, :$grab_input) {
+	func _init_app (:$fullscreen, :$fps_limit, :$no_frame, :$grab_input, :$share_dir) {
 		my ($event_window_pause, $event_pause); # recursive subs
 		$event_window_pause = sub {
 			# pause when the app loses focus
@@ -215,7 +220,7 @@ class Neverhood {
 	#		async_blit => 1,
 	#		hw_palette => 1,
 
-			icon => share_file('icon.bmp'),
+			icon => cat_file($share_dir, 'icon.bmp'),
 			icon_alpha_key => SDL::Color->new(255, 0, 255),
 
 			event_handlers => [
@@ -228,13 +233,13 @@ class Neverhood {
 
 				# move
 
-				$;->scene->handle_time($time);
+				# $;->scene->handle_time($time);
 
 				# show
 
 				$app->draw_rect(undef, 0xFF00FFFF) if debug;
 
-				$;->scene->draw();
+				# $;->scene->draw();
 
 				Neverhood::Draw->update_screen();
 			},

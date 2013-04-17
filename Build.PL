@@ -48,7 +48,7 @@ my $build = My::Build->new(
 		'B::Hooks::EndOfScope'      => 0.11,
 	},
 	share_dir            => File::Spec->catdir('share'),
-	extra_compiler_flags => [ @cflags ],
+	extra_compiler_flags => [ @cflags, '-Wall', '-Wno-comment' ],
 	extra_linker_flags   => [ @lflags ],
 	xs_files             => { @xs_files },
 	include_dirs         => [ @c_dirs ],

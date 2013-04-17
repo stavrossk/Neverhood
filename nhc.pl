@@ -22,12 +22,15 @@ sub quote {
 
 my $build = quote(File::Spec->catfile($FindBin::Bin, 'Build'));
 
-tee_merged { system $^X, $build and exit 1 }
-	=~ /collect2: ld returned 1 exit status|:\d+:\d+: warning:/ and exit 1;
+my ($stderr) = capture_stderr { system $^X, $build and exit 1 };
+if ($stderr) {
+	say "\n$stderr";
+	exit 1;
+}
 
-system $^X, $build, 'install' and exit 1;
+system $^X, $build, 'install'  and exit 1;
+system $^X, $build, 'libclean' and exit 1;
 
 my $nhc = quote(File::Spec->catfile($FindBin::Bin, 'blib', 'script', 'nhc'));
 
 system $^X, $nhc, qw(--debug --normal-window), @ARGV;
-

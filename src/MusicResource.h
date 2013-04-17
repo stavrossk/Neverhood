@@ -154,7 +154,7 @@ static void MusicResource_player (void* udata, Uint8* buf, int size)
 		int input_size;
 		Sint8* input_buf;
 		input_size = size / 2.0 * cvt.len_ratio;
-		input_buf = music_buf + input_size;
+		input_buf = (Sint8*)music_buf + input_size;
 
 		MusicResource_player_recurse(music_playing, (Sint16*)music_buf, size, input_buf, input_size);
 
