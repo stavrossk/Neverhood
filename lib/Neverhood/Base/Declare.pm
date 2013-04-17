@@ -11,7 +11,7 @@ use Mouse::Exporter ();
 
 Mouse::Exporter->setup_import_methods(
 	as_is => [
-		qw/ x func method _around class role /,
+		qw/ x func method _around trigger build class role with /,
 	],
 );
 
@@ -19,8 +19,10 @@ sub x ($) { Neverhood::ResourceKey->new(@_) }
 sub func    (&) {}
 sub method  (&) {}
 sub _around (&) {}
-sub class () {};
-sub role  () {};
+sub trigger (;$) { _trigger => @_ ? $_[0] : scalar caller }
+sub build   (;$) { builder => 1 }
+sub class () {}
+sub role  () {}
 
 sub setup_declarators {
 	my ($class, $caller) = @_;
@@ -50,6 +52,9 @@ sub setup_declarators {
 			before => { const => sub { $ctx->method_modifier_parser(@_) } },
 			after  => { const => sub { $ctx->method_modifier_parser(@_) } },
 			around => { const => sub { $ctx->method_modifier_parser(@_) } },
+			
+			trigger => { const => sub { $ctx->trigger_or_builder_parser(@_) } },
+			build   => { const => sub { $ctx->trigger_or_builder_parser(@_) } },
 
 			class => { const => sub { $ctx->class_or_role_parser(@_) } },
 			role  => { const => sub { $ctx->class_or_role_parser(@_) } },
@@ -113,12 +118,12 @@ sub method_modifier_parser {
 
 	my $pos = $self->offset;
 	my $len = Devel::Declare::toke_scan_word($self->offset, 0);
-	$len or croak "Expected word after $declarator";
+	return if !$len; # we shouldn't be processing this; let Mouse::before etc. process it
 	my $method = substr($line, $pos, $len);
 
 	$self->inc_offset($len);
 	$self->skipspace;
-	my $proto = $self->strip_proto // '';
+	my $proto = $self->strip_proto // '@_';
 	$self->skipspace;
 	$line = $self->get_linestr;
 	$pos = $self->offset;
@@ -139,6 +144,50 @@ sub on_method_modifier_end {
 		substr($line, $pos, 0) = ';';
 		Devel::Declare::set_linestr($line);
 	}
+}
+
+sub trigger_or_builder_parser {
+	# parses
+	# trigger foo { ... }
+	# into
+	# trigger method _foo_trigger ($new, $old?) { ... }
+
+	# or
+	# rw foo => Int, trigger { ... };
+	# into
+	# rw foo => Int, trigger method ($new, $old?) { ... };
+
+	# or
+	# rw foo => Int, trigger;
+	# into
+	# rw foo => Int, trigger;
+
+	my $self = shift;
+	$self->init(@_);
+	my $declarator = $self->declarator;
+	my $is_trigger = $declarator eq 'trigger';
+
+	$self->skip_declarator;
+	$self->skipspace;
+
+	my $name = $self->strip_name;
+	my $proto = $self->strip_proto;
+	my $line = $self->get_linestr;
+	my $pos = $self->offset;
+	
+	return if !defined $name and substr($line, $pos, 1) ne "{";
+	$proto //= '$new, $old' if $is_trigger;
+	
+	my $insert = "method ";
+	if (defined $name) {
+		$insert .= "_${declarator}_$name";
+	}
+	$insert .= "($proto)" if defined $proto;
+	
+	substr($line, $pos, 0) = $insert;
+	$self->set_linestr($line);
+
+	return;
 }
 
 sub class_or_role_parser {
@@ -196,14 +245,27 @@ sub on_class_or_role_end {
 		my $pos = Devel::Declare::get_linestr_offset;
 		my $package = Devel::Declare::get_curstash_name;
 		my $insert =  " no Neverhood::Base; ";
-		$insert .= sprintf 'our @_WITH; %s::with(@_WITH) if @_WITH; undef @_WITH; ',
-			$is_role ? "Mouse::Role" : "Mouse";
-		$insert .= sprintf 'delete $%s::{_WITH}; ', $package;
+		$insert .= "Neverhood::Base::Declare::process_with($is_role); ";
 		$insert .=  "$package->meta->make_immutable; " if !$is_role;
 		$insert .= "} 1; ";
 		substr($line, $pos, 0) = $insert;
 		Devel::Declare::set_linestr($line);
 	}
+}
+
+# delayed with processing
+my %does;
+sub with {
+	$does{scalar caller} = [@_];
+}
+
+sub process_with {
+	my ($is_role) = @_;
+	my $caller = caller;
+	return if !exists $does{$caller};
+	@_ = @{$does{$caller}};
+	delete $does{$caller};
+	goto $is_role ? \&Mouse::Role::with : \&Mouse::with;
 }
 
 1;

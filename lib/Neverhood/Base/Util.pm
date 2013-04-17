@@ -19,7 +19,6 @@ use Carp ();
 use File::Spec ();
 use Scalar::Util qw/ weaken blessed /;
 use List::Util qw/ max min /;
-use YAML::XS ();
 
 # use all the SDL stuff we need here
 # then you only need to import constants in each class
@@ -63,7 +62,6 @@ Mouse::Exporter->setup_import_methods(
 		qw( debug error debug_stack ),
 		qw( cat_file cat_dir data_file data_dir share_file share_dir ),
 		qw( maybe unindent is_class_loaded ),
-		qw( store retrieve ),
 		qw( max min weaken blessed ),
 		# qw( Any ),
 		qw( Maybe Bool Str Num Int ),
@@ -80,8 +78,8 @@ Mouse::Exporter->setup_import_methods(
 );
 
 sub debug {
-	return $;->_options->debug if !@_;
-	return if !$;->_options->debug;
+	return $;->debug if !@_;
+	return if !$;->debug;
 
 	my ($sub, $filename, $line) = _get_sub_filename_line();
 
@@ -90,8 +88,8 @@ sub debug {
 	return;
 }
 sub debug_stack {
-	return $;->_options->debug if !@_;
-	return if !$;->_options->debug;
+	return $;->debug if !@_;
+	return if !$;->debug;
 	Carp::cluck(sprintf shift, @_);
 	say STDERR sprintf "-----";
 }
@@ -115,10 +113,10 @@ sub _get_sub_filename_line {
 
 sub cat_file   { File::Spec->catfile(@_) }
 sub cat_dir    { File::Spec->catdir (@_) }
-sub data_file  { File::Spec->catfile($;->_options->data_dir,  @_) }
-sub data_dir   { File::Spec->catdir ($;->_options->data_dir,  @_) }
-sub share_file { File::Spec->catfile($;->_options->share_dir, @_) }
-sub share_dir  { File::Spec->catdir ($;->_options->share_dir, @_) }
+sub data_file  { File::Spec->catfile($;->data_dir,  @_) }
+sub data_dir   { File::Spec->catdir ($;->data_dir,  @_) }
+sub share_file { File::Spec->catfile($;->share_dir, @_) }
+sub share_dir  { File::Spec->catdir ($;->share_dir, @_) }
 
 # returns what it was given, but returns an empty list if the value is undefined
 sub maybe {
@@ -133,12 +131,6 @@ sub unindent {
 	my ($str) = @_;
 	$str =~ s/^\t+//gm;
 	$str;
-}
-
-# serialization methods
-BEGIN {
-	*store    = \&YAML::XS::DumpFile;
-	*retrieve = \&YAML::XS::LoadFile;
 }
 
 sub Maybe     (;$) { return 'Maybe'     . (@_ ? "[$_[0][0]]" : '') }

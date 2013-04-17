@@ -70,8 +70,12 @@ static void ResourceEntry_loadArchive (char* filename, const char* prefix, const
 	header.extDataSize = SDL_ReadLE16(stream);
 	header.fileSize    = SDL_ReadLE32(stream);
 	header.fileCount   = SDL_ReadLE32(stream);
+	
+	int cur = SDL_RWseek(stream, 0, SEEK_CUR);
+	int size = SDL_RWseek(stream, 0, SEEK_END);
+	SDL_RWseek(stream, cur, SEEK_SET);
 
-	if (header.id1 != 0x2004940 || header.id2 != 7 || header.fileSize != SDL_RWlen(stream))
+	if (header.id1 != 0x2004940 || header.id2 != 7 || header.fileSize != size)
 		error("Archive %s seems to be corrupt", filename);
 
 	Uint32* keys = safemalloc(header.fileCount * 4);

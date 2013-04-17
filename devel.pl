@@ -19,20 +19,23 @@ class Foo::Bar {
 
 	rw foo => 'Str', default => 'YUP';
 	ro bar => 'Int', default => 2;
-	rw_ _baz => 'Str';
+	pvt baz => 'Str';
+	pvt moo => 'Str', trigger, build;
 
 	method asd (@_) {
 		say sprintf "foo => %s, bar => %s", $self->foo, $self->bar;
 		say $self->oh_no if defined $self->oh_no;
 		$self->_set_baz('scary');
 		say $self->_baz;
+		$self->_set_moo("fart");
+		$self->_set_moo("That's Yucky");
 	}
 
-	before asd (@_) {
+	before asd {
 		say 'before ';
 	}
 
-	after asd (@_) {
+	after asd {
 		say 'after ';
 	}
 
@@ -41,6 +44,16 @@ class Foo::Bar {
 		$this->$orig(@_);
 		say join " ", @_;
 	}
+	
+	trigger moo {
+		say sprintf "%s %s", $new, $old // '';
+	}
+	
+	build moo {
+		say "Woah. I'm about to build moo";
+		'building is epic';
+	}
+	
 	say __PACKAGE__->meta->is_immutable // 0;
 }
 

@@ -29,5 +29,5 @@ system $^X, $build, 'install' and exit 1;
 
 my $nhc = quote(File::Spec->catfile($FindBin::Bin, 'blib', 'script', 'nhc'));
 
-exec $^X, $nhc, qw(--debug --normal-window), @ARGV;
+system $^X, $nhc, qw(--debug --normal-window), @ARGV;
 

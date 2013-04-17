@@ -45,7 +45,7 @@ my $build = My::Build->new(
 		'File::ShareDir'            => 1.03,
 		'YAML::XS'                  => 0.37,
 		'Method::Signatures'        => 20121201,
-		'B::Hooks::EndOfScope'      => 0.12,
+		'B::Hooks::EndOfScope'      => 0.11,
 	},
 	share_dir            => File::Spec->catdir('share'),
 	extra_compiler_flags => [ @cflags ],

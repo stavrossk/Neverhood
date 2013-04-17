@@ -13,8 +13,8 @@ use warnings;
 
 use Neverhood;
 
-my $options = Neverhood::Options->new_with_options();
-my $game = Neverhood->new(options => $options);
-$game->run($options->starting_scene, $options->starting_prev_scene);
+my $options = Neverhood::Options->new_with_opts;
+my $game = Neverhood->new($options);
+# $game->run($options->starting_scene, $options->starting_which);
 
 1;
