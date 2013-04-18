@@ -15,7 +15,7 @@ class Neverhood::Scene {
 	rw_ prev_music => Maybe['Neverhood::MusicResource'];
 
 	method BUILD (@_) {
-		$self->_set_order(Neverhood::Order->new());
+		$self->_set_order(Neverhood::Order->new);
 		$self->set_fps(24);
 	}
 	method setup (SceneName $prev_scene) {}

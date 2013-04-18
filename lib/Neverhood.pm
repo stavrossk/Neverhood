@@ -79,7 +79,7 @@ class Neverhood {
 		# app stop is used to hold the scene name to be set
 		$self->app->stop([$options->starting_scene, $options->starting_which]);
 
-		# $self->_set_resource_man(Neverhood::ResourceMan->new());
+		# $self->_set_resource_man(Neverhood::ResourceMan->new);
 
 		Neverhood::SoundResource::init();
 		Neverhood::MusicResource::init();

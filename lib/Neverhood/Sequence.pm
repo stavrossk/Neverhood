@@ -43,7 +43,7 @@ class Neverhood::Sequence
 
 		}
 
-		$self->_set_surface($self->_resource->get_frame_surface());
+		$self->_set_surface($self->_resource->get_frame_surface);
 		$self->set_palette($self->_resource->get_palette);
 
 		$self->set_x($self->_resource->get_x) if !defined $self->x;

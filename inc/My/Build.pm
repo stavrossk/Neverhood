@@ -27,9 +27,9 @@ sub ACTION_license {
 		holder => 'Blaise Roth',
 	});
 	open LICENSE, ">", File::Spec->catfile('LICENSE');
-	print LICENSE $license->fulltext();
-	say $license->notice();
-	say $license->url();
+	print LICENSE $license->fulltext;
+	say $license->notice;
+	say $license->url;
 }
 
 =back

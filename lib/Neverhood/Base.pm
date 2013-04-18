@@ -12,7 +12,7 @@ package Neverhood::Base;
 
 # There are a few ways to import this module
 # This hash remembers how each package imported it
-# so that it can unimport correctly
+# so that it can be unimported correctly
 my %_imported;
 
 # this needs to happen before the below "use"s so they can import from the modules before them
@@ -43,7 +43,7 @@ BEGIN {
 
 		Neverhood::Base::Declare->setup_declarators($caller);
 		@_ = qw/feature :5.10/;
-		goto(feature->can('import'));
+		goto feature->can('import');
 	};
 
 	sub unimport {
