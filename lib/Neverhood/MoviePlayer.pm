@@ -16,14 +16,14 @@ class Neverhood::MoviePlayer
 	rw   is_loopy       => Bool, default => 1;
 	rpvt stopped        => Bool, default => 1;
 
-	method cur_frame   { $self->_resource->get_cur_frame }
-	method frame_count { $self->_resource->get_frame_count }
+	method cur_frame   () { $self->_resource->get_cur_frame }
+	method frame_count () { $self->_resource->get_frame_count }
 
 	pvt resource            => 'Neverhood::SmackerResource';
 	pvt surface             => Surface;
 	pvt double_size_surface => Surface;
 
-	method BUILD (@_) {
+	method BUILD {
 		$self->_set_resource($;->resource_man->get_smacker($self->key));
 		$self->_set_surface($self->_resource->get_surface);
 		$self->set_fps($self->_resource->get_frame_rate);

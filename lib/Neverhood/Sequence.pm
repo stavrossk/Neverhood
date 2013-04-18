@@ -25,7 +25,7 @@ class Neverhood::Sequence
 	pvt delta_y                 => Int;
 	pvt collision_bounds_offset => Int;
 
-	method BUILD (@_) {
+	method BUILD {
 		$self->_set_resource($;->resource_man->get_sequence($self->key));
 
 		$self->_frame_count($self->_resource->get_frame_count);
@@ -34,7 +34,7 @@ class Neverhood::Sequence
 		}
 	}
 
-	method next_frame_index {
+	method next_frame_index () {
 		my $frame = $self->frame_index;
 		if ($self->play_backwards) {
 

@@ -40,19 +40,19 @@ role Neverhood::Role::Draw {
 	pvt update_rect => Maybe[Rect];
 
 	# done manually by anything that wants to invalidate the entire screen
-	method invalidate_all {
+	method invalidate_all () {
 		$_invalidated_all = 1;
 		$self->invalidate() if ref $self;
 		@_invalidated_rects = ();
 	}
 
 	# done manually by a surface that wants to be invalidated
-	method invalidate {
+	method invalidate () {
 		$self->set_invalidated(1);
 	}
 
 	# update rects on the app
-	method update_screen {
+	method update_screen () {
 		if ($_invalidated_all) {
 			SDL::Video::update_rect($;->app, 0, 0, 0, 0);
 		}
@@ -122,10 +122,10 @@ role Neverhood::Role::Draw {
 	}
 
 	# called when drawables are added/removed from the scene
-	method add {
+	method add () {
 		$self->invalidate();
 	}
-	method remove {
+	method remove () {
 		$self->_add_update_rect() if $self->_update_rect;
 		$self->_set_update_rect(undef);
 	}

@@ -5,7 +5,7 @@ Neverhood::Role::Tick - role that ticks
 =cut
 
 role Neverhood::Role::Tick {
-	pvt ticker_tick_time      => Num, trigger method (@_) { $self->_set_ticker_remaining_time(0) };
+	pvt ticker_tick_time      => Num, trigger { $self->_set_ticker_remaining_time(0) };
 	pvt ticker_remaining_time => Num;
 
 	requires 'handle_time', 'handle_tick';
@@ -26,7 +26,7 @@ role Neverhood::Role::Tick {
 		}
 	}
 	
-	method resync {}
+	method resync () {}
 	
 	method ticker_stop () {
 		$self->_set_ticker_remaining_time(0);

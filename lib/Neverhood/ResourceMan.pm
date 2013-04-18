@@ -8,7 +8,7 @@ class Neverhood::ResourceMan {
 	pvt entries   => HashRef;
 	pvt resources => HashRef;
 
-	method BUILD (@_) {
+	method BUILD {
 		# to get a dir separator at the end we have to put in a filename then chop it off
 		my $prefix = catfile($;->data_dir, "a");
 		chop $prefix;

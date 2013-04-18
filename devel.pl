@@ -10,7 +10,7 @@ role Goo::Par {
 
 	rw oh_no => 'Str';
 
-	before asd (@_) {
+	before asd {
 		say 'ROEL BEFOER';
 	}
 }
@@ -24,7 +24,7 @@ class Foo::Bar {
 	pvt moo => Str, trigger, build;
 	rw sprite => Role::Draw;
 
-	method asd (@_) {
+	method asd {
 		say sprintf "foo => %s, bar => %s", $self->foo, $self->bar;
 		say $self->oh_no if defined $self->oh_no;
 		$self->_set_baz('scary');
@@ -33,6 +33,7 @@ class Foo::Bar {
 		$self->_set_moo("That's Yucky");
 		$self->set_sprite(Moo::Mar->new);
 		$self->do_something($self->sprite);
+		say 'Splitting up "with" works pretty well if 1='.$self->sprite->does('Goo::Par');
 	}
 
 	before asd {
@@ -70,6 +71,9 @@ class Foo::Bar {
 
 class Moo::Mar {
 	with Role::Draw;
+	with 'Goo::Par';
+	
+	rw [qw/asd foo bar/] => Str;
 	
 	rw  bool    => Maybe[Bool], check;
 	rw_ int     => Maybe[Int], check;
@@ -79,9 +83,9 @@ class Moo::Mar {
 	
 	trigger surface { 'nothing to see here' }
 	
-	method draw {}
+	method draw () {}
 	
-	method check_stuff {
+	method check_stuff () {
 		my $surface = SDLx::Surface->new(w=>1,h=>2);
 	
 		$self->set_invalidated(0);

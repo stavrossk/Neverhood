@@ -24,7 +24,7 @@ class Neverhood::Options {
 	rw starting_which => Str;
 	rw_ share_dir     => Str;
 
-	method BUILD (@_) {
+	method BUILD {
 		$self->set_grab_input($self->no_frame || $self->fullscreen) if !defined $self->grab_input;
 		$self->set_share_dir(File::ShareDir::dist_dir('Neverhood'));
 	}

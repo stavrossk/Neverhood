@@ -11,7 +11,7 @@ class Neverhood::Sprite with Neverhood::Draw {
 	pvt surface  => Surface;
 	pvt resource => 'Neverhood::SpriteResource';
 
-	method BUILD (@_) {
+	method BUILD {
 		$self->_set_resource($;->resource_man->get_sprite($self->key));
 		$self->_set_surface($self->_resource->get_surface);
 		$self->set_palette($self->_resource->get_palette) if !$self->palette;
@@ -24,7 +24,7 @@ class Neverhood::Sprite with Neverhood::Draw {
 
 	}
 
-	method draw {
+	method draw () {
 		$self->draw_surface($self->_surface, $self->x, $self->y);
 	}
 
@@ -39,7 +39,7 @@ class Neverhood::Sprite with Neverhood::Draw {
 		Neverhood::SurfaceUtil::set_color_keying($self->_surface, 1);
 	}
 
-	method reset_palette {
+	method reset_palette () {
 		$self->set_palette($self->_resource->get_palette);
 	}
 }

@@ -8,17 +8,18 @@ class Neverhood::Scene {
 	use SDL::Constants ':SDL::Events';
 
 	pvt order      => 'Neverhood::Order', handles => [qw( add add_above add_below replace remove )];
-	rw_ background => 'Neverhood::Draw';
+	rw_ background => Role::Draw;
 	rw_ movie      => Maybe['Neverhood::MoviePlayer'];
 	rw_ palette    => Maybe[Palette];
 	rw_ music      => Maybe['Neverhood::MusicResource'];
 	rw_ prev_music => Maybe['Neverhood::MusicResource'];
 
-	method BUILD (@_) {
+	method BUILD {
 		$self->_set_order(Neverhood::Order->new);
 		$self->set_fps(24);
 	}
-	method setup (SceneName $prev_scene) {}
+	method setup (Maybe[Str] $which) {}
+	method teardown () {}
 
 	method handle_time (Num $time) {
 		$self->movie->handle_time($time) if $self->movie;

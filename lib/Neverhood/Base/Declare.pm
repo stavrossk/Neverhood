@@ -52,7 +52,7 @@ sub setup_declarators {
 			before => { const => sub { $ctx->method_modifier_parser(@_) } },
 			after  => { const => sub { $ctx->method_modifier_parser(@_) } },
 			around => { const => sub { $ctx->method_modifier_parser(@_) } },
-			
+
 			trigger => { const => sub { $ctx->trigger_or_builder_parser(@_) } },
 			build   => { const => sub { $ctx->trigger_or_builder_parser(@_) } },
 
@@ -99,7 +99,6 @@ sub resource_key_parser {
 
 	return;
 }
-
 
 sub method_modifier_parser {
 	# parses
@@ -174,20 +173,31 @@ sub trigger_or_builder_parser {
 	my $proto = $self->strip_proto;
 	my $line = $self->get_linestr;
 	my $pos = $self->offset;
-	
+
 	return if !defined $name and substr($line, $pos, 1) ne "{";
 	$proto //= '$new, $old' if $is_trigger;
-	
+
 	my $insert = "method ";
 	if (defined $name) {
 		$insert .= "_${declarator}_$name";
 	}
 	$insert .= "($proto)" if defined $proto;
-	
+
 	substr($line, $pos, 0) = $insert;
 	$self->set_linestr($line);
 
 	return;
+}
+
+# from Method::Signatures
+sub parse_proto {
+	# empty proto e.g.
+	# method foo { ... }
+	# becomes (@_) instead of ()
+	# you have to do method foo () { ... } to mean the other thing
+	
+	my ($self, $proto) = @_;
+	$self->SUPER::parse_proto($proto // '@_');
 }
 
 sub class_or_role_parser {
@@ -202,9 +212,8 @@ sub class_or_role_parser {
 		# {
 			# ...
 			# no Neverhood::Base;
+			# Neverhood::Base::Declare::process_with(0);
 			# __PACKAGE__->meta->make_immutable;
-			# our @_WITH;
-			# Mouse::with(@_WITH) if @_WITH;
 		# }
 	# }
 	# 1;
@@ -256,7 +265,7 @@ sub on_class_or_role_end {
 # delayed with processing
 my %does;
 sub with {
-	$does{scalar caller} = [@_];
+	push @{$does{scalar caller}}, @_;
 }
 
 sub process_with {

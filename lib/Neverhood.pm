@@ -55,7 +55,7 @@ class Neverhood {
 		};
 	}
 
-	method BUILD (@_) {
+	method BUILD {
 		# So we don't have to pass around the current scene object everywhere
 		$; = $self;
 	}
