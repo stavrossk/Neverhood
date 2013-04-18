@@ -15,7 +15,7 @@ use warnings;
 package Neverhood::ResourceKey;
 
 use overload
-	'""' => sub { ${+shift} },
+	'""' => sub { ${$_[0]} },
 	fallback => 1,
 ;
 

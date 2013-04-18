@@ -15,6 +15,6 @@ use Neverhood;
 
 my $options = Neverhood::Options->new_with_opts;
 my $game = Neverhood->new($options);
-$game->run($options->starting_scene, $options->starting_which);
+$game->run($options);
 
 1;

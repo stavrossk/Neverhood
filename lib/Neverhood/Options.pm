@@ -58,7 +58,7 @@ class Neverhood::Options {
 		);
 
 		my $share_dir = $options->share_dir;
-		my $config_file = cat_file($share_dir, 'config.yaml');
+		my $config_file = catfile($share_dir, 'config.yaml');
 
 		my $saved_options;
 		eval { $saved_options = retrieve($config_file) };
@@ -87,7 +87,7 @@ class Neverhood::Options {
 					for my $drive (0..SDL::CDROM::num_drives()-1) {
 						my $cd = SDL::CD->new($drive);
 						if ($cd and $cd->status > CD_TRAYEMPTY) {
-							my $data_dir = cat_dir(SDL::CDROM::name($drive), 'DATA');
+							my $data_dir = catdir(SDL::CDROM::name($drive), 'DATA');
 							if (_is_valid_data_dir($data_dir, $share_dir, $write_checksums)) {
 								$valid_data_dir = $data_dir;
 								last;
@@ -143,7 +143,7 @@ class Neverhood::Options {
 		my $valid = 1;
 		my @files =  qw/a c hd i m s t/;
 		for (@files) {
-			my $file = cat_file($data_dir, "$_.blb");
+			my $file = catfile($data_dir, "$_.blb");
 			if (-s $file <= 0) {
 				$valid = 0;
 				last;
@@ -151,14 +151,14 @@ class Neverhood::Options {
 		}
 
 		my $checksums_passed = 1;
-		my $checksums = eval { retrieve(cat_file($share_dir, 'checksums.yaml')) };
+		my $checksums = eval { retrieve(catfile($share_dir, 'checksums.yaml')) };
 		if (!defined $checksums) {
 			$write_checksums = 1;
 			$checksums = {};
 		}
 
 		for (@files) {
-			my $filename = cat_file($data_dir, "$_.blb");
+			my $filename = catfile($data_dir, "$_.blb");
 			my $file;
 			if (!open $file, "<", $filename) {
 				say STDERR "Couldn't open $filename for testing checksum: $!";

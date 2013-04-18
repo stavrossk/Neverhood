@@ -4,15 +4,15 @@ Neverhood::Scene - the base class for all scenes
 
 =cut
 
-class Neverhood::Scene with Neverhood::Tick {
+class Neverhood::Scene {
 	use SDL::Constants ':SDL::Events';
 
-	pvt   order      => 'Neverhood::Order', handles => [qw( add add_above add_below replace remove )];
-	rpvt  background => 'Neverhood::Draw';
-	rpvt  movie      => Maybe['Neverhood::MoviePlayer'];
-	rpvt  palette    => Maybe[Palette];
-	rpvt  music      => Maybe['Neverhood::MusicResource'];
-	rwpvt prev_music => Maybe['Neverhood::MusicResource'];
+	pvt order      => 'Neverhood::Order', handles => [qw( add add_above add_below replace remove )];
+	rw_ background => 'Neverhood::Draw';
+	rw_ movie      => Maybe['Neverhood::MoviePlayer'];
+	rw_ palette    => Maybe[Palette];
+	rw_ music      => Maybe['Neverhood::MusicResource'];
+	rw_ prev_music => Maybe['Neverhood::MusicResource'];
 
 	method BUILD (@_) {
 		$self->_set_order(Neverhood::Order->new());
@@ -116,10 +116,7 @@ class Neverhood::Scene with Neverhood::Tick {
 
 package Neverhood::Order;
 
-use 5.01;
-use strict;
-use warnings;
-use Method::Signatures;
+use Neverhood::Base;
 
 method new ($class:) {
 	bless [], $class;
@@ -182,4 +179,5 @@ method _add_at (Neverhood::Draw $item, Neverhood::Draw $target_item, Int $offset
 	return $item;
 }
 
+no Neverhood::Base;
 1;

@@ -19,8 +19,8 @@ sub x ($) { Neverhood::ResourceKey->new(@_) }
 sub func    (&) {}
 sub method  (&) {}
 sub _around (&) {}
-sub trigger (;$) { _trigger => @_ ? $_[0] : scalar caller }
-sub build   (;$) { builder => 1 }
+sub trigger (;$) { _trigger => @_ ? $_[0] : 1 }
+sub build   (;$) { builder  => @_ ? $_[0] : 1 }
 sub class () {}
 sub role  () {}
 

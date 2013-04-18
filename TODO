@@ -8,11 +8,12 @@ TODO
     Complete config mode
     Make sure the disk keeps spinning
     Make smacker audio resync with video
-    Make music always play silence when it runs out of data
+    Make music always play silence when it runs out of data, read music in a separate thread
     Only resume music/sound that you paused
     Music fading code to fade between volumes
     Music fading might sound better if non-linear, use some function?
     Split h and c apart in src/ and use so instead of o
+    Handle the demo
 
 Milestones
         0.2 - Main resources loading from archives and functional

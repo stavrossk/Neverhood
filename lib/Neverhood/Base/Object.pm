@@ -12,6 +12,7 @@ package Neverhood::Base::Object;
 use Mouse ();
 use Mouse::Role ();
 use Mouse::Exporter ();
+use Neverhood::Base;
 
 Mouse::Exporter->setup_import_methods(
 	as_is => [
@@ -25,7 +26,8 @@ Mouse::Exporter->setup_import_methods(
 
 # attribute declaration customised
 sub has {
-	my $meta = caller->meta;
+	my $caller = caller;
+	my $meta = $caller->meta;
 	my $name = shift;
 
 	$meta->throw_error(q{Usage: has 'name' => ( key => value, ... )})
@@ -36,22 +38,43 @@ sub has {
 	my $writer  = $options{writer};
 	my $builder = $options{builder};
 	my $check   = delete $options{_check};
-	my $trigger = delete $options{_trigger};
-	my ($trigger_name, $trigger_coderef);
-	if ($trigger) {
-		ref $trigger ? $trigger_coderef : $trigger_name = $trigger;
-		$trigger = '';
-	}
-
-	if ($trigger_coderef) {
-		$trigger = '$self->$trigger_coderef(@_); ';
-	}
-	if ($check) {
-		my $isa = $options{isa};
+	my $isa;
+	if ($check or !$builder and !exists $options{default}) {
+		$isa = $options{isa};
 		1 while $isa =~ s/^Maybe\[(.+)]/$1/;
 		$isa =~ s/\[.+]//;
-		$check = "\$self->_check('$isa', \@_); ";
-		if (!$trigger_name) {
+
+		if (!$builder and !exists $options{default}) {
+			if ($isa eq 'ArrayRef') {
+				$options{default} = sub { [] };
+			}
+			elsif ($isa eq 'HashRef') {
+				$options{default} = sub { {} };
+			}
+		}
+	}
+
+	my $trigger_coderef = delete $options{_trigger};
+	my $trigger = '';
+	$trigger = '$self->$trigger_coderef($new, $old); ' if $trigger_coderef and ref $trigger_coderef;
+
+	if ($check) {
+		$check = '$self->invalidate if ';
+		$check .= do {
+			given ($isa) {
+				when (Bool)               {   '$new      xor  $old' }
+				when ([Int, Num])         {  '($new//0)  !=  ($old//0)' }
+				when (Str)                {  '($new//"") ne  ($old//"")' }
+				when ([Palette, Surface]) { '${$new//\0} != ${$old//\0}' }
+				when ([Rect, RectX])      {
+					'!Neverhood::CUtil::rects_equal($new//SDL::Rect->new(0,0,0,0), $old//SDL::Rect->new(0,0,0,0))';
+				}
+				default { $meta->throw_error("Invalidator check on unsupported type: $isa") }
+			}
+		};
+		$check .= '; ';
+
+		if (!$trigger_coderef or ref $trigger_coderef) {
 			$trigger .= $check;
 		}
 	}
@@ -59,28 +82,25 @@ sub has {
 	for my $name (ref $name ? @$name : $name) {
 		$options{reader} = $reader.$name;
 		$options{writer} = $writer."set_$name" if defined $writer;
-
-		if ($builder) { $options{builder} = "_build_$name" }
+		$options{builder} = "_build_$name" if $builder and !ref $builder;
 
 		$meta->add_attribute( $name, \%options );
 
-		if ($trigger_name) {
-			$trigger = "\$self->_trigger_$name(\@_); ";
+		if ($trigger_coderef and !ref $trigger_coderef) {
+			$trigger = "\$self->${caller}::_trigger_$name(\$new, \$old); ";
 			$trigger .= $check if defined $check;
 		}
-		if (defined $trigger) {
+		if (length $trigger) {
 			my $code = 'sub { '
 				. 'my $orig = shift; '
-				. 'my $self = shift; '
-				. "my \$old = \$self->$options{reader}; "
-				. '$self->$orig(@_); '
-				. 'push @_, $old; '
+				. 'my ($self, $new) = @_; '
+				. "my \$old = \$_[0]->$options{reader}; "
+				. '&$orig; '
 				. $trigger
-				. "}"
+				. '}'
 			;
 
-			$code = eval $code || Carp::croak("$@ in code:\n$code");
-			$meta->add_around_method_modifier($options{writer} => $code);
+			$meta->add_around_method_modifier($options{writer} => eval $code);
 		}
 	}
 
@@ -97,4 +117,5 @@ sub required () { required => 1 }
 sub weak_ref () { weak_ref => 1 }
 sub lazy_build () { lazy => 1, builder => 1 }
 
+no Neverhood::Base;
 1;

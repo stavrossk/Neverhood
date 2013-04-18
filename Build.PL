@@ -33,7 +33,7 @@ my @xs_files = map {
 my $build = My::Build->new(
 	module_name   => 'Neverhood',
 	license       => 'perl',
-	configure_requires   => {
+	configure_requires => {
 		'perl'          => 5.01,
 		'Module::Build' => 0.34,
 		'Alien::SDL'    => 1.438,
@@ -60,7 +60,8 @@ my $build = My::Build->new(
 		File::Spec->catfile('META.yml'),
 		File::Spec->catfile('META.json'),
 		File::Spec->catfile('lib', 'Neverhood', 'typemap'),
-		File::Spec->catfile('compilet_def.old'),
+		File::Spec->catfile('*_def.old'),
+		File::Spec->catfile('lib', 'Neverhood', '*_def.old'),
 	],
 	meta_merge => {
 		resources => {

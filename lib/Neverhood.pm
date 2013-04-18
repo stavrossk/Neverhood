@@ -24,8 +24,8 @@ use Neverhood::Options;
 use Neverhood::Role::Draw;
 # use Neverhood::Role::Tick;
 
-# use Neverhood::ResourceKey;
-# use Neverhood::ResourceMan;
+use Neverhood::ResourceKey;
+use Neverhood::ResourceMan;
 # use Neverhood::Scene;
 # use Neverhood::Sprite;
 # use Neverhood::Sequence;
@@ -46,19 +46,10 @@ class Neverhood {
 	rw_ prev_scene   => Maybe['Neverhood::Scene'];
 	rw_ resource_man => 'Neverhood::ResourceMan';
 
-	method BUILDARGS (Neverhood::Options $options) {
-		my $app = _init_app(
-			fullscreen => $options->fullscreen // 0,
-			no_frame   => $options->no_frame   // 0,
-			grab_input => $options->grab_input // 0,
-			fps_limit  => $options->fps_limit  // 60,
-			share_dir  => $options->share_dir,
-		);
-		
+	method BUILDARGS (Neverhood::Options $options) {		
 		return {
-			app       => $app,
 			debug     => $options->debug // 0,
-			data_dir  => $options->data_dir,
+			data_dir  => $options->data_dir // '.',
 			share_dir => $options->share_dir,
 			mute      => $options->mute // 0,
 		};
@@ -69,16 +60,24 @@ class Neverhood {
 		$; = $self;
 	}
 
-	method run (Maybe[SceneName] $starting_scene?, Maybe[Str] $starting_which?) {
-		printf unindent(<<'		HELLO'), data_dir(), share_dir();
+	method run (Neverhood::Options $options) {	
+		printf unindent(<<'		HELLO'), $self->data_dir, $self->share_dir;
 		 Data dir: %s
 		Share dir: %s
 		HELLO
 
 		say '=' x 69 if debug();
+		
+		$self->_init_app(
+			fullscreen => $options->fullscreen // 0,
+			no_frame   => $options->no_frame   // 0,
+			grab_input => $options->grab_input // 0,
+			fps_limit  => $options->fps_limit  // 60,
+			share_dir  => $options->share_dir,
+		);
 
 		# app stop is used to hold the scene name to be set
-		$self->app->stop([$starting_scene, $starting_which]);
+		$self->app->stop([$options->starting_scene, $options->starting_which]);
 
 		# $self->_set_resource_man(Neverhood::ResourceMan->new());
 
@@ -159,7 +158,9 @@ class Neverhood {
 		}
 	}
 
-	func _init_app (:$fullscreen, :$fps_limit, :$no_frame, :$grab_input, :$share_dir) {
+	method _init_app (:$fullscreen, :$fps_limit, :$no_frame, :$grab_input, :$share_dir) {
+		return if $self->app;
+	
 		my ($event_window_pause, $event_pause); # recursive subs
 		$event_window_pause = sub {
 			# pause when the app loses focus
@@ -198,7 +199,7 @@ class Neverhood {
 			return;
 		};
 
-		my $app = SDLx::App->new(
+		$self->set_app(SDLx::App->new(
 			title      => 'The Neverhood',
 			width      => 640,
 			height     => 480,
@@ -220,7 +221,7 @@ class Neverhood {
 	#		async_blit => 1,
 	#		hw_palette => 1,
 
-			icon => cat_file($share_dir, 'icon.bmp'),
+			icon => catfile($share_dir, 'icon.bmp'),
 			icon_alpha_key => SDL::Color->new(255, 0, 255),
 
 			event_handlers => [
@@ -241,7 +242,7 @@ class Neverhood {
 
 				# $;->scene->draw();
 
-				Neverhood::Draw->update_screen();
+				# Neverhood::Draw->update_screen();
 			},
 			move_handler => undef,
 			stop_handler => sub {
@@ -266,10 +267,9 @@ class Neverhood {
 					SDL::Mixer::Music::resume_music();
 				}
 			},
-		);
+		));
 
-		$app->draw_rect(undef, 0x000000FF);
-		$app->update();
-		return $app;
+		$self->app->draw_rect(undef, 0x000000FF);
+		$self->app->update();
 	}
 }

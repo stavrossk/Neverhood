@@ -1,10 +1,10 @@
-# Tick - role that provides handle_time and requires handle_tick
-# Copyright (C) 2012 Blaise Roth
+=head1 NAME
 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Neverhood::Role::Tick - role that ticks
 
-role Neverhood::Tick {
+=cut
+
+role Neverhood::Role::Tick {
 	pvt ticker_tick_time      => Num, trigger method (@_) { $self->_set_ticker_remaining_time(0) };
 	pvt ticker_remaining_time => Num;
 

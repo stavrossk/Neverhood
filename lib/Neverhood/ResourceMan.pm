@@ -9,7 +9,9 @@ class Neverhood::ResourceMan {
 	pvt resources => HashRef;
 
 	method BUILD (@_) {
-		chop(my $prefix = data_file("a")); # to get a dir separator at the end we have to put in a filename then chop it off
+		# to get a dir separator at the end we have to put in a filename then chop it off
+		my $prefix = catfile($;->data_dir, "a");
+		chop $prefix;
 		Neverhood::ResourceEntry::load_archives($prefix, $self->_entries);
 	}
 
@@ -19,7 +21,6 @@ class Neverhood::ResourceMan {
 			$key = sprintf("%08X", $entry->get_disk_size);
 			$entry = $self->_entries->{$key};
 		}
-
 		return $entry;
 	}
 
@@ -39,7 +40,6 @@ class Neverhood::ResourceMan {
 
 			weaken($self->_resources->{$key} = $resource);
 		}
-
 		return $resource;
 	}
 
@@ -56,13 +56,13 @@ class Neverhood::ResourceMan {
 		}
 	}
 
-	method get_sprite   (ResourceKey $key) { $self->_get_resource_of_type($key, 2); }
-	method get_sequence (ResourceKey $key) { $self->_get_resource_of_type($key, 4); }
-	method get_sound    (ResourceKey $key) { $self->_get_resource_of_type($key, 7); }
-	method get_music    (ResourceKey $key) { $self->_get_resource_of_type($key, 8); }
-	method get_smacker  (ResourceKey $key) { $self->_get_resource_of_type($key, 10); }
+	method get_sprite   (ResourceKey $key) { $self->_get_resource_of_type($key, 2) }
+	method get_sequence (ResourceKey $key) { $self->_get_resource_of_type($key, 4) }
+	method get_sound    (ResourceKey $key) { $self->_get_resource_of_type($key, 7) }
+	method get_music    (ResourceKey $key) { $self->_get_resource_of_type($key, 8) }
+	method get_smacker  (ResourceKey $key) { $self->_get_resource_of_type($key, 10) }
 
-	method get_palette  (ResourceKey $key) {
+	method get_palette (ResourceKey $key) {
 		my $entry = $self->_get_entry($key);
 		$entry or error("Key %08X is not in entry hash", $key);
 		return $self->_get_resource($key, $entry) if $entry->get_type == 3;

@@ -16,7 +16,7 @@ use Mouse::Exporter ();
 use Mouse::Util::TypeConstraints;
 use XSLoader ();
 use Carp ();
-use File::Spec ();
+use File::Spec::Functions qw/ catfile catdir /;
 use Scalar::Util qw/ weaken blessed /;
 use List::Util qw/ max min /;
 
@@ -60,7 +60,7 @@ BEGIN {
 Mouse::Exporter->setup_import_methods(
 	as_is => [
 		qw( debug error debug_stack ),
-		qw( cat_file cat_dir data_file data_dir share_file share_dir ),
+		qw( catfile catdir ),
 		qw( maybe unindent is_class_loaded ),
 		qw( max min weaken blessed ),
 		# qw( Any ),
@@ -111,13 +111,6 @@ sub _get_sub_filename_line {
 	return($sub, $filename, $line);
 }
 
-sub cat_file   { File::Spec->catfile(@_) }
-sub cat_dir    { File::Spec->catdir (@_) }
-sub data_file  { File::Spec->catfile($;->data_dir,  @_) }
-sub data_dir   { File::Spec->catdir ($;->data_dir,  @_) }
-sub share_file { File::Spec->catfile($;->share_dir, @_) }
-sub share_dir  { File::Spec->catdir ($;->share_dir, @_) }
-
 # returns what it was given, but returns an empty list if the value is undefined
 sub maybe {
 	if    (@_ == 2) { return @_ if defined $_[1] }
@@ -163,6 +156,8 @@ class_type 'RectX',       { class => 'SDLx::Rect' };             sub RectX      
 class_type 'Surface',     { class => 'SDL::Surface' };           sub Surface     () { 'SDL::Surface' }
 class_type 'Palette',     { class => 'SDL::Palette' };           sub Palette     () { 'SDL::Palette' }
 class_type 'ResourceKey', { class => 'Neverhood::ResourceKey' }; sub ResourceKey () { 'Neverhood::ResourceKey' }
+
+role_type 'Role::Draw', { role => 'Neverhood::Role::Draw' }; sub Role::Draw () { 'Neverhood::Role::Draw' }
 
 # subtypes
 subtype 'SceneName',
